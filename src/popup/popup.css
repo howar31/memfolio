@@ -118,6 +118,22 @@ h1 {
   max-height: 400px;
   overflow-y: auto;
 }
+/* A slim thumb without a track or arrows, in place of the system scrollbar. */
+#list::-webkit-scrollbar {
+  width: 10px;
+}
+#list::-webkit-scrollbar-track {
+  background: transparent;
+}
+#list::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 5px;
+}
+#list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-2);
+}
 .row {
   display: grid;
   grid-template-columns: 1fr auto 36px;
