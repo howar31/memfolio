@@ -49,10 +49,21 @@ function statusOf(result: RunResult): AccountStatus {
   return result.failed.length > 0 ? 'partial' : 'ok';
 }
 
-function summarize(result: RunResult, where: string): { text: string; warn: boolean } {
+/**
+ * The result message says how much of the tab was looked at, so that the
+ * counts of a run that stopped early are not read as the size of the account
+ * or of the folder.
+ */
+function summarize(result: RunResult, tab: ProfileTab, where: string, folderFiles: number): { text: string; warn: boolean } {
   const lines: string[] = [];
   if (result.cancelled) lines.push(t('resultCancelled'));
-  lines.push(t('resultSaved', where, n(result.downloaded), n(result.skipped)));
+  const label = t(TAB_LABEL[tab]);
+  lines.push(result.downloaded > 0 ? t('resultNew', label, n(result.downloaded)) : t('resultNone', label));
+  const ended = result.cancelled || result.stop !== undefined ? 'partial' : result.listing;
+  if (ended === 'complete') lines.push(t('resultScopeComplete', n(result.posts), n(result.media), n(result.skipped)));
+  else if (ended === 'early-stop') lines.push(t('resultScopeEarly', n(result.posts), n(result.media)));
+  else lines.push(t('resultScopePartial', n(result.posts), n(result.media), n(result.skipped)));
+  lines.push(t('resultFolder', where, n(folderFiles)));
   if (result.failed.length > 0) lines.push(t('resultFailed', n(result.failed.length)));
   if (result.stop) lines.push(describeStop(result.stop));
   if (needsFullScan(result)) lines.push(t('resultWillFullScan'));
@@ -149,7 +160,7 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   await putAccount(record);
   if (result.failed.length > 0) console.warn('[memfolio] failed media:', result.failed);
 
-  const summary = summarize(result, record.relPath ?? record.folderName);
+  const summary = summarize(result, tab, record.relPath ?? record.folderName, index.matchedCount);
   surface.toast(summary.text, summary.warn ? 'warn' : 'info', null);
 }
 

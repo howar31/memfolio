@@ -283,7 +283,9 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
     ['acct', 'acct', 'root/acct', expected.length, 'ok', false],
     'summary after the first run',
   );
-  assert((await surfaceText(page)).includes(await ctx.msg('resultSaved', 'root/acct', expected.length, 0)), 'result message');
+  const tabPosts = await ctx.msg('tabPosts');
+  assert((await surfaceText(page)).includes(await ctx.msg('resultNew', tabPosts, expected.length)), 'result message');
+  assert((await surfaceText(page)).includes(await ctx.msg('resultFolder', 'root/acct', expected.length)), 'the result names the folder total');
 
   // Two new posts: page 1 has new media, page 2 is fully on disk, so listing stops there.
   await closeToasts(page);
@@ -291,7 +293,8 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   state.calls.length = 0;
   await click(page, await ctx.msg('downloadAll'));
   const knownOnTwoPages = expectedFiles(state.posts.slice(2, 24)).length;
-  await waitText(page, await ctx.msg('resultSaved', 'root/acct', 2, knownOnTwoPages));
+  await waitText(page, await ctx.msg('resultNew', tabPosts, 2));
+  assert((await surfaceText(page)).includes(await ctx.msg('resultScopeEarly', 24, 2 + knownOnTwoPages)), 'the result says how much was checked');
   assertEqual(callsNamed(state, POSTS).length, 2, 'incremental run stops at the first fully known page');
   assertEqual((await opfs.names(page, 'root/acct')).length, expected.length + 2, 'two files added');
 
@@ -300,7 +303,7 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   await closeToasts(page);
   state.calls.length = 0;
   await click(page, await ctx.msg('downloadAll'));
-  await waitText(page, await ctx.msg('resultSaved', 'root/acct', 0, firstPageMedia));
+  await waitText(page, await ctx.msg('resultScopeEarly', 12, firstPageMedia));
   assertEqual(callsNamed(state, POSTS).length, 1, 'one request when nothing is new');
 
   // A gap in old media is invisible to an incremental run and filled by a full scan.
@@ -309,7 +312,7 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   await closeToasts(page);
   state.calls.length = 0;
   await click(page, await ctx.msg('downloadAll'));
-  await waitText(page, await ctx.msg('resultSaved', 'root/acct', 0, firstPageMedia));
+  await waitText(page, await ctx.msg('resultScopeEarly', 12, firstPageMedia));
   assert(!(await opfs.names(page, 'root/acct')).includes(oldest), 'incremental run does not reach the old gap');
 
   await closeToasts(page);
@@ -407,7 +410,7 @@ scenario('a missing folder is reported before any request and can be reconnected
   await setPick(page, 'moved/acct');
   await click(page, await ctx.msg('chooseAnother'));
   await runFinished(ctx, page);
-  assert((await surfaceText(page)).includes(await ctx.msg('resultSaved', 'acct', 0, expected.length)), 'nothing is downloaded again');
+  assert((await surfaceText(page)).includes(await ctx.msg('resultNone', await ctx.msg('tabPosts'))), 'nothing is downloaded again');
   assertEqual(mediaFetched(state).length, expected.length, 'media was requested only during the first run');
   assertEqual((await ctx.account('42')).lastStatus, 'ok', 'summary is back to ok');
 });

@@ -95,8 +95,23 @@
   "resultCancelled": {
     "message": "已取消。"
   },
-  "resultSaved": {
-    "message": "$1：新下載 $2 個，已存在 $3 個。"
+  "resultNew": {
+    "message": "$1：新下載 $2 個檔案。"
+  },
+  "resultNone": {
+    "message": "$1：沒有新檔案。"
+  },
+  "resultScopeComplete": {
+    "message": "已列出每一頁：$1 則貼文、$2 個檔案，其中 $3 個原本就在資料夾中。"
+  },
+  "resultScopeEarly": {
+    "message": "只檢查了最新的 $1 則貼文（$2 個檔案）：列到已全部存在的一頁就停止，更早的內容沒有檢查。要檢查全部請用「完整掃描」。"
+  },
+  "resultScopePartial": {
+    "message": "執行結束前檢查了 $1 則貼文、$2 個檔案，其中 $3 個原本就在資料夾中。"
+  },
+  "resultFolder": {
+    "message": "資料夾「$1」目前共有 $2 個檔案。"
   },
   "resultFailed": {
     "message": "$1 個檔案失敗，細節在瀏覽器主控台。"

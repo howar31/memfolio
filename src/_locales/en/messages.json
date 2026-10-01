@@ -95,8 +95,23 @@
   "resultCancelled": {
     "message": "Cancelled."
   },
-  "resultSaved": {
-    "message": "$1: $2 new, $3 already there."
+  "resultNew": {
+    "message": "$1: $2 new files saved."
+  },
+  "resultNone": {
+    "message": "$1: no new files."
+  },
+  "resultScopeComplete": {
+    "message": "Every page was listed: $1 posts, $2 files, of which $3 were already in the folder."
+  },
+  "resultScopeEarly": {
+    "message": "Only the newest $1 posts ($2 files) were checked: listing stops at the first page that is already in the folder. Use Full scan to check everything."
+  },
+  "resultScopePartial": {
+    "message": "Checked before the run ended: $1 posts, $2 files, of which $3 were already in the folder."
+  },
+  "resultFolder": {
+    "message": "Folder $1 now holds $2 files."
   },
   "resultFailed": {
     "message": "Failed: $1. Details are in the browser console."
