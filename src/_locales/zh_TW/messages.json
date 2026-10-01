@@ -251,11 +251,14 @@
   "savingFolder": {
     "message": "儲存中：第 $1 個，共 $2 個…"
   },
-  "savedFolder": {
-    "message": "$1：新下載 $2 個，已存在 $3 個。"
+  "savedFolderNew": {
+    "message": "已存到資料夾「$1」：$2 個檔案。"
   },
-  "savedFolderFailed": {
-    "message": "$1：新下載 $2 個，已存在 $3 個，$4 個失敗。"
+  "savedFolderSome": {
+    "message": "已存到資料夾「$1」：$2 個檔案，另外 $3 個原本就有。"
+  },
+  "savedFolderNone": {
+    "message": "資料夾「$1」已有這 $2 個檔案，沒有重新下載。"
   },
   "importTitle": {
     "message": "匯入既有資料夾"

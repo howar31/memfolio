@@ -5,7 +5,7 @@ import { findAccountByUsername, getSettings, putAccount, type AccountRecord, typ
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
 import { ICONS, h, icon } from '../../ui/dom';
-import { surface } from '../../ui/host';
+import { surface, type ToastHandle } from '../../ui/host';
 import { resolveAccountFolder } from './account-folder';
 import { fetchPostMedia, isSoftStop, postsSource, reelsSource, resolveUserId, taggedSource } from './api';
 import { bridge } from './bridge-client';
@@ -28,6 +28,7 @@ const TAB_LABEL: Record<ProfileTab, Parameters<typeof t>[0]> = { posts: 'tabPost
 
 let current: Target | null = null;
 let active: ActiveRun | null = null;
+let lastResult: ToastHandle | null = null;
 let collapsed = false;
 let renderSeq = 0;
 // Used by the test build only.
@@ -161,11 +162,14 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   if (result.failed.length > 0) console.warn('[memfolio] failed media:', result.failed);
 
   const summary = summarize(result, tab, record.relPath ?? record.folderName, index.matchedCount);
-  surface.toast(summary.text, summary.warn ? 'warn' : 'info', null);
+  lastResult = surface.toast(summary.text, summary.warn ? 'warn' : 'info', null);
 }
 
 async function start(target: Target, mode: RunMode): Promise<void> {
   if (active) return;
+  // One result at a time: it stays until closed or until the next run starts.
+  lastResult?.close();
+  lastResult = null;
   const controller = new AbortController();
   const state: ActiveRun = { ...target, controller, status: '', ratio: null };
   active = state;
@@ -181,7 +185,7 @@ async function start(target: Target, mode: RunMode): Promise<void> {
       surface.toast(t('resultCancelled'));
     } else {
       console.error('[memfolio]', e);
-      surface.toast(t('downloadFailed', describeError(e)), 'error', null);
+      lastResult = surface.toast(t('downloadFailed', describeError(e)), 'error', null);
     }
   } finally {
     active = null;

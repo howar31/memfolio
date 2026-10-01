@@ -78,8 +78,12 @@ async function saveIntoFolder(items: MediaItem[], dir: FileSystemDirectoryHandle
   const record = await getAccount(PLATFORM, ownerId);
   if (record) await putAccount({ ...record, fileCount: index.matchedCount, folderName: dir.name });
   const where = record?.relPath ?? dir.name;
-  if (failed > 0) surface.toast(t('savedFolderFailed', where, n(saved), n(skipped), n(failed)), 'warn', null);
-  else surface.toast(t('savedFolder', where, n(saved), n(skipped)));
+  const lines: string[] = [];
+  if (saved > 0) lines.push(skipped > 0 ? t('savedFolderSome', where, n(saved), n(skipped)) : t('savedFolderNew', where, n(saved)));
+  else if (skipped > 0) lines.push(t('savedFolderNone', where, n(skipped)));
+  if (failed > 0) lines.push(t('resultFailed', n(failed)));
+  if (failed > 0) surface.toast(lines.join('\n'), 'warn', null);
+  else surface.toast(lines.join('\n'));
 }
 
 /**

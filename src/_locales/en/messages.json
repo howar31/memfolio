@@ -251,11 +251,14 @@
   "savingFolder": {
     "message": "Saving $1 of $2…"
   },
-  "savedFolder": {
-    "message": "$1: $2 new, $3 already there."
+  "savedFolderNew": {
+    "message": "Saved to folder $1: $2 files."
   },
-  "savedFolderFailed": {
-    "message": "$1: $2 new, $3 already there, $4 failed."
+  "savedFolderSome": {
+    "message": "Saved to folder $1: $2 files; $3 more were already there."
+  },
+  "savedFolderNone": {
+    "message": "Folder $1 already has these $2 files; nothing was downloaded again."
   },
   "importTitle": {
     "message": "Import existing folders"

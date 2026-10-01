@@ -306,6 +306,16 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   await waitText(page, await ctx.msg('resultScopeEarly', 12, firstPageMedia));
   assertEqual(callsNamed(state, POSTS).length, 1, 'one request when nothing is new');
 
+  // The result stays on screen; the next run replaces it instead of adding another.
+  const before = Number(await page.evaluate(() => document.documentElement.dataset.memfolioRunsDone));
+  await click(page, await ctx.msg('downloadAll'));
+  await waitFor(async () => Number(await page.evaluate(() => document.documentElement.dataset.memfolioRunsDone)) > before, 'the next run to end');
+  assertEqual(
+    await page.evaluate(() => document.querySelector('memfolio-surface').shadowRoot.querySelectorAll('.toast').length),
+    1,
+    'one result on screen',
+  );
+
   // A gap in old media is invisible to an incremental run and filled by a full scan.
   const oldest = expectedFiles([state.posts.at(-1)])[0];
   await opfs.remove(page, 'root/acct', oldest);
@@ -535,7 +545,7 @@ scenario('with the account folder setting a single post goes into the account fo
   await closeToasts(profile);
   await clickHover(profile, '#grid a:first-child');
   const newest = expectedFiles([state.posts[0]]).length;
-  await waitText(profile, await ctx.msg('savedFolder', 'root/acct', 0, newest));
+  await waitText(profile, await ctx.msg('savedFolderNone', 'root/acct', newest));
   assertEqual(await profile.evaluate(() => location.pathname), '/acct/', 'the thumbnail button does not follow the link');
   assertEqual(await profile.evaluate(() => document.getElementById('grid').innerHTML), markup, 'nothing is inserted into the grid');
 
@@ -548,7 +558,7 @@ scenario('with the account folder setting a single post goes into the account fo
 
   // Pointing at one slide offers that slide only.
   await clickHover(post, 'article li:nth-child(2)');
-  await waitText(post, await ctx.msg('savedFolder', 'root/acct', 1, 0));
+  await waitText(post, await ctx.msg('savedFolderNew', 'root/acct', 1));
   const second = expectedFiles([fresh])[1];
   assertEqual((await opfs.names(post, 'root/acct')).filter((n) => !before.includes(n)), [second], 'only the clicked slide is saved');
 
@@ -556,7 +566,7 @@ scenario('with the account folder setting a single post goes into the account fo
   await closeToasts(post);
   const button = await waitFor(() => post.$('.memfolio-post-btn'), 'the post button');
   await button.click();
-  await waitText(post, await ctx.msg('savedFolder', 'root/acct', 2, 1));
+  await waitText(post, await ctx.msg('savedFolderSome', 'root/acct', 2, 1));
   const after = await opfs.names(post, 'root/acct');
   assertEqual(after.length, before.length + 3, 'carousel saved into the account folder');
   assertEqual((await ctx.account('42')).fileCount, after.length, 'summary file count follows');
@@ -564,7 +574,7 @@ scenario('with the account folder setting a single post goes into the account fo
   // Pressing again skips what is there.
   await closeToasts(post);
   await (await post.$('.memfolio-post-btn')).click();
-  await waitText(post, await ctx.msg('savedFolder', 'root/acct', 0, 3));
+  await waitText(post, await ctx.msg('savedFolderNone', 'root/acct', 3));
 
   // A post by an account that is not managed uses the browser's download handling.
   const foreign = makePost(50, { owner: '555', username: 'stranger' });
