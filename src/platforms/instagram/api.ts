@@ -14,19 +14,16 @@ const PAGE_SIZE = 12;
  * is the last observed value and is used only when the page has none.
  * `sessionParams` adds the form fields the web client sends with the request.
  * The posts query is sent without them.
- * `alternate` names a query that takes the same variables and is tried when
- * the page has not loaded the primary one.
  */
 interface QueryDef {
   fallbackId: string | null;
   sessionParams: boolean;
-  alternate?: string;
 }
 
 const QUERIES = {
   PolarisProfilePostsTabContentQuery_connection: { fallbackId: '28844755988451916', sessionParams: false },
-  PolarisProfileReelsTabContentQuery_connection: { fallbackId: null, sessionParams: true, alternate: 'PolarisProfileReelsTabContentQuery' },
-  PolarisProfileTaggedTabContentQuery_connection: { fallbackId: null, sessionParams: true, alternate: 'PolarisProfileTaggedTabContentQuery' },
+  PolarisProfileReelsTabContentQuery_connection: { fallbackId: null, sessionParams: true },
+  PolarisProfileTaggedTabContentQuery_connection: { fallbackId: null, sessionParams: true },
   PolarisPostRootQuery: { fallbackId: '27830990013244856', sessionParams: true },
   PolarisStoriesV3ReelPageGalleryQuery: { fallbackId: '28262315486766731', sessionParams: true },
   PolarisStoriesV3HighlightsPageQuery: { fallbackId: '28325328583775973', sessionParams: true },
@@ -64,13 +61,7 @@ function isObject(v: unknown): v is Json {
 export function createGraphql(deps: GraphqlDeps): GraphqlFn {
   return async (name, variables, signal) => {
     const def: QueryDef = QUERIES[name];
-    let friendly: string = name;
-    let docId = await deps.docId(name);
-    if (!docId && def.alternate) {
-      docId = await deps.docId(def.alternate);
-      if (docId) friendly = def.alternate;
-    }
-    docId ??= def.fallbackId;
+    const docId = (await deps.docId(name)) ?? def.fallbackId;
     if (!docId) throw new StopError('bad-response', `query id for ${name} is not available on this page`);
     const session = await deps.session();
 
@@ -88,9 +79,9 @@ export function createGraphql(deps: GraphqlDeps): GraphqlFn {
         headers['x-fb-lsd'] = session.lsd;
       }
       form.set('fb_api_caller_class', 'RelayModern');
-      form.set('fb_api_req_friendly_name', friendly);
+      form.set('fb_api_req_friendly_name', name);
       form.set('server_timestamps', 'true');
-      headers['x-fb-friendly-name'] = friendly;
+      headers['x-fb-friendly-name'] = name;
     }
     form.set('doc_id', docId);
     form.set('variables', JSON.stringify(variables));

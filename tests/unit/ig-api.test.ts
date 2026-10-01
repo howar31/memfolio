@@ -411,18 +411,10 @@ describe('createGraphql', () => {
     expect(params(t.sent[0]!.init).get('doc_id')).toBe('28844755988451916');
   });
 
-  it('uses the alternate query name when the page has loaded only that one', async () => {
+  it('does not send a query under the id of another query', async () => {
     const t = transport({ data: {} }, { PolarisProfileReelsTabContentQuery: '77' });
-    await t.gql('PolarisProfileReelsTabContentQuery_connection', {}, signal);
-    const { init } = t.sent[0]!;
-    expect(params(init).get('doc_id')).toBe('77');
-    expect(params(init).get('fb_api_req_friendly_name')).toBe('PolarisProfileReelsTabContentQuery');
-  });
-
-  it('prefers the primary query name when both are loaded', async () => {
-    const t = transport({ data: {} }, { PolarisProfileReelsTabContentQuery: '77', PolarisProfileReelsTabContentQuery_connection: '78' });
-    await t.gql('PolarisProfileReelsTabContentQuery_connection', {}, signal);
-    expect(params(t.sent[0]!.init).get('doc_id')).toBe('78');
+    await expect(t.gql('PolarisProfileReelsTabContentQuery_connection', {}, signal)).rejects.toMatchObject({ reason: 'bad-response' });
+    expect(t.sent).toHaveLength(0);
   });
 
   it('stops without a request when no query id is known', async () => {

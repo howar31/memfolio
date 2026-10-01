@@ -98,9 +98,16 @@ function pageHtml(state, body) {
     PolarisRelayEnvironment: { getStore: () => ({ getSource: () => ({ getRecordIDs: () => Object.keys(records), get: (id) => records[id] }) }) },
   };
   for (const [name, id] of Object.entries(reg.docIds)) modules[name + '_instagramRelayOperation'] = id;
+  // The direct form reports an unknown name to the page's error handling, so
+  // the suite counts every use of it; the deferred form calls back only for
+  // names that are defined.
+  window.__directRequires = [];
   window.require = (name) => {
-    if (!(name in modules)) throw new Error('Requiring unknown module "' + name + '"');
+    window.__directRequires.push(name);
     return modules[name];
+  };
+  window.requireLazy = (names, onReady) => {
+    if (names.every((n) => n in modules)) setTimeout(() => onReady(...names.map((n) => modules[n])), 0);
   };
 })();
 </script></head><body style="background:#fff;margin:0">${body}

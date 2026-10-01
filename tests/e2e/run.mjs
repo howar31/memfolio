@@ -470,6 +470,7 @@ scenario('reels and tagged tabs list their own content', async (ctx) => {
   assertEqual(await opfs.names(page, 'root/acct'), expectedFiles(reels), 'reels are saved after resolving each video');
   assertEqual(callsNamed(state, 'PolarisProfileReelsTabContentQuery_connection')[0].vars.data.target_user_id, '42', 'reels are listed by account id');
   assertEqual(callsNamed(state, POSTS).length, 0, 'the main grid is not listed from the reels tab');
+  assertEqual(await page.evaluate(() => window.__directRequires), [], 'modules are read without the lookup the page reports');
   assertEqual(callsNamed(state, 'mediaInfo').length, 1, 'a dead info endpoint is tried once per session');
   assertEqual(callsNamed(state, 'PolarisPostRootQuery').length, 2, 'each new reel is resolved through the post query');
   const resolve = callsNamed(state, 'PolarisPostRootQuery')[0];
@@ -574,6 +575,7 @@ scenario('with the account folder setting a single post goes into the account fo
   const wanted = expectedFiles([foreign])[0];
   await waitFor(() => ctx.browserDownloads.includes(wanted), `browser download of ${wanted}`);
   assertEqual(await ctx.account('555'), null, 'a single download does not register an account');
+  assertEqual(await other.evaluate(() => window.__directRequires), [], 'modules are read without the lookup the page reports');
 });
 
 scenario('the post button waits until the page has taken over its markup', async (ctx) => {

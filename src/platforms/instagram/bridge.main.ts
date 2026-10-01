@@ -5,26 +5,42 @@
 import { RPC_TAG, type BridgeMethods, type BridgeSession, type RpcRequest, type RpcResponse } from './bridge-protocol';
 
 type AnyRecord = Record<string, unknown>;
-type RequireFn = (name: string) => unknown;
+type RequireLazyFn = (names: string[], onReady: (...modules: unknown[]) => void) => void;
 
-function pageRequire(): RequireFn | null {
-  const r = (window as unknown as { require?: unknown }).require;
-  return typeof r === 'function' ? (r as RequireFn) : null;
+function pageRequireLazy(): RequireLazyFn | null {
+  const r = (window as unknown as { requireLazy?: unknown }).requireLazy;
+  return typeof r === 'function' ? (r as RequireLazyFn) : null;
 }
 
-function mod(name: string): AnyRecord | string | null {
-  const req = pageRequire();
-  if (!req) return null;
-  try {
-    const m = req(name);
-    return typeof m === 'string' || (typeof m === 'object' && m !== null) ? (m as AnyRecord | string) : null;
-  } catch {
-    return null;
+// Modules are read through the loader's deferred form. It calls back once a
+// module is defined and stays silent for a name the page has not loaded; the
+// direct form reports such a name to the page's error handling. One request
+// per name is left with the loader and reused.
+const LOOKUP_WAIT_MS = 300;
+const lookups = new Map<string, Promise<unknown>>();
+
+function mod(name: string): Promise<AnyRecord | string | null> {
+  let found = lookups.get(name);
+  if (!found) {
+    const lazy = pageRequireLazy();
+    if (!lazy) return Promise.resolve(null);
+    found = new Promise((resolve) => {
+      try {
+        lazy([name], (m) => resolve(m));
+      } catch {
+        // Stays unanswered, like an unknown name.
+      }
+    });
+    lookups.set(name, found);
   }
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), LOOKUP_WAIT_MS));
+  return Promise.race([found, timeout]).then((m) =>
+    typeof m === 'string' || (typeof m === 'object' && m !== null) ? (m as AnyRecord | string) : null,
+  );
 }
 
-function objMod(name: string): AnyRecord | null {
-  const m = mod(name);
+async function objMod(name: string): Promise<AnyRecord | null> {
+  const m = await mod(name);
   return typeof m === 'object' ? m : null;
 }
 
@@ -45,8 +61,8 @@ function text(v: unknown): string | null {
 
 const NUMERIC = /^\d+$/;
 
-function relayEnvironment(): AnyRecord | null {
-  const m = objMod('PolarisRelayEnvironment');
+async function relayEnvironment(): Promise<AnyRecord | null> {
+  const m = await objMod('PolarisRelayEnvironment');
   if (!m) return null;
   if (typeof m.getStore === 'function') return m;
   const d = m.default;
@@ -82,26 +98,26 @@ function mediaPkFromProps(props: unknown): string | null {
 }
 
 const methods: BridgeMethods = {
-  session(): BridgeSession {
+  async session(): Promise<BridgeSession> {
+    const [config, dtsg, lsd, claim] = await Promise.all(['PolarisConfig', 'DTSGInitialData', 'LSD', 'PolarisWWWClaim'].map(objMod));
     return {
-      appId: text(call(objMod('PolarisConfig'), 'getIGAppID')),
-      dtsg: text(objMod('DTSGInitialData')?.token),
-      lsd: text(objMod('LSD')?.token),
-      wwwClaim: text(call(objMod('PolarisWWWClaim'), 'getWWWClaim')),
-      hasRequire: pageRequire() !== null,
+      appId: text(call(config ?? null, 'getIGAppID')),
+      dtsg: text(dtsg?.token),
+      lsd: text(lsd?.token),
+      wwwClaim: text(call(claim ?? null, 'getWWWClaim')),
+      hasRequire: pageRequireLazy() !== null,
     };
   },
 
-  docIds(names) {
-    const out: Record<string, string | null> = {};
-    for (const name of names) out[name] = text(mod(`${name}_instagramRelayOperation`));
-    return out;
+  async docIds(names) {
+    const ids = await Promise.all(names.map((name) => mod(`${name}_instagramRelayOperation`)));
+    return Object.fromEntries(names.map((name, i) => [name, text(ids[i])]));
   },
 
-  findUserId(username) {
+  async findUserId(username) {
     const wanted = username.toLowerCase();
     try {
-      const store = call(relayEnvironment(), 'getStore') as AnyRecord | null;
+      const store = call(await relayEnvironment(), 'getStore') as AnyRecord | null;
       const source = call(store, 'getSource') as AnyRecord | null;
       const ids = call(source, 'getRecordIDs');
       if (!source || !Array.isArray(ids) || typeof source.get !== 'function') return null;
@@ -119,9 +135,8 @@ const methods: BridgeMethods = {
   },
 
   async relayPost(shortcode) {
-    const relay = objMod('CometRelay');
-    const env = relayEnvironment();
-    const query = objMod('PolarisPostActionLoadPostQuery')?.POST_QUERY;
+    const [relay, env, loader] = await Promise.all([objMod('CometRelay'), relayEnvironment(), objMod('PolarisPostActionLoadPostQuery')]);
+    const query = loader?.POST_QUERY;
     if (!relay || !env || !query || typeof relay.fetchQuery !== 'function') return null;
     const observable = (relay.fetchQuery as (...a: unknown[]) => AnyRecord)(env, query, {
       shortcode,

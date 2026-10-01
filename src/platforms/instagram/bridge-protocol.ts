@@ -12,11 +12,11 @@ export interface BridgeSession {
 }
 
 export interface BridgeMethods {
-  session(): BridgeSession;
+  session(): Promise<BridgeSession>;
   /** Ids of persisted queries by friendly name; null for names the page does not know. */
-  docIds(names: string[]): Record<string, string | null>;
+  docIds(names: string[]): Promise<Record<string, string | null>>;
   /** Numeric id of a user found in data the page has already loaded. */
-  findUserId(username: string): string | null;
+  findUserId(username: string): Promise<string | null>;
   /** The page's own post loader (older response shape). */
   relayPost(shortcode: string): Promise<unknown | null>;
   /** Media pk attached to the element carrying `data-memfolio-probe="<token>"`. */
