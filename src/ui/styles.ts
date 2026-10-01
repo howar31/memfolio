@@ -36,9 +36,9 @@ button { font: inherit; color: inherit; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .dock {
-  position: fixed; right: 16px; bottom: 76px; z-index: 2147483000;
+  position: fixed; right: 32px; bottom: 86px; z-index: 2147483000;
   display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
-  width: min(340px, calc(100vw - 32px)); pointer-events: none;
+  width: min(340px, calc(100vw - 48px)); pointer-events: none;
 }
 .dock > * { pointer-events: auto; }
 .toasts { display: flex; flex-direction: column; gap: 8px; width: 100%; }
@@ -66,19 +66,20 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   border-radius: 4px; box-shadow: var(--shadow); padding: 12px;
 }
 .card .who { margin-bottom: 4px; color: var(--accent); font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The button has the shape of the logo's tile, so the mark is not cut off. */
 .ball {
   position: relative; width: 52px; height: 52px; margin: -4px; padding: 4px;
-  border: 0; border-radius: 50%; background: none; cursor: pointer;
+  border: 0; border-radius: 14px; background: none; cursor: pointer;
 }
-.ball::before { content: ""; position: absolute; inset: 0; border-radius: 50%; }
+.ball::before { content: ""; position: absolute; inset: 0; border-radius: 14px; }
 .ball .core {
   position: relative; display: grid; place-items: center; width: 100%; height: 100%;
-  border-radius: 50%; overflow: hidden; background: #4a3528; box-shadow: var(--shadow);
+  border-radius: 10px; overflow: hidden; background: #4a3528; box-shadow: var(--shadow);
 }
 .ball .core svg { display: block; }
 .ball:hover .core { filter: brightness(1.08); }
 .ball.busy::before { background: conic-gradient(var(--spark) calc(var(--p, 0) * 1%), var(--rule) 0); }
-.ball.busy.unknown::before { background: conic-gradient(var(--spark) 30%, var(--rule) 0); animation: spin 1.4s linear infinite; }
+.ball.busy.unknown::before { background: var(--spark); animation: pulse 1.4s ease-in-out infinite; }
 .ball.busy .core { box-shadow: 0 0 0 2px var(--sheet); }
 .card .path { font-weight: 600; overflow-wrap: anywhere; }
 .card .meta { color: var(--ink-2); font-variant-numeric: tabular-nums; }
@@ -138,7 +139,7 @@ td .sub { color: var(--ink-2); }
 td .flag { color: var(--warn); }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { opacity: 0.3; } }
 @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }

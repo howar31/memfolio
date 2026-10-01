@@ -42,7 +42,11 @@ export function icon(paths: string[], size = 20): SVGSVGElement {
   return svg;
 }
 
-/** The product mark without its background tile: two stacked instant photos. */
+/**
+ * The product mark without its background tile: two stacked instant photos.
+ * The toolbar icon draws the same shapes larger; here they keep a margin
+ * inside the button.
+ */
 export function logoMark(size: number): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 128 128');
@@ -55,12 +59,12 @@ export function logoMark(size: number): SVGSVGElement {
     parent.append(el);
     return el;
   };
-  add(svg, 'rect', { x: '30', y: '26', width: '58', height: '70', rx: '4', fill: '#d9bfa2', transform: 'rotate(-11 64 64)' });
+  add(svg, 'rect', { x: '26', y: '22', width: '62', height: '76', rx: '5', fill: '#d9bfa2', transform: 'rotate(-12 64 64)' });
   const front = add(svg, 'g', { transform: 'rotate(7 64 64)' });
-  add(front, 'rect', { x: '40', y: '30', width: '58', height: '70', rx: '4', fill: '#fbf3e6' });
-  add(front, 'rect', { x: '46', y: '36', width: '46', height: '44', rx: '2', fill: '#8a644c' });
-  add(front, 'circle', { cx: '78', cy: '50', r: '6', fill: '#d98f55' });
-  add(front, 'path', { d: 'M46 80l14-17 11 11 8-8 13 14z', fill: '#5b4033' });
+  add(front, 'rect', { x: '38', y: '26', width: '64', height: '78', rx: '5', fill: '#fbf3e6' });
+  add(front, 'rect', { x: '45', y: '33', width: '50', height: '48', rx: '2', fill: '#8a644c' });
+  add(front, 'circle', { cx: '80', cy: '49', r: '8', fill: '#d98f55' });
+  add(front, 'path', { d: 'M45 81l16-20 12 12 8-8 14 16z', fill: '#4a3528' });
   return svg;
 }
 
