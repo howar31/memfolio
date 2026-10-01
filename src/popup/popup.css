@@ -408,8 +408,8 @@ h1 {
 
 /* The two views share one layout; the settings replace the account list. */
 #accounts,
-#adding,
-#exporting,
+#transferring,
+.panel,
 #settings {
   display: flex;
   flex-direction: column;
@@ -430,7 +430,33 @@ h1 {
 .titlebar .iconbtn {
   margin: -4px 0;
 }
-/* The view that takes pasted profile addresses. */
+.panel {
+  padding: 0;
+}
+/* The two tabs of the text view, drawn as one control. */
+.tabs {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.tabs button {
+  flex: 1;
+  padding: 5px 10px;
+  background: var(--sheet);
+  border: 0;
+  color: var(--ink-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tabs button + button {
+  border-left: 1px solid var(--rule);
+}
+.tabs button[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+/* The text view: pasted profile addresses in, the list out. */
 #adding .hint,
 #exporting .hint,
 #add-result,

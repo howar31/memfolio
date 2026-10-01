@@ -309,7 +309,7 @@
     "message": "以帳號或資料夾篩選"
   },
   "popupEmpty": {
-    "message": "清單上還沒有帳號。到個人檔案頁按「下載全部」、用「+」貼上個人頁網址，或匯入你已有的資料夾。"
+    "message": "清單上還沒有帳號。到個人檔案頁按「下載全部」、用上方的按鈕貼上個人頁網址，或匯入你已有的資料夾。"
   },
   "popupNoMatch": {
     "message": "沒有符合篩選條件的帳號。"
@@ -563,12 +563,6 @@
   "pageStale": {
     "message": "Memfolio 已更新或重新載入，請重新整理這個頁面後再使用。"
   },
-  "popupAdd": {
-    "message": "以網址加入帳號"
-  },
-  "popupAddTitle": {
-    "message": "加入帳號"
-  },
   "popupAddHint": {
     "message": "貼上個人頁網址，每行一個。「# 名稱」的行會把其後的網址放進該群組。資料夾在第一次下載時設定。"
   },
@@ -599,14 +593,8 @@
   "popupUnpin": {
     "message": "取消釘選"
   },
-  "popupExport": {
-    "message": "匯出網址清單"
-  },
-  "popupExportTitle": {
-    "message": "匯出帳號"
-  },
   "popupExportHint": {
-    "message": "每行一個個人頁網址，順序與清單相同；「#」開頭的行是群組。貼到「加入帳號」即可重建清單。"
+    "message": "每行一個個人頁網址，順序與清單相同；「#」開頭的行是群組。貼到「加入」分頁即可重建清單。"
   },
   "popupExportCopy": {
     "message": "複製"
@@ -688,5 +676,17 @@
   },
   "popupSortDesc": {
     "message": "降冪，按一下反轉"
+  },
+  "popupTransfer": {
+    "message": "以網址加入或匯出帳號"
+  },
+  "popupTransferTitle": {
+    "message": "網址清單"
+  },
+  "popupTabAdd": {
+    "message": "加入"
+  },
+  "popupTabExport": {
+    "message": "匯出"
   }
 }

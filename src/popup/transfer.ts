@@ -1,5 +1,5 @@
-// The two text views of the popup: adding accounts from pasted profile addresses
-// and handing the list out in the same form.
+// The text view of the popup, with two tabs: adding accounts from pasted profile
+// addresses, and handing the list out in the same form.
 
 import { n, t } from '../core/i18n';
 import { addGroup, assign, exportText, pendingKey } from '../core/layout';
@@ -41,11 +41,21 @@ async function addPasted(): Promise<void> {
 }
 
 /** One profile address per entry under the heading of its block, in the order of the list, whatever the filter shows. */
-async function openExport(): Promise<void> {
+async function fillExport(): Promise<void> {
   const { blocks } = await loadList();
   box('exported').value = exportText(blocks, (entry) => PROFILE_URL[entry.platform]?.(entry.name) ?? '');
   text('export-result', '');
-  show('exporting');
+}
+
+type Tab = 'add' | 'export';
+
+function showTab(tab: Tab): void {
+  for (const [name, panel] of [['add', 'adding'], ['export', 'exporting']] as const) {
+    document.getElementById(`tab-${name}`)!.setAttribute('aria-selected', String(name === tab));
+    document.getElementById(panel)!.hidden = name !== tab;
+  }
+  if (tab === 'export') void fillExport();
+  else box('addresses').focus();
 }
 
 async function copyExport(): Promise<void> {
@@ -75,13 +85,15 @@ function saveExport(): void {
 }
 
 export function initTransfer(): void {
-  document.getElementById('add')!.addEventListener('click', () => {
+  // The view opens on the tab used more often.
+  document.getElementById('transfer')!.addEventListener('click', () => {
     text('add-result', '');
-    show('adding');
-    box('addresses').focus();
+    show('transferring');
+    showTab('add');
   });
+  document.getElementById('tab-add')!.addEventListener('click', () => showTab('add'));
+  document.getElementById('tab-export')!.addEventListener('click', () => showTab('export'));
   document.getElementById('add-go')!.addEventListener('click', () => void addPasted());
-  document.getElementById('export')!.addEventListener('click', () => void openExport());
   document.getElementById('export-copy')!.addEventListener('click', () => void copyExport());
   document.getElementById('export-save')!.addEventListener('click', saveExport);
 }

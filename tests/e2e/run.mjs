@@ -917,11 +917,18 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
 scenario('profile addresses pasted into the popup become entries of the list', async (ctx) => {
   const popup = await ctx.browser.newPage();
   await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
-  await waitFor(async () => (await popup.$eval('#add', (e) => e.title)) === (await ctx.msg('popupAdd')), 'the popup');
-  assertEqual(await popup.$eval('#adding', (e) => e.hidden), true, 'the paste view is closed at first');
+  await waitFor(async () => (await popup.$eval('#transfer', (e) => e.title)) === (await ctx.msg('popupTransfer')), 'the popup');
+  assertEqual(await popup.$$eval('#add, #export', (els) => els.length), 0, 'one button stands for adding and exporting');
+  assertEqual(await popup.$eval('#transferring', (e) => e.hidden), true, 'the view for adding and exporting is closed at first');
 
-  await popup.click('#add');
-  assertEqual(await popup.$eval('#adding', (e) => e.hidden), false, 'the paste view opens');
+  await popup.click('#transfer');
+  assertEqual(await popup.$eval('#transferring', (e) => e.hidden), false, 'the view opens');
+  assertEqual(
+    await popup.$$eval('#tab-add, #tab-export', (els) => els.map((e) => [e.textContent, e.getAttribute('aria-selected')])),
+    [[await ctx.msg('popupTabAdd'), 'true'], [await ctx.msg('popupTabExport'), 'false']],
+    'two tabs, adding first',
+  );
+  assertEqual(await popup.$$eval('#adding, #exporting', (els) => els.map((e) => e.hidden)), [false, true], 'the paste box is shown');
   assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
   const pasted = [`${ORIGIN}/first.user/`, 'instagram.com/Second/reels/', `${ORIGIN}/p/ABC123/`, `${ORIGIN}/first.user/tagged/`].join('\n');
   assertEqual(await popup.$eval('#addresses', (e) => getComputedStyle(e).resize), 'vertical', 'the box can be made taller or shorter');
@@ -986,15 +993,16 @@ scenario('the list is exported as profile addresses in the order it is shown', a
   const popup = await ctx.browser.newPage();
   await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
   await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 3, 'the popup list');
-  assertEqual(await popup.$eval('#export', (e) => [e.title, e.hidden]), [await ctx.msg('popupExport'), false], 'the export button is named');
   const shown = await popup.$$eval('.row .name', (els) => els.map((e) => e.textContent.slice(1)));
   assertEqual(shown, ['charlie', 'alpha', 'bravo'], 'the list: pinned first, then by name');
 
   // The filter narrows the list on screen, not the export.
   await popup.type('#filter', 'alp');
   await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 1, 'the filtered list');
-  await popup.click('#export');
-  assertEqual(await popup.$eval('#exporting', (e) => e.hidden), false, 'the export view opens');
+  await popup.click('#transfer');
+  await popup.click('#tab-export');
+  assertEqual(await popup.$$eval('#adding, #exporting', (els) => els.map((e) => e.hidden)), [true, false], 'the export tab shows the text to hand out');
+  assertEqual(await popup.$eval('#tab-export', (e) => e.getAttribute('aria-selected')), 'true', 'the tab says so');
   assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
   const expected = ['# [pinned]', `${ORIGIN}/charlie/`, '# [ungrouped]', `${ORIGIN}/alpha/`, `${ORIGIN}/bravo/`].join('\n');
   assertEqual(await popup.$eval('#exported', (e) => [e.value, e.readOnly]), [expected, true], 'one address per entry, in the order of the list');
@@ -1013,8 +1021,11 @@ scenario('the list is exported as profile addresses in the order it is shown', a
   // What was exported can be pasted back in.
   await ctx.ext.evaluate(() => chrome.storage.local.clear());
   await popup.click('#back');
-  await waitFor(() => popup.$eval('#export', (e) => e.hidden), 'the export button to go away with the last entry');
-  await popup.click('#add');
+  await popup.click('#transfer');
+  assertEqual(await popup.$$eval('#adding, #exporting', (els) => els.map((e) => e.hidden)), [false, true], 'the view opens on the paste box every time');
+  await popup.click('#tab-export');
+  assertEqual(await popup.$eval('#exported', (e) => e.value), '', 'an empty list exports nothing');
+  await popup.click('#tab-add');
   await popup.$eval('#addresses', (e, v) => (e.value = v), expected);
   await popup.click('#add-go');
   await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 3, 0, 0)), 'every exported line to be taken');
@@ -1324,14 +1335,15 @@ scenario('groups and pins travel with the exported text', async (ctx) => {
   });
   const popup = await openPopup(ctx);
   const [pinned, rest] = [await ctx.msg('popupBlockPinned'), await ctx.msg('popupBlockUngrouped')];
-  await popup.click('#export');
+  await popup.click('#transfer');
+  await popup.click('#tab-export');
   const expected = ['# [pinned]', `${ORIGIN}/alpha/`, '# One', `${ORIGIN}/delta/`, `${ORIGIN}/charlie/`, '# Empty', '# [ungrouped]', `${ORIGIN}/bravo/`].join('\n');
   assertEqual(await popup.$eval('#exported', (e) => e.value), expected, 'every block under its heading, folded or not, in the order on screen');
 
   // Pasted into an empty list, the text brings the groups and the pin back.
   await ctx.ext.evaluate(() => chrome.storage.local.clear());
   await popup.click('#back');
-  await popup.click('#add');
+  await popup.click('#transfer');
   await popup.$eval('#addresses', (e, v) => (e.value = v), expected);
   await popup.click('#add-go');
   await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 4, 0, 0)), 'every address to be taken');
@@ -1341,7 +1353,7 @@ scenario('groups and pins travel with the exported text', async (ctx) => {
   assertEqual((await ctx.storage())['pending:instagram:alpha'].pinned, true, 'the pin is stored with the entry');
 
   // A group that already exists takes the new entries; entries already listed stay where they are.
-  await popup.click('#add');
+  await popup.click('#transfer');
   await popup.$eval('#addresses', (e, v) => (e.value = v), ['# One', `${ORIGIN}/echo/`, `${ORIGIN}/bravo/`].join('\n'));
   await popup.click('#add-go');
   await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 1, 1, 0)), 'one new, one already listed');

@@ -80,10 +80,9 @@ export const ICONS = {
   /** Two sliders: settings. */
   settings: ['M4 8h7', 'M17 8h3', 'M11 8a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M4 16h3', 'M13 16h7', 'M7 16a3 3 0 1 0 6 0a3 3 0 1 0-6 0'],
   back: ['M20 12H5', 'M11 6l-6 6 6 6'],
-  plus: ['M12 5v14', 'M5 12h14'],
   chevronDown: ['M6 9l6 6 6-6'],
-  /** Arrow out of a tray: hand the list out. */
-  export: ['M12 15V4', 'M7.5 8.5 12 4l4.5 4.5', 'M5 19h14'],
+  /** A tray with one arrow into it and one out of it: accounts into the list and the list out of it. */
+  transfer: ['M4 14v5h16v-5', 'M9 4v9', 'M6 10l3 3 3-3', 'M15 13V4', 'M12 7l3-3 3 3'],
   folderPlus: ['M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v7.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z', 'M12 11v5', 'M9.5 13.5h5'],
   arrowUp: ['M12 19V5', 'M6 11l6-6 6 6'],
   arrowDown: ['M12 5v14', 'M6 13l6 6 6-6'],

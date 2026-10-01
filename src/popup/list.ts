@@ -354,7 +354,6 @@ const DIRECTION: Record<'asc' | 'desc', { paths: readonly string[]; name: Messag
 
 function renderControls(layout: Layout, empty: boolean): void {
   document.getElementById('controls')!.hidden = empty;
-  document.getElementById('export')!.hidden = empty;
   sortBy.value = layout.sort.by;
   const direction = DIRECTION[layout.sort.desc ? 'desc' : 'asc'];
   sortDir.replaceChildren(icon([...direction.paths], 16));

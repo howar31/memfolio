@@ -67,11 +67,11 @@ export const label = (id: string, paths: readonly string[], name: string): void 
   el.setAttribute('aria-label', name);
 };
 
-export type View = 'accounts' | 'adding' | 'exporting' | 'settings';
+export type View = 'accounts' | 'transferring' | 'settings';
 
 /** The popup shows one view at a time; the account list is the one to go back to. */
 export function show(view: View): void {
-  for (const id of ['accounts', 'adding', 'exporting', 'settings']) document.getElementById(id)!.hidden = id !== view;
+  for (const id of ['accounts', 'transferring', 'settings']) document.getElementById(id)!.hidden = id !== view;
   document.getElementById('options')!.hidden = view !== 'accounts';
   document.getElementById('back')!.hidden = view === 'accounts';
 }

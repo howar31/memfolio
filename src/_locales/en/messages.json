@@ -309,7 +309,7 @@
     "message": "Filter by account or folder"
   },
   "popupEmpty": {
-    "message": "No accounts yet. Open a profile and press Download All, add profile addresses with +, or import folders you already have."
+    "message": "No accounts yet. Open a profile and press Download All, paste profile addresses with the button above, or import folders you already have."
   },
   "popupNoMatch": {
     "message": "No account matches the filter."
@@ -563,12 +563,6 @@
   "pageStale": {
     "message": "Memfolio was updated or reloaded. Refresh this page to use it again."
   },
-  "popupAdd": {
-    "message": "Add accounts by address"
-  },
-  "popupAddTitle": {
-    "message": "Add accounts"
-  },
   "popupAddHint": {
     "message": "Paste profile addresses, one per line. A line “# name” puts the addresses below it into that group. Folders are set up at the first download."
   },
@@ -599,14 +593,8 @@
   "popupUnpin": {
     "message": "Unpin"
   },
-  "popupExport": {
-    "message": "Export the list as addresses"
-  },
-  "popupExportTitle": {
-    "message": "Export accounts"
-  },
   "popupExportHint": {
-    "message": "One profile address per line, in the order of the list; lines starting with # name the groups. Paste it into “Add accounts” to rebuild the list."
+    "message": "One profile address per line, in the order of the list; lines starting with # name the groups. Pasted under “Add”, it rebuilds the list."
   },
   "popupExportCopy": {
     "message": "Copy"
@@ -688,5 +676,17 @@
   },
   "popupSortDesc": {
     "message": "Descending; press to reverse"
+  },
+  "popupTransfer": {
+    "message": "Add or export accounts as addresses"
+  },
+  "popupTransferTitle": {
+    "message": "Address list"
+  },
+  "popupTabAdd": {
+    "message": "Add"
+  },
+  "popupTabExport": {
+    "message": "Export"
   }
 }

@@ -19,8 +19,7 @@
         <h2 id="count"></h2>
         <div class="tools">
           <button id="new-group" class="iconbtn" type="button"></button>
-          <button id="export" class="iconbtn" type="button"></button>
-          <button id="add" class="iconbtn" type="button"></button>
+          <button id="transfer" class="iconbtn" type="button"></button>
         </div>
       </div>
       <div id="controls">
@@ -36,27 +35,30 @@
       </div>
       <main id="list"></main>
     </section>
-    <section id="adding" hidden>
+    <section id="transferring" hidden>
       <div class="titlebar">
-        <h2 id="adding-title"></h2>
+        <h2 id="transferring-title"></h2>
       </div>
-      <div class="hint" id="adding-hint"></div>
-      <textarea id="addresses" rows="10" spellcheck="false" autocomplete="off"></textarea>
-      <div class="actions">
-        <span id="add-result" role="status" aria-live="polite"></span>
-        <button id="add-go" class="btn" type="button"></button>
+      <div class="tabs" role="tablist">
+        <button id="tab-add" type="button" role="tab" aria-controls="adding"></button>
+        <button id="tab-export" type="button" role="tab" aria-controls="exporting"></button>
       </div>
-    </section>
-    <section id="exporting" hidden>
-      <div class="titlebar">
-        <h2 id="exporting-title"></h2>
+      <div id="adding" class="panel" role="tabpanel" aria-labelledby="tab-add">
+        <div class="hint" id="adding-hint"></div>
+        <textarea id="addresses" rows="10" spellcheck="false" autocomplete="off"></textarea>
+        <div class="actions">
+          <span id="add-result" role="status" aria-live="polite"></span>
+          <button id="add-go" class="btn" type="button"></button>
+        </div>
       </div>
-      <div class="hint" id="exporting-hint"></div>
-      <textarea id="exported" rows="10" spellcheck="false" readonly></textarea>
-      <div class="actions">
-        <span id="export-result" role="status" aria-live="polite"></span>
-        <button id="export-copy" class="btn" type="button"></button>
-        <button id="export-save" class="btn" type="button"></button>
+      <div id="exporting" class="panel" role="tabpanel" aria-labelledby="tab-export" hidden>
+        <div class="hint" id="exporting-hint"></div>
+        <textarea id="exported" rows="10" spellcheck="false" readonly></textarea>
+        <div class="actions">
+          <span id="export-result" role="status" aria-live="polite"></span>
+          <button id="export-copy" class="btn" type="button"></button>
+          <button id="export-save" class="btn" type="button"></button>
+        </div>
       </div>
     </section>
     <section id="settings" hidden>
