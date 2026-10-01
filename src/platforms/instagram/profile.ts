@@ -4,7 +4,7 @@ import { sleep } from '../../core/pacing';
 import { findAccountByUsername, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
-import { ICONS, h, icon } from '../../ui/dom';
+import { h, logoMark } from '../../ui/dom';
 import { surface, type ToastHandle } from '../../ui/host';
 import { resolveAccountFolder } from './account-folder';
 import { fetchPostMedia, isSoftStop, postsSource, reelsSource, resolveUserId, taggedSource } from './api';
@@ -214,7 +214,7 @@ async function buildCard(): Promise<HTMLElement | null> {
       attrs: { 'aria-label': t('cardToggle'), 'aria-expanded': String(expanded) },
       on: { click: () => ((expanded = !expanded), void render()) },
     },
-    h('span', { class: 'core' }, icon([...ICONS.folder], 20)),
+    h('span', { class: 'core' }, logoMark(44)),
   );
   // The ring around the ball follows the run while the panel is closed.
   if (active && active.ratio !== null) ball.style.setProperty('--p', String(Math.round(active.ratio * 100)));

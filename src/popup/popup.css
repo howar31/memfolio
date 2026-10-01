@@ -1,25 +1,27 @@
 :root {
   --sheet: #ffffff;
-  --sheet-2: #f3f6f4;
-  --ink: #1b1f1d;
-  --ink-2: #56605b;
-  --rule: #d5dcd8;
-  --green: #1e6b52;
-  --green-ink: #ffffff;
-  --amber: #a15c00;
+  --sheet-2: #f7f2ed;
+  --ink: #2a211c;
+  --ink-2: #6f6259;
+  --rule: #e3d8cd;
+  --accent: #5b4033;
+  --accent-ink: #ffffff;
+  --spark: #d98f55;
+  --warn: #8f7400;
   --red: #b3261e;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --sheet: #1c211f;
-    --sheet-2: #262c29;
-    --ink: #e9edeb;
-    --ink-2: #a3aea9;
-    --rule: #3a423e;
-    --green: #5cc2a0;
-    --green-ink: #0e1a15;
-    --amber: #f0b45a;
+    --sheet: #211c19;
+    --sheet-2: #2c2622;
+    --ink: #f1eae4;
+    --ink-2: #b4a79c;
+    --rule: #463d37;
+    --accent: #e3bd98;
+    --accent-ink: #2a1b12;
+    --spark: #e6a06a;
+    --warn: #e3c95a;
     --red: #ff8a80;
   }
 }
@@ -40,7 +42,7 @@ select {
   color: inherit;
 }
 :focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -49,7 +51,7 @@ header {
   align-items: flex-end;
   justify-content: space-between;
   padding: 12px 14px 0;
-  border-bottom: 3px solid var(--green);
+  border-bottom: 3px solid var(--accent);
 }
 h1 {
   margin: 0;
@@ -60,8 +62,8 @@ h1 {
 .tab {
   display: inline-block;
   padding: 7px 14px 6px;
-  background: var(--green);
-  color: var(--green-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
   font-weight: 650;
   border-radius: 7px 7px 0 0;
 }
@@ -134,7 +136,7 @@ h1 {
   color: var(--ink-2);
 }
 .status {
-  color: var(--amber);
+  color: var(--warn);
 }
 .status.error {
   color: var(--red);

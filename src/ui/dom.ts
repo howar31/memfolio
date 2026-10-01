@@ -42,6 +42,28 @@ export function icon(paths: string[], size = 20): SVGSVGElement {
   return svg;
 }
 
+/** The product mark without its background tile: two stacked instant photos. */
+export function logoMark(size: number): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 128 128');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  const add = (parent: SVGElement, tag: string, attrs: Record<string, string>): SVGElement => {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    parent.append(el);
+    return el;
+  };
+  add(svg, 'rect', { x: '30', y: '26', width: '58', height: '70', rx: '4', fill: '#d9bfa2', transform: 'rotate(-11 64 64)' });
+  const front = add(svg, 'g', { transform: 'rotate(7 64 64)' });
+  add(front, 'rect', { x: '40', y: '30', width: '58', height: '70', rx: '4', fill: '#fbf3e6' });
+  add(front, 'rect', { x: '46', y: '36', width: '46', height: '44', rx: '2', fill: '#8a644c' });
+  add(front, 'circle', { cx: '78', cy: '50', r: '6', fill: '#d98f55' });
+  add(front, 'path', { d: 'M46 80l14-17 11 11 8-8 13 14z', fill: '#5b4033' });
+  return svg;
+}
+
 export const ICONS = {
   /** Arrow into a tray: save one file. */
   download: ['M12 4v11', 'M7.5 10.5 12 15l4.5-4.5', 'M5 19h14'],
