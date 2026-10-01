@@ -18,12 +18,23 @@
       <div class="titlebar">
         <h2 id="count"></h2>
         <div class="tools">
+          <button id="new-group" class="iconbtn" type="button"></button>
           <button id="export" class="iconbtn" type="button"></button>
           <button id="add" class="iconbtn" type="button"></button>
         </div>
       </div>
-      <input id="filter" type="search" autocomplete="off" />
-      <main id="list" class="group"></main>
+      <div id="controls">
+        <input id="filter" type="search" autocomplete="off" />
+        <select id="sort-by">
+          <option id="sort-name" value="name"></option>
+          <option id="sort-last-run" value="lastRun"></option>
+          <option id="sort-files" value="files"></option>
+          <option id="sort-added" value="added"></option>
+          <option id="sort-manual" value="manual"></option>
+        </select>
+        <button id="sort-dir" class="iconbtn" type="button"></button>
+      </div>
+      <main id="list"></main>
     </section>
     <section id="adding" hidden>
       <div class="titlebar">

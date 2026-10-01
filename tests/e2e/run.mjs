@@ -479,6 +479,13 @@ scenario('import registers existing folders and shows their relative path', asyn
   await opfs.seed(page, 'archive/bob/instagram', ['bob.b_1700000002_3000000000000008888_99.jpg']);
   await opfs.seed(page, 'archive/copy', have.slice(0, 2));
 
+  // One of the accounts was pasted before, pinned and put into a group.
+  await ctx.ext.evaluate(() =>
+    chrome.storage.local.set({
+      'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1, pinned: true },
+      layout: { groups: [{ id: 'g1', name: 'One', collapsed: false }], groupOf: { 'instagram:@acct': 'g1' } },
+    }),
+  );
   // What the popup leaves behind when it has to open a new tab for the import.
   await ctx.ext.evaluate(() => chrome.storage.local.set({ pendingTool: { tool: 'import', at: Date.now() } }));
   await page.reload({ waitUntil: 'load' });
@@ -501,6 +508,12 @@ scenario('import registers existing folders and shows their relative path', asyn
     'imported account (the folder with most files wins)',
   );
   assertEqual((await ctx.account('99')).relPath, 'archive/bob/instagram', 'second imported account');
+  const afterImport = await ctx.storage();
+  assertEqual(
+    [acct.pinned, afterImport.layout.groupOf, 'pending:instagram:acct' in afterImport],
+    [true, { 'instagram:42': 'g1' }, false],
+    'the pasted entry of an imported account hands over its pin and its group',
+  );
   assertEqual(await ctx.account('77'), null, 'minor owners of a folder are not imported');
 
   // The profile now downloads into the imported folder without asking for a root.
@@ -864,14 +877,21 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/acct/`], 'clicking a row opens the profile');
 
   assertEqual(await popup.$eval('.row .extra', (e) => e.hidden), true, 'the actions are folded away at first');
-  assertEqual(await popup.$eval('.row .more', (e) => [getComputedStyle(e).opacity, e.getAttribute('aria-expanded')]), ['1', 'false'], 'the button that unfolds them is always shown');
+  await popup.mouse.move(2, 2);
+  await new Promise((r) => setTimeout(r, 300));
+  assertEqual(await popup.$eval('.row .more', (e) => [getComputedStyle(e).opacity, e.getAttribute('aria-expanded')]), ['0.4', 'false'], 'the button that unfolds them is always there, faint until needed');
+  await popup.hover('.row');
+  await waitFor(async () => (await popup.$eval('.row .more', (e) => getComputedStyle(e).opacity)) === '1', 'the button to show fully under the pointer');
   await popup.click('.row .more');
   assertEqual(await popup.$eval('.row .extra', (e) => e.hidden), false, 'the actions unfold under the entry');
   assertEqual(await popup.$eval('.row .more', (e) => e.getAttribute('aria-expanded')), 'true', 'the button says so');
+  await popup.mouse.move(2, 2);
+  await new Promise((r) => setTimeout(r, 300));
+  assertEqual(await popup.$eval('.row .more', (e) => getComputedStyle(e).opacity), '1', 'and stays fully shown while the actions are open');
   assertEqual(await popup.$eval('.row .pin', (e) => e.textContent), await ctx.msg('popupPin'), 'an entry can be pinned');
   await popup.click('.row .pin');
   await waitFor(async () => (await ctx.account('42')).pinned === true, 'the pin to be stored');
-  await waitFor(() => popup.$('.row .pinmark'), 'the mark of a pinned entry');
+  await waitFor(() => popup.$('.block[data-block="pinned"] .row'), 'the entry in the pinned block');
   await popup.click('.row .more');
   assertEqual(await popup.$eval('.row .pin', (e) => e.textContent), await ctx.msg('popupUnpin'), 'a pinned entry can be unpinned');
   assertEqual(await popup.$eval('.row .confirm', (e) => e.hidden), true, 'no question before the remove button is pressed');
@@ -976,7 +996,7 @@ scenario('the list is exported as profile addresses in the order it is shown', a
   await popup.click('#export');
   assertEqual(await popup.$eval('#exporting', (e) => e.hidden), false, 'the export view opens');
   assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
-  const expected = shown.map((name) => `${ORIGIN}/${name}/`).join('\n');
+  const expected = ['# [pinned]', `${ORIGIN}/charlie/`, '# [ungrouped]', `${ORIGIN}/alpha/`, `${ORIGIN}/bravo/`].join('\n');
   assertEqual(await popup.$eval('#exported', (e) => [e.value, e.readOnly]), [expected, true], 'one address per entry, in the order of the list');
 
   await popup.evaluate(() => {
@@ -993,21 +1013,353 @@ scenario('the list is exported as profile addresses in the order it is shown', a
   // What was exported can be pasted back in.
   await ctx.ext.evaluate(() => chrome.storage.local.clear());
   await popup.click('#back');
-  assertEqual(await popup.$eval('#export', (e) => e.hidden), true, 'nothing to export from an empty list');
+  await waitFor(() => popup.$eval('#export', (e) => e.hidden), 'the export button to go away with the last entry');
   await popup.click('#add');
   await popup.$eval('#addresses', (e, v) => (e.value = v), expected);
   await popup.click('#add-go');
   await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 3, 0, 0)), 'every exported line to be taken');
 });
 
+// ---- groups and sorting ------------------------------------------------------
+
+const listRecord = (id, username, more = {}) => ({ platform: 'instagram', id, username, folderName: username, relPath: null, fileCount: 1, lastRunAt: null, lastStatus: 'ok', needsFullScan: {}, addedAt: 1, ...more });
+
+/** The popup list as [block name, [account names]] from top to bottom. */
+const blocksOf = (popup) =>
+  popup.$$eval('#list .block', (els) =>
+    els.map((b) => [b.querySelector('.blockname').textContent, [...b.querySelectorAll('.row .name')].map((n) => n.textContent.slice(1))]),
+  );
+const waitBlocks = (popup, expected, what) =>
+  waitFor(async () => JSON.stringify(await blocksOf(popup)) === JSON.stringify(expected), what).catch(async (e) => {
+    throw new Error(`${e.message}\n   list shows: ${JSON.stringify(await blocksOf(popup))}`);
+  });
+const layoutOf = async (ctx) => (await ctx.storage()).layout;
+const rowOf = (name) => `.row[data-name="${name}"]`;
+
+async function openPopup(ctx) {
+  const popup = await ctx.browser.newPage();
+  await popup.setViewport({ width: 440, height: 600 });
+  await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
+  await waitFor(() => popup.$('#list > *'), 'the popup list');
+  await popup.evaluate(() => {
+    window.__opened = [];
+    chrome.tabs.create = async (options) => {
+      window.__opened.push(options.url);
+      return {};
+    };
+  });
+  return popup;
+}
+
+/** Presses on one element and lets go over another, a little above or below its middle. */
+async function drag(popup, from, to, where = 'after') {
+  // The list scrolls; what is pressed has to be in its visible part.
+  await popup.$eval(from, (e) => e.scrollIntoView({ block: 'nearest' }));
+  const a = await (await popup.$(from)).boundingBox();
+  const b = await (await popup.$(to)).boundingBox();
+  const target = { x: b.x + b.width / 3, y: b.y + (where === 'before' ? b.height * 0.25 : where === 'after' ? b.height * 0.75 : b.height / 2) };
+  await popup.mouse.move(a.x + a.width / 3, a.y + a.height / 2);
+  await popup.mouse.down();
+  await popup.mouse.move(a.x + a.width / 3, a.y + a.height / 2 + 8, { steps: 2 });
+  await popup.mouse.move(target.x, target.y, { steps: 6 });
+  await popup.mouse.up();
+}
+
+scenario('groups split the list and sorting stays inside them', async (ctx) => {
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    'account:instagram:1': listRecord('1', 'alpha', { fileCount: 5, lastRunAt: 100 }),
+    'account:instagram:2': listRecord('2', 'bravo', { fileCount: 50, lastRunAt: 300 }),
+    'account:instagram:3': listRecord('3', 'charlie', { fileCount: 1, lastRunAt: 200 }),
+    'pending:instagram:delta': { platform: 'instagram', username: 'delta', addedAt: 1 },
+  });
+  const popup = await openPopup(ctx);
+  const rest = await ctx.msg('popupBlockUngrouped');
+  assertEqual(await blocksOf(popup), [[rest, ['alpha', 'bravo', 'charlie', 'delta']]], 'one block, sorted by name');
+  assertEqual(await popup.$eval('.blockhead', (e) => e.hidden), true, 'a list without groups has no heading');
+  assertEqual(await popup.$eval('#sort-by', (e) => e.value), 'name', 'sorted by name at first');
+
+  // A new group exists only once its name is saved: Cancel and Escape make none.
+  for (const leave of ['.gcancel', 'Escape']) {
+    await popup.click('#new-group');
+    await waitFor(() => popup.$('.gname'), 'the name box of the new group');
+    if (leave === 'Escape') await popup.keyboard.press('Escape');
+    else await popup.click(leave);
+    await waitFor(async () => (await popup.$('.gname')) === null, 'the name box to close');
+    assertEqual([(await layoutOf(ctx))?.groups ?? [], await blocksOf(popup)], [[], [[rest, ['alpha', 'bravo', 'charlie', 'delta']]]], `no group after leaving with ${leave}`);
+  }
+
+  // A new group starts with its name open for typing.
+  await popup.click('#new-group');
+  await waitFor(() => popup.$('.gname'), 'the name box of the new group');
+  assertEqual((await layoutOf(ctx))?.groups ?? [], [], 'nothing is stored while the name is open');
+  // Enter that only confirms an input method's composition does not save.
+  await popup.$eval('.gname', (e) => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })));
+  assertEqual(await popup.$eval('.gname', (e) => document.activeElement === e), true, 'the name box stays open during a composition');
+  assertEqual(await popup.$eval('.gname', (e) => [e.value, document.activeElement === e]), [await ctx.msg('popupGroupDefault'), true], 'the name box holds a default and the focus');
+  await popup.$eval('.gname', (e) => (e.value = ''));
+  await popup.type('.gname', 'Fri');
+  // A change stored elsewhere redraws the list; what was typed stays.
+  await ctx.ext.evaluate((entry) => chrome.storage.local.set({ 'account:instagram:1': entry }), listRecord('1', 'alpha', { fileCount: 6, lastRunAt: 100 }));
+  await waitFor(async () => (await popup.$eval(`${rowOf('alpha')} .files`, (e) => e.textContent)) === (await ctx.msg('popupFiles', 6)), 'the redrawn list');
+  assertEqual(await popup.$eval('.gname', (e) => [e.value, document.activeElement === e]), ['Fri', true], 'the name being typed survives a redraw');
+  await popup.type('.gname', 'ends');
+  await popup.keyboard.press('Enter');
+  await waitBlocks(popup, [['Friends', []], [rest, ['alpha', 'bravo', 'charlie', 'delta']]], 'the new group above the rest');
+  assertEqual(await popup.$$eval('.blockhead', (els) => els.map((e) => e.hidden)), [false, false], 'headings appear once there is a group');
+  const frames = await popup.$$eval('#list .block', (els) => els.map((e) => ({ radius: getComputedStyle(e).borderTopLeftRadius, border: getComputedStyle(e).borderTopWidth, top: e.getBoundingClientRect().top, bottom: e.getBoundingClientRect().bottom })));
+  assertEqual(frames.map((f) => [f.radius, f.border]), [['8px', '1px'], ['8px', '1px']], 'every block has a frame of its own');
+  assert(frames[1].top - frames[0].bottom >= 8, 'with room between the frames');
+  assertEqual(await popup.$eval('#list', (e) => getComputedStyle(e).borderTopWidth), '0px', 'and no frame around all of them');
+  const friends = (await layoutOf(ctx)).groups[0].id;
+
+  // Entries move between groups through their actions.
+  for (const name of ['bravo', 'charlie']) {
+    await popup.click(`${rowOf(name)} .more`);
+    await popup.select(`${rowOf(name)} .moveto`, friends);
+    await waitFor(async () => (await blocksOf(popup))[0][1].includes(name), `${name} in the group`);
+  }
+  await waitBlocks(popup, [['Friends', ['bravo', 'charlie']], [rest, ['alpha', 'delta']]], 'two entries in the group');
+  assertEqual(await popup.$$eval('.blockcount', (els) => els.map((e) => e.textContent)), ['2', '2'], 'each heading counts its entries');
+
+  // Sorting orders each block by itself.
+  await popup.select('#sort-by', 'files');
+  await waitBlocks(popup, [['Friends', ['bravo', 'charlie']], [rest, ['alpha', 'delta']]], 'most files first, inside each block');
+  await popup.click('#sort-dir');
+  await waitBlocks(popup, [['Friends', ['charlie', 'bravo']], [rest, ['delta', 'alpha']]], 'the direction turned, still inside each block');
+  assertEqual((await layoutOf(ctx)).sort, { by: 'files', desc: false }, 'the sort is stored');
+  await popup.select('#sort-by', 'lastRun');
+  await waitBlocks(popup, [['Friends', ['bravo', 'charlie']], [rest, ['alpha', 'delta']]], 'latest run first; an entry that never ran is last');
+  await popup.select('#sort-by', 'name');
+
+  // The filter keeps the headings of the blocks that still show something.
+  await popup.type('#filter', 'cha');
+  await waitBlocks(popup, [['Friends', ['charlie']]], 'only the block with a match');
+  await popup.click('.block .fold');
+  await new Promise((r) => setTimeout(r, 200));
+  assertEqual((await layoutOf(ctx)).groups[0].collapsed, false, 'a heading does not fold while the filter is in use');
+  await popup.$eval('#filter', (e) => {
+    e.value = '';
+    e.dispatchEvent(new Event('input'));
+  });
+  await waitBlocks(popup, [['Friends', ['bravo', 'charlie']], [rest, ['alpha', 'delta']]], 'the whole list again');
+
+  // A folded block stays folded when the popup is opened again.
+  await popup.click('.block .fold');
+  await waitFor(async () => (await layoutOf(ctx)).groups[0].collapsed === true, 'the folded state to be stored');
+  const again = await openPopup(ctx);
+  assertEqual(await again.$eval('.block .rows', (e) => e.hidden), true, 'the group is still folded');
+  assertEqual(await again.$eval('.block .fold', (e) => e.getAttribute('aria-expanded')), 'false', 'the heading says so');
+  assertEqual(await again.$eval('.block .blockcount', (e) => e.textContent), '2', 'a folded group still counts its entries');
+  await again.click('.block .fold');
+  await waitFor(async () => (await again.$eval('.block .rows', (e) => e.hidden)) === false, 'the group to unfold');
+
+  // A group is renamed and deleted through its heading; deleting keeps the entries.
+  await again.click('.block .gmore');
+  await again.click('.block .grename');
+  await again.$eval('.gname', (e) => (e.value = ''));
+  await again.type('.gname', 'Close friends');
+  await again.click('.block .gsave');
+  await waitBlocks(again, [['Close friends', ['bravo', 'charlie']], [rest, ['alpha', 'delta']]], 'the new name');
+  await again.click('.block .gmore');
+  await again.click('.block .gdelete');
+  assertEqual(await again.$eval('.block .gextra .confirm span', (e) => e.textContent), await ctx.msg('popupGroupDeleteConfirm'), 'deleting asks first');
+  await again.click('.block .gextra .confirm .danger');
+  await waitBlocks(again, [[rest, ['alpha', 'bravo', 'charlie', 'delta']]], 'the entries are back in one block');
+  assertEqual((await layoutOf(ctx)).groups, [], 'no group left');
+
+  // An entry can also start a group of its own.
+  await again.click(`${rowOf('delta')} .more`);
+  await again.select(`${rowOf('delta')} .moveto`, '+');
+  await waitFor(() => again.$('.gname'), 'the name box of the group made for the entry');
+  await again.click('.gcancel');
+  await waitBlocks(again, [[rest, ['alpha', 'bravo', 'charlie', 'delta']]], 'cancelled: no group, and the entry stays where it was');
+  assertEqual((await layoutOf(ctx)).groups, [], 'nothing stored');
+  await again.click(`${rowOf('delta')} .more`);
+  await again.select(`${rowOf('delta')} .moveto`, '+');
+  await waitFor(() => again.$('.gname'), 'the name box of the group made for the entry');
+  await again.keyboard.press('Enter');
+  await waitBlocks(again, [[await ctx.msg('popupGroupDefault'), ['delta']], [rest, ['alpha', 'bravo', 'charlie']]], 'the entry in its new group');
+  assertEqual((await layoutOf(ctx)).groupOf['instagram:@delta'], (await layoutOf(ctx)).groups[0].id, 'an address-only entry is keyed by its name');
+});
+
+scenario('pinned entries form a block at the top and return to their group', async (ctx) => {
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    'account:instagram:1': listRecord('1', 'alpha'),
+    'account:instagram:2': listRecord('2', 'bravo'),
+    layout: { groups: [{ id: 'g1', name: 'Friends', collapsed: false }], groupOf: { 'instagram:2': 'g1' } },
+  });
+  const popup = await openPopup(ctx);
+  const [pinned, rest] = [await ctx.msg('popupBlockPinned'), await ctx.msg('popupBlockUngrouped')];
+  assertEqual(await blocksOf(popup), [['Friends', ['bravo']], [rest, ['alpha']]], 'the list before pinning');
+  await popup.click(`${rowOf('bravo')} .more`);
+  await popup.click(`${rowOf('bravo')} .pin`);
+  await waitBlocks(popup, [[pinned, ['bravo']], ['Friends', []], [rest, ['alpha']]], 'the pinned entry in the block at the top');
+  assertEqual(await popup.$eval('.block[data-block="g1"] .hollow', (e) => e.textContent), await ctx.msg('popupGroupEmpty'), 'an empty group says so');
+  await popup.click(`${rowOf('bravo')} .more`);
+  await popup.click(`${rowOf('bravo')} .pin`);
+  await waitBlocks(popup, [['Friends', ['bravo']], [rest, ['alpha']]], 'back in its group after unpinning');
+});
+
+scenario('the manual order is set with buttons and by dragging', async (ctx) => {
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    'account:instagram:1': listRecord('1', 'alpha'),
+    'account:instagram:2': listRecord('2', 'bravo'),
+    'account:instagram:3': listRecord('3', 'charlie'),
+    'account:instagram:4': listRecord('4', 'delta'),
+    'account:instagram:5': listRecord('5', 'echo'),
+    layout: {
+      groups: [{ id: 'g1', name: 'One', collapsed: false }, { id: 'g2', name: 'Two', collapsed: false }],
+      groupOf: { 'instagram:4': 'g1', 'instagram:5': 'g2' },
+    },
+  });
+  const popup = await openPopup(ctx);
+  const [pinned, rest] = [await ctx.msg('popupBlockPinned'), await ctx.msg('popupBlockUngrouped')];
+  await popup.click(`${rowOf('alpha')} .more`);
+  assertEqual(await popup.$(`${rowOf('alpha')} .up`), null, 'no moving up or down while the list sorts itself');
+  await popup.click(`${rowOf('alpha')} .more`);
+
+  // Sorted by name, dragging changes the group only.
+  await drag(popup, `${rowOf('charlie')} .open`, rowOf('echo'));
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['alpha', 'bravo']]], 'dropped into another group, placed by the sort');
+  assertEqual(await popup.evaluate(() => window.__opened), [], 'a drag does not open the profile');
+
+  // Manual order starts from what is on screen.
+  await popup.select('#sort-by', 'manual');
+  await waitFor(async () => (await layoutOf(ctx)).sort.by === 'manual', 'manual order to be stored');
+  assertEqual(await popup.$eval('#sort-dir', (e) => e.disabled), true, 'manual order has no direction');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['alpha', 'bravo']]], 'the same order as before');
+
+  await popup.click(`${rowOf('alpha')} .more`);
+  await popup.click(`${rowOf('alpha')} .down`);
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['bravo', 'alpha']]], 'moved down by its button');
+  assertEqual(await popup.$eval(`${rowOf('alpha')} .extra`, (e) => e.hidden), false, 'the actions stay open after a move');
+  assertEqual(await popup.$eval(`${rowOf('alpha')} .down`, (e) => e.disabled), true, 'the last entry cannot go further down');
+  assertEqual(await popup.evaluate(() => document.activeElement?.className), 'btn up', 'the focus goes to the button that still works');
+  await popup.click(`${rowOf('alpha')} .up`);
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['alpha', 'bravo']]], 'moved up by its button');
+  await popup.click(`${rowOf('alpha')} .more`);
+
+  // Sorting another way and coming back finds the manual order as it was left.
+  await popup.click(`${rowOf('bravo')} .more`);
+  await popup.click(`${rowOf('bravo')} .up`);
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['bravo', 'alpha']]], 'bravo above alpha');
+  await popup.select('#sort-by', 'name');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['alpha', 'bravo']]], 'by name in between');
+  await popup.select('#sort-by', 'manual');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['bravo', 'alpha']]], 'the manual order is back');
+  await popup.click(`${rowOf('alpha')} .more`);
+  await popup.click(`${rowOf('alpha')} .up`);
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['charlie', 'echo']], [rest, ['alpha', 'bravo']]], 'alpha first again');
+  await popup.click(`${rowOf('alpha')} .more`);
+
+  // A drag given up with Escape, or ended by the browser, changes nothing and opens nothing.
+  const untouched = JSON.stringify(await layoutOf(ctx));
+  const box = await (await popup.$(`${rowOf('alpha')} .open`)).boundingBox();
+  const over = await (await popup.$(rowOf('echo'))).boundingBox();
+  for (const end of ['escape', 'cancel']) {
+    await popup.mouse.move(box.x + 40, box.y + 20);
+    await popup.mouse.down();
+    await popup.mouse.move(box.x + 40, box.y + 30, { steps: 2 });
+    await popup.mouse.move(over.x + 40, over.y + 20, { steps: 4 });
+    assertEqual(await popup.$eval('#list', (e) => e.classList.contains('dragging')), true, 'a drag is under way');
+    if (end === 'escape') await popup.keyboard.press('Escape');
+    else await popup.evaluate(() => window.dispatchEvent(new PointerEvent('pointercancel')));
+    assertEqual(await popup.$eval('#list', (e) => e.classList.contains('dragging')), false, `the drag ends on ${end}`);
+    await popup.mouse.move(box.x + 40, box.y + 20, { steps: 2 });
+    await popup.mouse.up();
+    await new Promise((r) => setTimeout(r, 200));
+    assertEqual(JSON.stringify(await layoutOf(ctx)), untouched, `nothing moved after ${end}`);
+    // A drag the browser ends has no release of its own; the one simulated here is an ordinary click.
+    if (end === 'escape') assertEqual(await popup.evaluate(() => window.__opened), [], 'the release after Escape opens nothing');
+    await popup.evaluate(() => (window.__opened.length = 0));
+  }
+
+  // Dragging places an entry where it is dropped: inside its block, or in another one.
+  await drag(popup, `${rowOf('echo')} .open`, rowOf('charlie'), 'before');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['echo', 'charlie']], [rest, ['alpha', 'bravo']]], 'dragged above its neighbour');
+  await drag(popup, `${rowOf('bravo')} .open`, rowOf('echo'), 'after');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['echo', 'bravo', 'charlie']], [rest, ['alpha']]], 'dragged between two entries of another group');
+  assertEqual((await layoutOf(ctx)).groupOf['instagram:2'], 'g2', 'the group of the dragged entry is stored');
+  await drag(popup, `${rowOf('charlie')} .open`, '.block[data-block="ungrouped"] .blockhead', 'middle');
+  await waitBlocks(popup, [['One', ['delta']], ['Two', ['echo', 'bravo']], [rest, ['alpha', 'charlie']]], 'dropped on a heading: last in that block');
+
+  // Dropping on a pinned entry pins; dragging out again unpins and sets the group.
+  await popup.click(`${rowOf('alpha')} .more`);
+  await popup.click(`${rowOf('alpha')} .pin`);
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['delta']], ['Two', ['echo', 'bravo']], [rest, ['charlie']]], 'one pinned entry');
+  await drag(popup, `${rowOf('echo')} .open`, rowOf('alpha'), 'before');
+  await waitBlocks(popup, [[pinned, ['echo', 'alpha']], ['One', ['delta']], ['Two', ['bravo']], [rest, ['charlie']]], 'dragged into the pinned block');
+  assertEqual((await ctx.account('5')).pinned, true, 'the dragged entry is pinned');
+  await drag(popup, `${rowOf('alpha')} .open`, rowOf('delta'), 'after');
+  await waitBlocks(popup, [[pinned, ['echo']], ['One', ['delta', 'alpha']], ['Two', ['bravo']], [rest, ['charlie']]], 'dragged out of the pinned block into a group');
+  assertEqual([(await ctx.account('1')).pinned === true, (await layoutOf(ctx)).groupOf['instagram:1']], [false, 'g1'], 'unpinned and in the group it was dropped on');
+
+  // Groups change places by their headings.
+  await drag(popup, '.block[data-block="g2"] .fold', '.block[data-block="g1"] .blockhead', 'before');
+  await waitFor(async () => JSON.stringify((await layoutOf(ctx)).groups.map((g) => g.id)) === JSON.stringify(['g2', 'g1']), 'the groups to change places');
+  await waitBlocks(popup, [[pinned, ['echo']], ['Two', ['bravo']], ['One', ['delta', 'alpha']], [rest, ['charlie']]], 'the dragged group first');
+  assertEqual((await layoutOf(ctx)).groups.map((g) => g.collapsed), [false, false], 'dragging a heading does not fold its group');
+
+  // A narrowed list is not rearranged.
+  await popup.type('#filter', 'a');
+  await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 4, 'the filtered list');
+  const before = JSON.stringify(await layoutOf(ctx));
+  await drag(popup, `${rowOf('alpha')} .open`, rowOf('bravo'), 'after');
+  await new Promise((r) => setTimeout(r, 300));
+  assertEqual(JSON.stringify(await layoutOf(ctx)), before, 'no dragging while the filter is in use');
+});
+
+scenario('groups and pins travel with the exported text', async (ctx) => {
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    'account:instagram:1': listRecord('1', 'alpha', { pinned: true }),
+    'account:instagram:2': listRecord('2', 'bravo'),
+    'account:instagram:3': listRecord('3', 'charlie'),
+    'pending:instagram:delta': { platform: 'instagram', username: 'delta', addedAt: 1 },
+    layout: {
+      sort: { by: 'manual', desc: false },
+      groups: [{ id: 'g1', name: 'One', collapsed: true }, { id: 'g2', name: 'Empty', collapsed: false }],
+      groupOf: { 'instagram:3': 'g1', 'instagram:@delta': 'g1' },
+      order: ['instagram:@delta', 'instagram:3'],
+    },
+  });
+  const popup = await openPopup(ctx);
+  const [pinned, rest] = [await ctx.msg('popupBlockPinned'), await ctx.msg('popupBlockUngrouped')];
+  await popup.click('#export');
+  const expected = ['# [pinned]', `${ORIGIN}/alpha/`, '# One', `${ORIGIN}/delta/`, `${ORIGIN}/charlie/`, '# Empty', '# [ungrouped]', `${ORIGIN}/bravo/`].join('\n');
+  assertEqual(await popup.$eval('#exported', (e) => e.value), expected, 'every block under its heading, folded or not, in the order on screen');
+
+  // Pasted into an empty list, the text brings the groups and the pin back.
+  await ctx.ext.evaluate(() => chrome.storage.local.clear());
+  await popup.click('#back');
+  await popup.click('#add');
+  await popup.$eval('#addresses', (e, v) => (e.value = v), expected);
+  await popup.click('#add-go');
+  await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 4, 0, 0)), 'every address to be taken');
+  assertEqual(await popup.$eval('#addresses', (e) => e.value), '', 'headings are not handed back as unreadable lines');
+  await popup.click('#back');
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['charlie', 'delta']], ['Empty', []], [rest, ['bravo']]], 'the groups and the pin are back');
+  assertEqual((await ctx.storage())['pending:instagram:alpha'].pinned, true, 'the pin is stored with the entry');
+
+  // A group that already exists takes the new entries; entries already listed stay where they are.
+  await popup.click('#add');
+  await popup.$eval('#addresses', (e, v) => (e.value = v), ['# One', `${ORIGIN}/echo/`, `${ORIGIN}/bravo/`].join('\n'));
+  await popup.click('#add-go');
+  await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 1, 1, 0)), 'one new, one already listed');
+  await popup.click('#back');
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['charlie', 'delta', 'echo']], ['Empty', []], [rest, ['bravo']]], 'the existing group grew; the listed entry did not move');
+  assertEqual((await layoutOf(ctx)).groups.length, 2, 'no second group of the same name');
+});
+
 scenario('a pasted account becomes a managed one on its first run', async (ctx) => {
-  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1, pinned: true } }));
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1, pinned: true }, layout: { groups: [{ id: 'g1', name: 'One', collapsed: false }], groupOf: { 'instagram:@acct': 'g1' }, order: ['instagram:@other', 'instagram:@acct'] } }));
   const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(2) }));
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   assertEqual('pending:instagram:acct' in (await ctx.storage()), false, 'the pasted entry is gone');
   assertEqual((await ctx.account('42')).username, 'acct', 'the account is managed under its id');
   assertEqual((await ctx.account('42')).pinned, true, 'a pin set on the pasted entry stays');
+  const moved = (await ctx.storage()).layout;
+  assertEqual([moved.groupOf, moved.order], [{ 'instagram:42': 'g1' }, ['instagram:@other', 'instagram:42']], 'its group and its place in the manual order stay too');
 
   await closeToasts(page);
   await click(page, await ctx.msg('downloadAll'));

@@ -570,7 +570,7 @@
     "message": "加入帳號"
   },
   "popupAddHint": {
-    "message": "貼上個人頁網址，每行一個。各帳號的資料夾會在第一次下載時設定。"
+    "message": "貼上個人頁網址，每行一個。「# 名稱」的行會把其後的網址放進該群組。資料夾在第一次下載時設定。"
   },
   "popupAddGo": {
     "message": "加入"
@@ -599,9 +599,6 @@
   "popupUnpin": {
     "message": "取消釘選"
   },
-  "popupPinned": {
-    "message": "已釘選"
-  },
   "popupExport": {
     "message": "匯出網址清單"
   },
@@ -609,7 +606,7 @@
     "message": "匯出帳號"
   },
   "popupExportHint": {
-    "message": "每行一個個人頁網址，順序與清單相同。貼到「加入帳號」即可重建清單。"
+    "message": "每行一個個人頁網址，順序與清單相同；「#」開頭的行是群組。貼到「加入帳號」即可重建清單。"
   },
   "popupExportCopy": {
     "message": "複製"
@@ -622,5 +619,74 @@
   },
   "popupExportCopyFailed": {
     "message": "無法複製到剪貼簿（$1），請改用「存成檔案」。"
+  },
+  "popupBlockPinned": {
+    "message": "置頂"
+  },
+  "popupBlockUngrouped": {
+    "message": "未分組"
+  },
+  "popupNewGroup": {
+    "message": "新增群組"
+  },
+  "popupGroupDefault": {
+    "message": "新群組"
+  },
+  "popupGroupRename": {
+    "message": "重新命名"
+  },
+  "popupGroupDelete": {
+    "message": "刪除群組"
+  },
+  "popupGroupDeleteConfirm": {
+    "message": "刪除群組？其中的帳號會移到未分組。"
+  },
+  "popupGroupDeleteYes": {
+    "message": "刪除"
+  },
+  "popupGroupName": {
+    "message": "群組名稱"
+  },
+  "popupGroupEmpty": {
+    "message": "這個群組還沒有帳號。"
+  },
+  "popupSave": {
+    "message": "儲存"
+  },
+  "popupMoveTo": {
+    "message": "移到群組"
+  },
+  "popupMoveNew": {
+    "message": "新增群組…"
+  },
+  "popupMoveUp": {
+    "message": "上移"
+  },
+  "popupMoveDown": {
+    "message": "下移"
+  },
+  "popupSort": {
+    "message": "排序方式"
+  },
+  "popupSortName": {
+    "message": "名稱"
+  },
+  "popupSortLastRun": {
+    "message": "上次執行"
+  },
+  "popupSortFiles": {
+    "message": "檔案數"
+  },
+  "popupSortAdded": {
+    "message": "加入時間"
+  },
+  "popupSortManual": {
+    "message": "手動"
+  },
+  "popupSortAsc": {
+    "message": "升冪，按一下反轉"
+  },
+  "popupSortDesc": {
+    "message": "降冪，按一下反轉"
   }
 }

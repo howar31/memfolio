@@ -105,9 +105,27 @@ h1 {
   color: var(--ink);
 }
 
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#sort-by {
+  flex: none;
+  max-width: 130px;
+  padding: 6px 8px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+#sort-dir:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 #filter {
   display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   margin: 0;
   padding: 6px 10px;
   background: var(--sheet);
@@ -116,8 +134,121 @@ h1 {
 }
 
 #list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-height: 400px;
   overflow-y: auto;
+  user-select: none;
+}
+/* A block of the list: pinned entries, a group, or the rest. Each has a frame of its own. */
+.block,
+.empty {
+  flex: none;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.blockhead {
+  display: grid;
+  grid-template-columns: 1fr 34px;
+  align-items: center;
+  background: var(--sheet-2);
+}
+.block:not(.folded) > .blockhead,
+.block.unfolded > .blockhead {
+  border-bottom: 1px solid var(--rule);
+}
+.fold {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px 6px 9px;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.fold svg {
+  flex: none;
+  transition: transform 120ms;
+}
+.block.folded .fold svg {
+  transform: rotate(-90deg);
+}
+.blockname {
+  overflow-wrap: anywhere;
+}
+.blockcount {
+  margin-left: auto;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.block.unfolded .gmore svg {
+  transform: rotate(180deg);
+}
+.block.folded > .gextra {
+  border-top: 0;
+}
+.gextra {
+  border-top: 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sheet-2);
+}
+.block.folded > .gextra,
+.block.draft > .gextra {
+  border-bottom: 0;
+}
+.renaming {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gname {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 8px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  user-select: text;
+}
+.hollow {
+  padding: 9px 12px;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+/* The rest without entries is shown only as a place to drop on. */
+.block.vacant {
+  display: none;
+}
+#list.dragging .block.vacant {
+  display: block;
+}
+/* Dragging: the entry or group in hand, the block it would join, the place it would take. */
+#list.dragging,
+#list.dragging * {
+  cursor: grabbing;
+}
+.dragged {
+  opacity: 0.45;
+}
+.droptarget {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.dropline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  pointer-events: none;
 }
 /* A slim thumb without a track or arrows, in place of the system scrollbar. */
 #list::-webkit-scrollbar,
@@ -197,15 +328,6 @@ h1 {
   font-size: 13px;
   color: var(--ink);
 }
-.open .name {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.pinmark {
-  display: inline-flex;
-  color: var(--ink-2);
-}
 .more {
   display: grid;
   place-items: center;
@@ -221,6 +343,18 @@ h1 {
 .more:hover {
   background: var(--rule);
   color: var(--ink);
+}
+/* Faint until the pointer or the keyboard reaches its entry or heading. */
+.more {
+  opacity: 0.4;
+  transition: opacity 120ms;
+}
+.row:hover > .more,
+.blockhead:hover > .more,
+.unfolded > .more,
+.unfolded > .blockhead > .more,
+.more:focus-visible {
+  opacity: 1;
 }
 .more svg {
   transition: transform 120ms;
@@ -238,9 +372,22 @@ h1 {
 .acts,
 .confirm {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+}
+.moveto {
+  max-width: 150px;
+  padding: 3px 6px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-weight: 600;
+}
+.extra .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .extra .btn {
   margin: 0;
@@ -442,7 +589,9 @@ label.item {
 @media (prefers-reduced-motion: reduce) {
   .switch,
   .switch::after,
-  .more svg {
+  .more,
+  .more svg,
+  .fold svg {
     transition: none;
   }
 }

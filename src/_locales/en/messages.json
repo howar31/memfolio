@@ -570,7 +570,7 @@
     "message": "Add accounts"
   },
   "popupAddHint": {
-    "message": "Paste profile addresses, one per line. The folder of each account is set up at its first download."
+    "message": "Paste profile addresses, one per line. A line “# name” puts the addresses below it into that group. Folders are set up at the first download."
   },
   "popupAddGo": {
     "message": "Add"
@@ -599,9 +599,6 @@
   "popupUnpin": {
     "message": "Unpin"
   },
-  "popupPinned": {
-    "message": "Pinned"
-  },
   "popupExport": {
     "message": "Export the list as addresses"
   },
@@ -609,7 +606,7 @@
     "message": "Export accounts"
   },
   "popupExportHint": {
-    "message": "One profile address per line, in the order of the list. Paste it into “Add accounts” to rebuild the list."
+    "message": "One profile address per line, in the order of the list; lines starting with # name the groups. Paste it into “Add accounts” to rebuild the list."
   },
   "popupExportCopy": {
     "message": "Copy"
@@ -622,5 +619,74 @@
   },
   "popupExportCopyFailed": {
     "message": "Could not copy to the clipboard ($1). Save it as a file instead."
+  },
+  "popupBlockPinned": {
+    "message": "Pinned"
+  },
+  "popupBlockUngrouped": {
+    "message": "Ungrouped"
+  },
+  "popupNewGroup": {
+    "message": "New group"
+  },
+  "popupGroupDefault": {
+    "message": "New group"
+  },
+  "popupGroupRename": {
+    "message": "Rename"
+  },
+  "popupGroupDelete": {
+    "message": "Delete group"
+  },
+  "popupGroupDeleteConfirm": {
+    "message": "Delete the group? Its accounts move to Ungrouped."
+  },
+  "popupGroupDeleteYes": {
+    "message": "Delete"
+  },
+  "popupGroupName": {
+    "message": "Group name"
+  },
+  "popupGroupEmpty": {
+    "message": "No accounts in this group."
+  },
+  "popupSave": {
+    "message": "Save"
+  },
+  "popupMoveTo": {
+    "message": "Move to group"
+  },
+  "popupMoveNew": {
+    "message": "New group…"
+  },
+  "popupMoveUp": {
+    "message": "Move up"
+  },
+  "popupMoveDown": {
+    "message": "Move down"
+  },
+  "popupSort": {
+    "message": "Sort by"
+  },
+  "popupSortName": {
+    "message": "Name"
+  },
+  "popupSortLastRun": {
+    "message": "Last run"
+  },
+  "popupSortFiles": {
+    "message": "Files"
+  },
+  "popupSortAdded": {
+    "message": "Date added"
+  },
+  "popupSortManual": {
+    "message": "Manual"
+  },
+  "popupSortAsc": {
+    "message": "Ascending; press to reverse"
+  },
+  "popupSortDesc": {
+    "message": "Descending; press to reverse"
   }
 }

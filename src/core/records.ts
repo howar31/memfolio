@@ -1,6 +1,8 @@
 // Account summaries and settings live in extension storage so the popup and the
 // content script can both read them. They never contain folder handles or absolute paths.
 
+import { accountKey as accountEntryKey, normalizeLayout, pendingKey as pendingEntryKey, renameKey, type Layout } from './layout';
+
 export type AccountStatus =
   | 'imported' // added by the folder import, not run yet
   | 'ok' // last run finished and nothing is known to be missing
@@ -119,6 +121,33 @@ export async function allPending(): Promise<PendingAccount[]> {
     .map(([, v]) => v as PendingAccount);
 }
 
+const LAYOUT_KEY = 'layout';
+
+/** Groups, order and sorting of the account list. */
+export async function getLayout(): Promise<Layout> {
+  const got = await chrome.storage.local.get(LAYOUT_KEY);
+  return normalizeLayout(got[LAYOUT_KEY]);
+}
+
+export async function setLayout(layout: Layout): Promise<void> {
+  await chrome.storage.local.set({ [LAYOUT_KEY]: layout });
+}
+
+/**
+ * The account of an address-only entry has a record now: the entry's group and
+ * its place in the list go to the record's key, and the entry is removed.
+ * Returns the entry, whose pin the caller carries over.
+ */
+export async function adoptPending(platform: string, username: string, id: string): Promise<PendingAccount | null> {
+  const pending = await getPending(platform, username);
+  if (!pending) return null;
+  const layout = await getLayout();
+  const from = pendingEntryKey(platform, username);
+  if (from in layout.groupOf || layout.order.includes(from)) await setLayout(renameKey(layout, from, accountEntryKey(platform, id)));
+  await removePending(platform, username);
+  return pending;
+}
+
 export async function getSettings(): Promise<Settings> {
   const got = await chrome.storage.local.get(SETTINGS_KEY);
   return { ...DEFAULT_SETTINGS, ...(got[SETTINGS_KEY] as Partial<Settings> | undefined) };
@@ -128,11 +157,11 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
   await chrome.storage.local.set({ [SETTINGS_KEY]: { ...(await getSettings()), ...patch } });
 }
 
-/** Calls back when the account list or the settings change in any tab or in the popup. */
+/** Calls back when the account list, its layout or the settings change in any tab or in the popup. */
 export function onStorageChange(cb: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k.startsWith(ACCOUNT_PREFIX) || k.startsWith(PENDING_PREFIX))) cb();
+    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k === LAYOUT_KEY || k.startsWith(ACCOUNT_PREFIX) || k.startsWith(PENDING_PREFIX))) cb();
   });
 }
 

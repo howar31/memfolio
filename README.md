@@ -15,9 +15,11 @@ Status: in development, not published to any extension store.
   - They go to the browser's download folder. A setting sends them to the account folder instead when the account is managed; files already there are skipped.
 - One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
-- The toolbar popup lists the managed accounts; a row opens the profile. Accounts can be pinned to the top of the list.
+- The toolbar popup lists the managed accounts; a row opens the profile.
+  - Accounts can be put into groups of your own, which fold away, and pinned to a block at the top.
+  - The list sorts by name, last run, file count or date added, inside each group; or you set the order by hand, with buttons or by dragging. Dragging also moves an account to another group and a group to another place.
   - Its **+** button takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
-  - The export button next to it gives the list back as addresses, in the order shown, to copy or save as a text file.
+  - The export button next to it gives the list back as addresses, in the order shown and with a `# name` line before each group, to copy or save as a text file. Pasting that text adds the accounts to the same groups.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 - Times are shown on a 24-hour clock; the settings can switch to 12-hour.
 
@@ -77,9 +79,11 @@ npm run check        # type check, unit tests, production build
   - 檔案存到瀏覽器的下載資料夾。可在設定中改為存到帳號資料夾（限已管理的帳號），已存在的檔案會略過。
 - 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
-- 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。帳號可以釘選到清單最上方。
+- 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。
+  - 帳號可以放進自訂的群組（群組可收合），也可以釘選到最上方的置頂區塊。
+  - 清單可依名稱、上次執行、檔案數或加入時間排序，排序只在各群組內進行；也可以用按鈕或拖拉手動排序。拖拉還能把帳號移到另一個群組，或調整群組的順序。
   - 清單上的 **+** 按鈕可貼上個人頁網址（每行一個），把這些帳號加入清單，過程不會連線到網站。各帳號的資料夾在第一次下載時設定。
-  - 旁邊的匯出按鈕會依清單目前的順序列出所有帳號的網址，可複製或存成文字檔。
+  - 旁邊的匯出按鈕會依清單目前的順序列出所有帳號的網址，每個群組前有一行 `# 名稱`，可複製或存成文字檔。貼回這段文字會把帳號加入同名的群組。
 - 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
 - 時間以 24 小時制顯示，可在設定中改為 12 小時制。
 

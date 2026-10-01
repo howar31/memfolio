@@ -102,6 +102,8 @@ describe('shortcode conversion', () => {
 });
 
 describe('profileNamesIn', () => {
+  const plain = (...usernames: string[]) => usernames.map((username) => ({ username, group: null, pinned: false }));
+
   it('takes one profile address per line, whatever tab or query it carries', () => {
     const text = [
       'https://www.instagram.com/first.user/',
@@ -109,20 +111,20 @@ describe('profileNamesIn', () => {
       'https://www.instagram.com/third/reels/',
       'https://www.instagram.com/fourth/tagged/?hl=en#top',
     ].join('\n');
-    expect(profileNamesIn(text)).toEqual({ usernames: ['first.user', 'second_user', 'third', 'fourth'], rejected: [] });
+    expect(profileNamesIn(text)).toEqual({ entries: plain('first.user', 'second_user', 'third', 'fourth'), groups: [], rejected: [] });
   });
 
   it('accepts an address without the scheme', () => {
-    expect(profileNamesIn('www.instagram.com/some.user/\ninstagram.com/other').usernames).toEqual(['some.user', 'other']);
+    expect(profileNamesIn('www.instagram.com/some.user/\ninstagram.com/other').entries).toEqual(plain('some.user', 'other'));
   });
 
   it('ignores blank lines and surrounding spaces', () => {
-    expect(profileNamesIn('\n  https://www.instagram.com/some.user/  \r\n\n')).toEqual({ usernames: ['some.user'], rejected: [] });
+    expect(profileNamesIn('\n  https://www.instagram.com/some.user/  \r\n\n')).toEqual({ entries: plain('some.user'), groups: [], rejected: [] });
   });
 
   it('names an account once, in lower case', () => {
     const text = 'https://www.instagram.com/Some.User/\nhttps://www.instagram.com/some.user/reels/';
-    expect(profileNamesIn(text).usernames).toEqual(['some.user']);
+    expect(profileNamesIn(text).entries).toEqual(plain('some.user'));
   });
 
   it('hands back the lines that are not a profile address', () => {
@@ -135,7 +137,8 @@ describe('profileNamesIn', () => {
       'https://www.instagram.com/explore/',
     ].join('\n');
     expect(profileNamesIn(text)).toEqual({
-      usernames: ['some.user'],
+      entries: plain('some.user'),
+      groups: [],
       rejected: [
         'https://www.instagram.com/p/ABC123/',
         'https://www.instagram.com/stories/some.user/123/',
@@ -144,5 +147,38 @@ describe('profileNamesIn', () => {
         'https://www.instagram.com/explore/',
       ],
     });
+  });
+
+  it('reads a line that starts with # as the group of the addresses below it', () => {
+    const text = [
+      'https://www.instagram.com/loose/',
+      '# [pinned]',
+      'https://www.instagram.com/top/',
+      '#First group',
+      'https://www.instagram.com/one/',
+      'https://www.instagram.com/two/',
+      '#   Empty  ',
+      '# [ungrouped]',
+      'https://www.instagram.com/rest/',
+      '#',
+      'https://www.instagram.com/more/',
+    ].join('\n');
+    expect(profileNamesIn(text)).toEqual({
+      entries: [
+        { username: 'loose', group: null, pinned: false },
+        { username: 'top', group: null, pinned: true },
+        { username: 'one', group: 'First group', pinned: false },
+        { username: 'two', group: 'First group', pinned: false },
+        { username: 'rest', group: null, pinned: false },
+        { username: 'more', group: null, pinned: false },
+      ],
+      groups: ['First group', 'Empty'],
+      rejected: [],
+    });
+  });
+
+  it('keeps the first place of an account named under two headings', () => {
+    const text = '# A\nhttps://www.instagram.com/one/\n# B\nhttps://www.instagram.com/one/';
+    expect(profileNamesIn(text)).toEqual({ entries: [{ username: 'one', group: 'A', pinned: false }], groups: ['A', 'B'], rejected: [] });
   });
 });

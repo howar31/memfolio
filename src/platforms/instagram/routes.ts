@@ -1,3 +1,5 @@
+import { PINNED_HEADING, UNGROUPED_HEADING } from '../../core/layout';
+
 export type ProfileTab = 'posts' | 'reels' | 'tagged';
 
 export type Route =
@@ -56,17 +58,41 @@ export function profileUrl(username: string): string {
   return `https://www.instagram.com/${encodeURIComponent(username)}/`;
 }
 
+export interface PastedProfile {
+  /** Lower case. */
+  username: string;
+  /** Name of the group the heading above the address gave, if any. */
+  group: string | null;
+  pinned: boolean;
+}
+
 /**
- * Account names in pasted text with one profile address per line. The scheme may be
- * left out. Lines that are not a profile address come back untouched.
+ * Accounts in pasted text with one profile address per line. The scheme may be
+ * left out. A line that starts with `#` is a heading: the addresses below it
+ * belong to the group of that name, or are pinned or ungrouped under the two
+ * fixed headings. Lines that are neither come back untouched.
  */
-export function profileNamesIn(text: string): { usernames: string[]; rejected: string[] } {
-  const usernames = new Set<string>();
+export function profileNamesIn(text: string): { entries: PastedProfile[]; groups: string[]; rejected: string[] } {
+  const entries = new Map<string, PastedProfile>();
+  const groups: string[] = [];
   const rejected: string[] = [];
+  let group: string | null = null;
+  let pinned = false;
   for (const line of text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+    if (line.startsWith('#')) {
+      const heading = line.slice(1).trim();
+      pinned = heading === PINNED_HEADING;
+      group = heading === '' || heading === PINNED_HEADING || heading === UNGROUPED_HEADING ? null : heading;
+      if (group !== null && !groups.includes(group)) groups.push(group);
+      continue;
+    }
     const route = parseRoute(/^https?:\/\//i.test(line) ? line : `https://${line}`);
-    if (route.kind === 'profile') usernames.add(route.username.toLowerCase());
-    else rejected.push(line);
+    if (route.kind !== 'profile') {
+      rejected.push(line);
+      continue;
+    }
+    const username = route.username.toLowerCase();
+    if (!entries.has(username)) entries.set(username, { username, group, pinned });
   }
-  return { usernames: [...usernames], rejected };
+  return { entries: [...entries.values()], groups, rejected };
 }

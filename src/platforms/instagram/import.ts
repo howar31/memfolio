@@ -1,6 +1,6 @@
 import { scanForAccounts, type ScanCandidate } from '../../core/import-scan';
 import { n, t } from '../../core/i18n';
-import { getAccount, putAccount } from '../../core/records';
+import { adoptPending, getAccount, putAccount } from '../../core/records';
 import { isAbortError } from '../../core/types';
 import { h } from '../../ui/dom';
 import { surface } from '../../ui/host';
@@ -131,6 +131,7 @@ export async function runImport(): Promise<void> {
       if (!row.checkbox.checked) continue;
       const c = row.candidate;
       const previous = await getAccount(PLATFORM, c.ownerId);
+      const pasted = await adoptPending(PLATFORM, c.username, c.ownerId);
       await handles.setAccount(c.ownerId, c.dir);
       await putAccount({
         platform: PLATFORM,
@@ -144,6 +145,7 @@ export async function runImport(): Promise<void> {
         needsFullScan: previous?.needsFullScan ?? {},
         listed: previous?.listed ?? {},
         addedAt: previous?.addedAt ?? Date.now(),
+        ...(previous?.pinned || pasted?.pinned ? { pinned: true } : {}),
       });
       imported += 1;
     }

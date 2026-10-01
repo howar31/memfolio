@@ -84,5 +84,7 @@ export const ICONS = {
   chevronDown: ['M6 9l6 6 6-6'],
   /** Arrow out of a tray: hand the list out. */
   export: ['M12 15V4', 'M7.5 8.5 12 4l4.5 4.5', 'M5 19h14'],
-  pin: ['M9 4h6l-1 6 3 3v2H7v-2l3-3z', 'M12 15v5'],
+  folderPlus: ['M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v7.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z', 'M12 11v5', 'M9.5 13.5h5'],
+  arrowUp: ['M12 19V5', 'M6 11l6-6 6 6'],
+  arrowDown: ['M12 5v14', 'M6 13l6 6 6-6'],
 } as const;
