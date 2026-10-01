@@ -589,5 +589,17 @@
   },
   "optTimeFormat12": {
     "message": "12 小時制"
+  },
+  "popupMore": {
+    "message": "操作"
+  },
+  "popupPin": {
+    "message": "釘選到最上方"
+  },
+  "popupUnpin": {
+    "message": "取消釘選"
+  },
+  "popupPinned": {
+    "message": "已釘選"
   }
 }

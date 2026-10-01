@@ -40,6 +40,7 @@ async function save(id: string, username: string, dir: FileSystemDirectoryHandle
     needsFullScan: previous?.needsFullScan ?? {},
     listed: previous?.listed ?? {},
     addedAt: previous?.addedAt ?? Date.now(),
+    ...(previous?.pinned ? { pinned: true } : {}),
   };
   await putAccount(record);
   return { dir, record };

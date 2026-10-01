@@ -589,5 +589,17 @@
   },
   "optTimeFormat12": {
     "message": "12-hour"
+  },
+  "popupMore": {
+    "message": "Actions"
+  },
+  "popupPin": {
+    "message": "Pin to top"
+  },
+  "popupUnpin": {
+    "message": "Unpin"
+  },
+  "popupPinned": {
+    "message": "Pinned"
   }
 }

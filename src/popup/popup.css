@@ -143,14 +143,14 @@ h1 {
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr auto 36px;
+  grid-template-columns: 1fr auto 34px;
   align-items: center;
 }
 .row + .row {
   border-top: 1px solid var(--rule);
 }
 .row:hover,
-.row.asking {
+.row.unfolded {
   background: var(--sheet-2);
 }
 .open {
@@ -192,7 +192,16 @@ h1 {
   font-size: 13px;
   color: var(--ink);
 }
-.remove {
+.open .name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.pinmark {
+  display: inline-flex;
+  color: var(--ink-2);
+}
+.more {
   display: grid;
   place-items: center;
   width: 24px;
@@ -203,34 +212,38 @@ h1 {
   border-radius: 6px;
   color: var(--ink-2);
   cursor: pointer;
-  opacity: 0;
 }
-.remove:hover {
+.more:hover {
   background: var(--rule);
   color: var(--ink);
 }
-.row:hover .remove,
-.row.asking .remove,
-.remove:focus-visible {
-  opacity: 1;
+.more svg {
+  transition: transform 120ms;
 }
-/* The question about removing an entry: a line of its own, so nothing above it moves. */
-.confirm {
+.row.unfolded .more svg {
+  transform: rotate(180deg);
+}
+/* The actions of an entry: a line of its own, so nothing above it moves. */
+.extra {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 8px 12px 10px;
   border-top: 1px dashed var(--rule);
   font-size: 12px;
 }
+.acts,
+.confirm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.extra .btn {
+  margin: 0;
+  padding: 3px 10px;
+}
 .confirm span {
   flex: 1;
   min-width: 0;
-}
-.confirm .btn {
-  margin: 0;
-  padding: 3px 10px;
 }
 .btn.danger {
   border-color: var(--red);
@@ -411,7 +424,8 @@ label.item {
 }
 @media (prefers-reduced-motion: reduce) {
   .switch,
-  .switch::after {
+  .switch::after,
+  .more svg {
     transition: none;
   }
 }

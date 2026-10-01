@@ -26,6 +26,8 @@ export interface AccountRecord {
   /** Per listing: a run has walked every page at least once. */
   listed?: Record<string, boolean>;
   addedAt: number;
+  /** Listed before the entries that are not pinned. */
+  pinned?: boolean;
 }
 
 /** UI language: `auto` follows the browser, the others name a folder in `_locales`. */
@@ -86,6 +88,7 @@ export interface PendingAccount {
   /** Lower case. */
   username: string;
   addedAt: number;
+  pinned?: boolean;
 }
 
 const PENDING_PREFIX = 'pending:';
@@ -97,6 +100,12 @@ function pendingKey(platform: string, username: string): string {
 export async function putPending(entries: PendingAccount[]): Promise<void> {
   if (entries.length === 0) return;
   await chrome.storage.local.set(Object.fromEntries(entries.map((e) => [pendingKey(e.platform, e.username), e])));
+}
+
+export async function getPending(platform: string, username: string): Promise<PendingAccount | null> {
+  const key = pendingKey(platform, username);
+  const got = await chrome.storage.local.get(key);
+  return (got[key] as PendingAccount | undefined) ?? null;
 }
 
 export async function removePending(platform: string, username: string): Promise<void> {

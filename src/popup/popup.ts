@@ -4,7 +4,7 @@
 
 import { initI18n, n, setLanguage, setTimeFormat, t, uiLanguage, when } from '../core/i18n';
 import { IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { allAccounts, allPending, getSettings, onStorageChange, putPending, removeAccount, removePending, setSettings, type AccountRecord, type AccountStatus, type Language, type PendingAccount, type SingleSave, type TimeFormat } from '../core/records';
+import { allAccounts, allPending, getSettings, onStorageChange, putAccount, putPending, removeAccount, removePending, setSettings, type AccountRecord, type AccountStatus, type Language, type PendingAccount, type SingleSave, type TimeFormat } from '../core/records';
 import { profileNamesIn, profileUrl } from '../platforms/instagram/routes';
 import { ICONS, h, icon } from '../ui/dom';
 
@@ -60,10 +60,21 @@ function row(entry: Entry): HTMLElement {
         h('div', { text: account.lastRunAt ? when(account.lastRunAt) : t('popupNeverRun') }),
       )
     : h('div', { class: 'side' });
-  const remove = h('button', { class: 'remove', title: t('popupRemove'), attrs: { 'aria-label': t('popupRemove') } }, icon([...ICONS.close], 14));
-  // Removing asks first, on a line of its own under the entry.
-  const cancel = h('button', { class: 'btn', text: t('cancel') });
+  const pinned = pinnedOf(entry);
+  if (pinned) {
+    const mark = h('span', { class: 'pinmark', title: t('popupPinned'), attrs: { role: 'img', 'aria-label': t('popupPinned') } }, icon([...ICONS.pin], 12));
+    open.querySelector('.name')!.append(mark);
+  }
+  const more = h('button', { class: 'more', title: t('popupMore'), attrs: { 'aria-label': t('popupMore'), 'aria-expanded': 'false' } }, icon([...ICONS.chevronDown], 16));
+  const setPinned = (): void =>
+    void ('account' in entry
+      ? putAccount({ ...entry.account, pinned: !pinned })
+      : putPending([{ ...entry.pending, pinned: !pinned }]));
   const drop = (): void => void (account ? removeAccount(platform, account.id) : removePending(platform, username));
+  const remove = h('button', { class: 'btn remove', text: t('popupRemoveYes') });
+  // The actions unfold on a line of their own under the entry; removing asks first on that line.
+  const acts = h('div', { class: 'acts' }, h('button', { class: 'btn pin', text: t(pinned ? 'popupUnpin' : 'popupPin'), on: { click: setPinned } }), remove);
+  const cancel = h('button', { class: 'btn', text: t('cancel') });
   const confirm = h(
     'div',
     { class: 'confirm', attrs: { role: 'alert' } },
@@ -72,18 +83,29 @@ function row(entry: Entry): HTMLElement {
     h('button', { class: 'btn danger', text: t('popupRemoveYes'), on: { click: drop } }),
   );
   confirm.hidden = true;
-  const el = h('div', { class: 'row' }, open, side, remove, confirm);
+  const extra = h('div', { class: 'extra' }, acts, confirm);
+  extra.hidden = true;
+  const el = h('div', { class: 'row' }, open, side, more, extra);
   const ask = (on: boolean): void => {
     confirm.hidden = !on;
-    el.classList.toggle('asking', on);
+    acts.hidden = on;
     (on ? cancel : remove).focus();
   };
-  remove.addEventListener('click', () => ask(confirm.hidden));
+  more.addEventListener('click', () => {
+    const on = extra.hidden;
+    extra.hidden = !on;
+    el.classList.toggle('unfolded', on);
+    more.setAttribute('aria-expanded', String(on));
+    confirm.hidden = true;
+    acts.hidden = false;
+  });
+  remove.addEventListener('click', () => ask(true));
   cancel.addEventListener('click', () => ask(false));
   return el;
 }
 
 const nameOf = (entry: Entry): string => ('account' in entry ? entry.account.username : entry.pending.username);
+const pinnedOf = (entry: Entry): boolean => ('account' in entry ? entry.account.pinned : entry.pending.pinned) === true;
 const folderOf = (entry: Entry): string => ('account' in entry ? (entry.account.relPath ?? entry.account.folderName) : '');
 const sameAccount = (platform: string, username: string) => (a: AccountRecord): boolean =>
   a.platform === platform && a.username.toLowerCase() === username.toLowerCase();
@@ -96,7 +118,7 @@ async function entries(): Promise<Entry[]> {
 }
 
 async function render(): Promise<void> {
-  const all = (await entries()).sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+  const all = (await entries()).sort((a, b) => Number(pinnedOf(b)) - Number(pinnedOf(a)) || nameOf(a).localeCompare(nameOf(b)));
   const needle = filter.value.trim().toLowerCase();
   const shown = needle ? all.filter((e) => nameOf(e).toLowerCase().includes(needle) || folderOf(e).toLowerCase().includes(needle)) : all;
   count.textContent = all.length > 0 ? t('popupCount', n(all.length)) : t('popupTitle');

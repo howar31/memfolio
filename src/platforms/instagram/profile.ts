@@ -1,7 +1,7 @@
 import { buildFileIndex } from '../../core/file-index';
 import { n, t, when } from '../../core/i18n';
 import { sleep } from '../../core/pacing';
-import { findAccountByUsername, getSettings, putAccount, removePending, type AccountRecord, type AccountStatus } from '../../core/records';
+import { findAccountByUsername, getAccount, getPending, getSettings, putAccount, removePending, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
 import { h, logoMark } from '../../ui/dom';
@@ -101,7 +101,11 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   const folder = await resolveAccountFolder(userId, username);
   if (!folder) return;
   // The account now has a record under its id; an entry made from its address alone is done.
-  await removePending(PLATFORM, username);
+  const pasted = await getPending(PLATFORM, username);
+  if (pasted) {
+    if (pasted.pinned && !folder.record.pinned) await putAccount({ ...folder.record, pinned: true });
+    await removePending(PLATFORM, username);
+  }
   const index = await buildFileIndex(folder.dir);
   if (folder.record.fileCount > 0 && index.matchedCount === 0 && !folder.acceptedEmpty) {
     const go = await surface.dialog({
@@ -152,8 +156,11 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   // 4. Record the outcome.
   const complete = result.listing === 'complete' && !result.cancelled && !needsFullScan(result);
   const flag = needsFullScan(result) ? true : complete ? false : flagged;
+  // The pin is set in the popup and may have changed while this run was under way.
+  const { pinned: _, ...kept } = folder.record;
   const record: AccountRecord = {
-    ...folder.record,
+    ...kept,
+    ...((await getAccount(PLATFORM, userId))?.pinned ? { pinned: true } : {}),
     username,
     fileCount: index.matchedCount,
     lastRunAt: Date.now(),

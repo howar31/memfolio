@@ -15,7 +15,7 @@ Status: in development, not published to any extension store.
   - They go to the browser's download folder. A setting sends them to the account folder instead when the account is managed; files already there are skipped.
 - One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
-- The toolbar popup lists the managed accounts; a row opens the profile.
+- The toolbar popup lists the managed accounts; a row opens the profile. Accounts can be pinned to the top of the list.
   - Its **+** button takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 - Times are shown on a 24-hour clock; the settings can switch to 12-hour.
@@ -76,7 +76,7 @@ npm run check        # type check, unit tests, production build
   - 檔案存到瀏覽器的下載資料夾。可在設定中改為存到帳號資料夾（限已管理的帳號），已存在的檔案會略過。
 - 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
-- 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。
+- 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。帳號可以釘選到清單最上方。
   - 清單上的 **+** 按鈕可貼上個人頁網址（每行一個），把這些帳號加入清單，過程不會連線到網站。各帳號的資料夾在第一次下載時設定。
 - 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
 - 時間以 24 小時制顯示，可在設定中改為 12 小時制。

@@ -863,7 +863,17 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   await popup.click('.row .open');
   assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/acct/`], 'clicking a row opens the profile');
 
-  await popup.hover('.row');
+  assertEqual(await popup.$eval('.row .extra', (e) => e.hidden), true, 'the actions are folded away at first');
+  assertEqual(await popup.$eval('.row .more', (e) => [getComputedStyle(e).opacity, e.getAttribute('aria-expanded')]), ['1', 'false'], 'the button that unfolds them is always shown');
+  await popup.click('.row .more');
+  assertEqual(await popup.$eval('.row .extra', (e) => e.hidden), false, 'the actions unfold under the entry');
+  assertEqual(await popup.$eval('.row .more', (e) => e.getAttribute('aria-expanded')), 'true', 'the button says so');
+  assertEqual(await popup.$eval('.row .pin', (e) => e.textContent), await ctx.msg('popupPin'), 'an entry can be pinned');
+  await popup.click('.row .pin');
+  await waitFor(async () => (await ctx.account('42')).pinned === true, 'the pin to be stored');
+  await waitFor(() => popup.$('.row .pinmark'), 'the mark of a pinned entry');
+  await popup.click('.row .more');
+  assertEqual(await popup.$eval('.row .pin', (e) => e.textContent), await ctx.msg('popupUnpin'), 'a pinned entry can be unpinned');
   assertEqual(await popup.$eval('.row .confirm', (e) => e.hidden), true, 'no question before the remove button is pressed');
   await popup.click('.row .remove');
   assert((await ctx.account('42')) !== null, 'the remove button only asks');
@@ -872,6 +882,7 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   assertEqual(await popup.$eval('.row .side', (e) => e.getBoundingClientRect().width), sideBefore, 'the entry keeps its layout while asking');
   await popup.click('.row .confirm .btn:not(.danger)');
   assertEqual(await popup.$eval('.row .confirm', (e) => e.hidden), true, 'cancel closes the question');
+  assertEqual(await popup.$eval('.row .acts', (e) => e.hidden), false, 'and brings the actions back');
   assert((await ctx.account('42')) !== null, 'cancel removes nothing');
   await popup.click('.row .remove');
   await popup.click('.row .confirm .danger');
@@ -928,7 +939,17 @@ scenario('profile addresses pasted into the popup become entries of the list', a
   await popup.click('.row .open');
   assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/first.user/`], 'clicking an entry opens the profile');
 
-  await popup.hover('.row');
+  // A pinned entry goes to the top; the others stay sorted by name.
+  const names = () => popup.$$eval('.row .name', (els) => els.map((e) => e.textContent));
+  await popup.click('.row:nth-child(2) .more');
+  await popup.click('.row:nth-child(2) .pin');
+  await waitFor(async () => JSON.stringify(await names()) === JSON.stringify(['@second', '@first.user']), 'the pinned entry at the top');
+  assertEqual((await ctx.storage())['pending:instagram:second'].pinned, true, 'the pin is stored');
+  await popup.click('.row:nth-child(1) .more');
+  await popup.click('.row:nth-child(1) .pin');
+  await waitFor(async () => JSON.stringify(await names()) === JSON.stringify(['@first.user', '@second']), 'the order by name after unpinning');
+
+  await popup.click('.row .more');
   await popup.click('.row .remove');
   await popup.click('.row .confirm .danger');
   await waitFor(async () => !('pending:instagram:first.user' in (await ctx.storage())), 'the entry to be removed');
@@ -936,12 +957,18 @@ scenario('profile addresses pasted into the popup become entries of the list', a
 });
 
 scenario('a pasted account becomes a managed one on its first run', async (ctx) => {
-  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1 } }));
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1, pinned: true } }));
   const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(2) }));
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   assertEqual('pending:instagram:acct' in (await ctx.storage()), false, 'the pasted entry is gone');
   assertEqual((await ctx.account('42')).username, 'acct', 'the account is managed under its id');
+  assertEqual((await ctx.account('42')).pinned, true, 'a pin set on the pasted entry stays');
+
+  await closeToasts(page);
+  await click(page, await ctx.msg('downloadAll'));
+  await runFinished(ctx, page);
+  assertEqual((await ctx.account('42')).pinned, true, 'later runs keep the pin');
 });
 
 scenario('a pasted new name of a managed account joins its record on the first run', async (ctx) => {
