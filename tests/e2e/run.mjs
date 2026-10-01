@@ -1327,7 +1327,7 @@ scenario('groups and pins travel with the exported text', async (ctx) => {
     'account:instagram:3': listRecord('3', 'charlie'),
     'pending:instagram:delta': { platform: 'instagram', username: 'delta', addedAt: 1 },
     layout: {
-      sort: { by: 'manual', desc: false },
+      sort: { by: 'name', desc: false },
       groups: [{ id: 'g1', name: 'One', collapsed: true }, { id: 'g2', name: 'Empty', collapsed: false }],
       groupOf: { 'instagram:3': 'g1', 'instagram:@delta': 'g1' },
       order: ['instagram:@delta', 'instagram:3'],
@@ -1338,7 +1338,8 @@ scenario('groups and pins travel with the exported text', async (ctx) => {
   await popup.click('#transfer');
   await popup.click('#tab-export');
   const expected = ['# [pinned]', `${ORIGIN}/alpha/`, '# One', `${ORIGIN}/delta/`, `${ORIGIN}/charlie/`, '# Empty', '# [ungrouped]', `${ORIGIN}/bravo/`].join('\n');
-  assertEqual(await popup.$eval('#exported', (e) => e.value), expected, 'every block under its heading, folded or not, in the order on screen');
+  assertEqual(await popup.$eval('#exported', (e) => e.value), expected, 'every block under its heading, folded or not, in the manual order whatever the list is sorted by');
+  assertEqual(await popup.$eval('#exporting-hint', (e) => e.textContent), await ctx.msg('popupExportHint'), 'the view says which order it uses');
 
   // Pasted into an empty list, the text brings the groups and the pin back.
   await ctx.ext.evaluate(() => chrome.storage.local.clear());
@@ -1349,7 +1350,12 @@ scenario('groups and pins travel with the exported text', async (ctx) => {
   await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 4, 0, 0)), 'every address to be taken');
   assertEqual(await popup.$eval('#addresses', (e) => e.value), '', 'headings are not handed back as unreadable lines');
   await popup.click('#back');
-  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['charlie', 'delta']], ['Empty', []], [rest, ['bravo']]], 'the groups and the pin are back');
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['charlie', 'delta']], ['Empty', []], [rest, ['bravo']]], 'the groups and the pin are back, shown by name');
+  assertEqual((await layoutOf(ctx)).order, ['instagram:@alpha', 'instagram:@delta', 'instagram:@charlie', 'instagram:@bravo'], 'the pasted order is kept as the manual order');
+  await popup.select('#sort-by', 'manual');
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['delta', 'charlie']], ['Empty', []], [rest, ['bravo']]], 'manual order shows the entries as they were exported');
+  await popup.select('#sort-by', 'name');
+  await waitBlocks(popup, [[pinned, ['alpha']], ['One', ['charlie', 'delta']], ['Empty', []], [rest, ['bravo']]], 'by name again');
   assertEqual((await ctx.storage())['pending:instagram:alpha'].pinned, true, 'the pin is stored with the entry');
 
   // A group that already exists takes the new entries; entries already listed stay where they are.

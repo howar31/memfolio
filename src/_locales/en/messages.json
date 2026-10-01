@@ -564,7 +564,7 @@
     "message": "Memfolio was updated or reloaded. Refresh this page to use it again."
   },
   "popupAddHint": {
-    "message": "Paste profile addresses, one per line. A line “# name” puts the addresses below it into that group. Folders are set up at the first download."
+    "message": "Paste profile addresses, one per line. A line “# name” puts the addresses below it into that group. The order pasted becomes the manual order. Folders are set up at the first download."
   },
   "popupAddGo": {
     "message": "Add"
@@ -594,7 +594,7 @@
     "message": "Unpin"
   },
   "popupExportHint": {
-    "message": "One profile address per line, in the order of the list; lines starting with # name the groups. Pasted under “Add”, it rebuilds the list."
+    "message": "One profile address per line, always in the manual order, whatever the list is sorted by now; lines starting with # name the groups. Pasted under “Add”, it rebuilds the list."
   },
   "popupExportCopy": {
     "message": "Copy"

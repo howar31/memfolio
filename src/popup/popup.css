@@ -476,7 +476,7 @@ h1 {
   font-size: 12px;
   /* The popup cannot grow past 600 px; the box stops before that. */
   min-height: 72px;
-  max-height: 380px;
+  max-height: 320px;
   resize: vertical;
   white-space: pre;
 }

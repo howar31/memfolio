@@ -2,7 +2,7 @@
 // addresses, and handing the list out in the same form.
 
 import { n, t } from '../core/i18n';
-import { addGroup, assign, exportText, pendingKey } from '../core/layout';
+import { addGroup, arrange, assign, exportText, pendingKey } from '../core/layout';
 import { putPending, setLayout, type PendingAccount } from '../core/records';
 import { profileNamesIn } from '../platforms/instagram/routes';
 import { newGroupId } from './list';
@@ -29,8 +29,8 @@ async function addPasted(): Promise<void> {
     const key = pendingKey(PASTE_PLATFORM, entry.username);
     const group = layout.groups.find((g) => g.name === entry.group);
     if (group) layout = assign(layout, key, group.id);
-    // In manual order new entries follow each other the way they were pasted.
-    if (layout.sort.by === 'manual') layout = { ...layout, order: [...layout.order.filter((k) => k !== key), key] };
+    // Whatever the list is sorted by, the manual order takes the new entries the way they were pasted.
+    layout = { ...layout, order: [...layout.order.filter((k) => k !== key), key] };
   }
   if (layout !== list.layout) await setLayout(layout);
   await putPending(
@@ -40,9 +40,14 @@ async function addPasted(): Promise<void> {
   text('add-result', t('popupAddResult', n(fresh.length), n(entries.length - fresh.length), n(rejected.length)));
 }
 
-/** One profile address per entry under the heading of its block, in the order of the list, whatever the filter shows. */
+/**
+ * One profile address per entry under the heading of its block, whatever the
+ * filter shows. The entries come in the manual order, not in the order the
+ * list is sorted by at the moment: pasting the text puts them back in it.
+ */
 async function fillExport(): Promise<void> {
-  const { blocks } = await loadList();
+  const { entries, layout } = await loadList();
+  const blocks = arrange(entries, { ...layout, sort: { by: 'manual', desc: false } });
   box('exported').value = exportText(blocks, (entry) => PROFILE_URL[entry.platform]?.(entry.name) ?? '');
   text('export-result', '');
 }

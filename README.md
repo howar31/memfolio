@@ -19,7 +19,7 @@ Status: in development, not published to any extension store.
   - Accounts can be put into groups of your own, which fold away, and pinned to a block at the top.
   - The list sorts by name, last run, file count or date added, inside each group; or you set the order by hand, with buttons or by dragging. Dragging also moves an account to another group and a group to another place.
   - The button with the tray and two arrows opens a view with two tabs. **Add** takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
-  - **Export** gives the list back as addresses, in the order shown and with a `# name` line before each group, to copy or save as a text file. Pasting that text adds the accounts to the same groups.
+  - **Export** gives the list back as addresses, in the manual order and with a `# name` line before each group, to copy or save as a text file. Pasting that text adds the accounts to the same groups and keeps their order as the manual order.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 - Times are shown on a 24-hour clock; the settings can switch to 12-hour.
 
@@ -83,7 +83,7 @@ npm run check        # type check, unit tests, production build
   - 帳號可以放進自訂的群組（群組可收合），也可以釘選到最上方的置頂區塊。
   - 清單可依名稱、上次執行、檔案數或加入時間排序，排序只在各群組內進行；也可以用按鈕或拖拉手動排序。拖拉還能把帳號移到另一個群組，或調整群組的順序。
   - 清單上的托盤箭頭按鈕會開啟有兩個分頁的畫面。**加入**可貼上個人頁網址（每行一個），把這些帳號加入清單，過程不會連線到網站。各帳號的資料夾在第一次下載時設定。
-  - **匯出**會依清單目前的順序列出所有帳號的網址，每個群組前有一行 `# 名稱`，可複製或存成文字檔。貼回這段文字會把帳號加入同名的群組。
+  - **匯出**會依手動排序的順序列出所有帳號的網址，每個群組前有一行 `# 名稱`，可複製或存成文字檔。貼回這段文字會把帳號加入同名的群組，並保留順序作為手動排序。
 - 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
 - 時間以 24 小時制顯示，可在設定中改為 12 小時制。
 
