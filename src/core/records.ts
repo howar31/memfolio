@@ -35,9 +35,13 @@ export interface Settings {
   /** Shows diagnostic tools (the folder check) in the card and the popup. */
   developerMode: boolean;
   language: Language;
+  /** Where a single download goes: the browser's download folder, or the account folder when the account is managed. */
+  singleSave: SingleSave;
 }
 
-export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto' };
+export type SingleSave = 'browser' | 'folder';
+
+export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser' };
 
 const ACCOUNT_PREFIX = 'account:';
 const SETTINGS_KEY = 'settings';

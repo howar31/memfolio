@@ -479,6 +479,18 @@
   "optLanguageAuto": {
     "message": "Follow the browser"
   },
+  "optSingleSave": {
+    "message": "Single downloads go to"
+  },
+  "optSingleSaveHint": {
+    "message": "Applies to a post, one picture of a carousel, a thumbnail and a reel. The account folder is used only for managed accounts and skips files already there; stories and highlights always use the browser's download folder."
+  },
+  "optSingleSaveBrowser": {
+    "message": "The browser's download folder"
+  },
+  "optSingleSaveFolder": {
+    "message": "The account folder"
+  },
   "optSaved": {
     "message": "Saved. Open tabs pick the change up right away."
   },

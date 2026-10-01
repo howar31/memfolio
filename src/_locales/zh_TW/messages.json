@@ -479,6 +479,18 @@
   "optLanguageAuto": {
     "message": "跟隨瀏覽器"
   },
+  "optSingleSave": {
+    "message": "單項下載存到"
+  },
+  "optSingleSaveHint": {
+    "message": "適用於一則貼文、輪播中的一張、縮圖與 Reel。帳號資料夾只用於已管理的帳號，並略過已存在的檔案；限時動態與精選一律存到瀏覽器的下載資料夾。"
+  },
+  "optSingleSaveBrowser": {
+    "message": "瀏覽器的下載資料夾"
+  },
+  "optSingleSaveFolder": {
+    "message": "帳號資料夾"
+  },
   "optSaved": {
     "message": "已儲存，已開啟的分頁會立即套用。"
   },

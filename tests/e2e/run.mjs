@@ -509,7 +509,19 @@ scenario('account id falls back to the search query when the page does not hold 
   assertEqual((await ctx.account('42'))?.username, 'acct', 'account registered under the id found by search');
 });
 
-scenario('a single post goes into the account folder when managed, else to browser downloads', async (ctx) => {
+scenario('a single download uses the browser unless the account folder is chosen in the settings', async (ctx) => {
+  const state = newState({ posts: makeTimeline(5) });
+  const profile = await ctx.open('/acct/', state);
+  await firstRun(ctx, profile);
+  await runFinished(ctx, profile);
+  await closeToasts(profile);
+  await clickHover(profile, '#grid a:first-child');
+  await waitText(profile, await ctx.msg('savedBrowser', expectedFiles([state.posts[0]]).length));
+  await waitFor(() => ctx.browserDownloads.includes(expectedFiles([state.posts[0]])[0]), 'browser download of a managed account by default');
+});
+
+scenario('with the account folder setting a single post goes into the account folder when managed, else to browser downloads', async (ctx) => {
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ settings: { singleSave: 'folder' } }));
   const state = newState({ posts: makeTimeline(5) });
   const profile = await ctx.open('/acct/', state);
   await firstRun(ctx, profile);
@@ -673,6 +685,11 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   assertEqual(await popup.$eval('#developer-mode', (e) => e.checked), false, 'developer mode is off by default');
   await popup.click('#developer-mode');
   await waitFor(async () => (await ctx.storage()).settings?.developerMode === true, 'the setting to be stored');
+
+  assertEqual(await popup.$eval('#single-save', (e) => e.value), 'browser', 'single downloads use the browser by default');
+  assertEqual(await popup.$eval('#single-save-name', (e) => e.textContent), await ctx.msg('optSingleSave'), 'the single download setting is named');
+  await popup.select('#single-save', 'folder');
+  await waitFor(async () => (await ctx.storage()).settings?.singleSave === 'folder', 'the single download setting to be stored');
 
   await popup.click('#back');
   assertEqual(await popup.$eval('#accounts', (e) => e.hidden), false, 'back to the account list');

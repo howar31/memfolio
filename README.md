@@ -12,6 +12,7 @@ Status: in development, not published to any extension store.
   - **Full scan** lists every page and fills in anything missing.
   - A run can be cancelled; the next run continues where files are missing.
 - Single downloads: a post, one picture of a carousel, a thumbnail, a reel, stories and highlights. Hotkey: `Ctrl/Cmd + Shift + D`.
+  - They go to the browser's download folder. A setting sends them to the account folder instead when the account is managed; files already there are skipped.
 - One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
 - The toolbar popup lists the managed accounts; a row opens the profile.
@@ -70,6 +71,7 @@ npm run check        # type check, unit tests, production build
   - **完整掃描** 會列出每一頁並補上缺少的檔案。
   - 執行中可以取消，下次執行會從缺少檔案的地方接續。
 - 單項下載：一則貼文、輪播中的一張、縮圖、Reel、限時動態與精選。快捷鍵：`Ctrl/Cmd + Shift + D`。
+  - 檔案存到瀏覽器的下載資料夾。可在設定中改為存到帳號資料夾（限已管理的帳號），已存在的檔案會略過。
 - 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
 - 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。

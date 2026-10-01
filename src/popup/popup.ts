@@ -3,7 +3,7 @@
 
 import { initI18n, n, setLanguage, t, uiLanguage, when } from '../core/i18n';
 import { IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { allAccounts, getSettings, onStorageChange, removeAccount, setSettings, type AccountRecord, type AccountStatus, type Language } from '../core/records';
+import { allAccounts, getSettings, onStorageChange, removeAccount, setSettings, type AccountRecord, type AccountStatus, type Language, type SingleSave } from '../core/records';
 import { profileUrl } from '../platforms/instagram/routes';
 import { ICONS, h, icon } from '../ui/dom';
 
@@ -124,6 +124,10 @@ function renderText(): void {
   text('language-name', t('optLanguage'));
   text('language-hint', t('optLanguageHint'));
   text('language-auto', t('optLanguageAuto'));
+  text('single-save-name', t('optSingleSave'));
+  text('single-save-hint', t('optSingleSaveHint'));
+  text('single-save-browser', t('optSingleSaveBrowser'));
+  text('single-save-folder', t('optSingleSaveFolder'));
 }
 
 /** The popup shows either the account list or the settings. */
@@ -156,6 +160,13 @@ async function initSettings(): Promise<void> {
     renderText();
     saved.textContent = t('optSaved');
     await render();
+  });
+
+  const singleSave = document.getElementById('single-save') as HTMLSelectElement;
+  singleSave.value = settings.singleSave;
+  singleSave.addEventListener('change', async () => {
+    await setSettings({ singleSave: singleSave.value as SingleSave });
+    saved.textContent = t('optSaved');
   });
 
   document.getElementById('options')!.addEventListener('click', () => {

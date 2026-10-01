@@ -4,7 +4,7 @@ import { checkFolder } from '../../core/folders';
 import { n, t } from '../../core/i18n';
 import { fileNameFor } from '../../core/naming';
 import { sleep } from '../../core/pacing';
-import { getAccount, putAccount } from '../../core/records';
+import { getAccount, getSettings, putAccount } from '../../core/records';
 import type { MediaItem } from '../../core/types';
 import { surface } from '../../ui/host';
 import { PLATFORM, describeError, ensurePermission, fetchMedia, handles, mediaDelay } from './env';
@@ -83,14 +83,16 @@ async function saveIntoFolder(items: MediaItem[], dir: FileSystemDirectoryHandle
 }
 
 /**
- * Saves the media of one post. Media of a managed account goes into that
- * account's folder; anything else goes to the browser's download folder.
+ * Saves the media of one post through the browser's download handling. With
+ * the "account folder" setting, media of a managed account goes into that
+ * account's folder instead.
  */
 export async function savePostItems(items: MediaItem[]): Promise<void> {
   const first = items[0];
   if (!first) return;
   try {
-    const dir = await handles.getAccount(first.ownerId);
+    const intoFolder = (await getSettings()).singleSave === 'folder';
+    const dir = intoFolder ? await handles.getAccount(first.ownerId) : null;
     if (dir && items.every((i) => i.ownerId === first.ownerId)) {
       if (await ensurePermission(dir)) {
         const state = await checkFolder(dir);
