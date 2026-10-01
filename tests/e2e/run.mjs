@@ -956,6 +956,50 @@ scenario('profile addresses pasted into the popup become entries of the list', a
   await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 1, 'the list without the removed entry');
 });
 
+scenario('the list is exported as profile addresses in the order it is shown', async (ctx) => {
+  const record = (id, username, more = {}) => ({ platform: 'instagram', id, username, folderName: username, relPath: null, fileCount: 1, lastRunAt: null, lastStatus: 'ok', needsFullScan: {}, addedAt: 1, ...more });
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    'account:instagram:1': record('1', 'alpha'),
+    'account:instagram:3': record('3', 'charlie', { pinned: true }),
+    'pending:instagram:bravo': { platform: 'instagram', username: 'bravo', addedAt: 1 },
+  });
+  const popup = await ctx.browser.newPage();
+  await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
+  await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 3, 'the popup list');
+  assertEqual(await popup.$eval('#export', (e) => [e.title, e.hidden]), [await ctx.msg('popupExport'), false], 'the export button is named');
+  const shown = await popup.$$eval('.row .name', (els) => els.map((e) => e.textContent.slice(1)));
+  assertEqual(shown, ['charlie', 'alpha', 'bravo'], 'the list: pinned first, then by name');
+
+  // The filter narrows the list on screen, not the export.
+  await popup.type('#filter', 'alp');
+  await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 1, 'the filtered list');
+  await popup.click('#export');
+  assertEqual(await popup.$eval('#exporting', (e) => e.hidden), false, 'the export view opens');
+  assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
+  const expected = shown.map((name) => `${ORIGIN}/${name}/`).join('\n');
+  assertEqual(await popup.$eval('#exported', (e) => [e.value, e.readOnly]), [expected, true], 'one address per entry, in the order of the list');
+
+  await popup.evaluate(() => {
+    window.__copied = [];
+    navigator.clipboard.writeText = async (text) => void window.__copied.push(text);
+  });
+  await popup.click('#export-copy');
+  await waitFor(async () => (await popup.$eval('#export-result', (e) => e.textContent)) === (await ctx.msg('checkCopied')), 'the note about the copy');
+  assertEqual(await popup.evaluate(() => window.__copied), [expected], 'the same text goes to the clipboard');
+
+  await popup.click('#export-save');
+  await waitFor(() => ctx.browserDownloads.some((name) => /^memfolio-accounts-\d{8}-\d{6}\.txt$/.test(name)), 'the exported file');
+
+  // What was exported can be pasted back in.
+  await ctx.ext.evaluate(() => chrome.storage.local.clear());
+  await popup.click('#back');
+  assertEqual(await popup.$eval('#export', (e) => e.hidden), true, 'nothing to export from an empty list');
+  await popup.click('#add');
+  await popup.$eval('#addresses', (e, v) => (e.value = v), expected);
+  await popup.click('#add-go');
+  await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 3, 0, 0)), 'every exported line to be taken');
+});
+
 scenario('a pasted account becomes a managed one on its first run', async (ctx) => {
   await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1, pinned: true } }));
   const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(2) }));

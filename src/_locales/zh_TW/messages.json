@@ -601,5 +601,26 @@
   },
   "popupPinned": {
     "message": "已釘選"
+  },
+  "popupExport": {
+    "message": "匯出網址清單"
+  },
+  "popupExportTitle": {
+    "message": "匯出帳號"
+  },
+  "popupExportHint": {
+    "message": "每行一個個人頁網址，順序與清單相同。貼到「加入帳號」即可重建清單。"
+  },
+  "popupExportCopy": {
+    "message": "複製"
+  },
+  "popupExportSave": {
+    "message": "存成檔案"
+  },
+  "popupExportSaved": {
+    "message": "已存為 $1。"
+  },
+  "popupExportCopyFailed": {
+    "message": "無法複製到剪貼簿（$1），請改用「存成檔案」。"
   }
 }

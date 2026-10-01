@@ -17,7 +17,10 @@
     <section id="accounts">
       <div class="titlebar">
         <h2 id="count"></h2>
-        <button id="add" class="iconbtn" type="button"></button>
+        <div class="tools">
+          <button id="export" class="iconbtn" type="button"></button>
+          <button id="add" class="iconbtn" type="button"></button>
+        </div>
       </div>
       <input id="filter" type="search" autocomplete="off" />
       <main id="list" class="group"></main>
@@ -31,6 +34,18 @@
       <div class="actions">
         <span id="add-result" role="status" aria-live="polite"></span>
         <button id="add-go" class="btn" type="button"></button>
+      </div>
+    </section>
+    <section id="exporting" hidden>
+      <div class="titlebar">
+        <h2 id="exporting-title"></h2>
+      </div>
+      <div class="hint" id="exporting-hint"></div>
+      <textarea id="exported" rows="10" spellcheck="false" readonly></textarea>
+      <div class="actions">
+        <span id="export-result" role="status" aria-live="polite"></span>
+        <button id="export-copy" class="btn" type="button"></button>
+        <button id="export-save" class="btn" type="button"></button>
       </div>
     </section>
     <section id="settings" hidden>

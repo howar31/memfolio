@@ -82,5 +82,7 @@ export const ICONS = {
   back: ['M20 12H5', 'M11 6l-6 6 6 6'],
   plus: ['M12 5v14', 'M5 12h14'],
   chevronDown: ['M6 9l6 6 6-6'],
+  /** Arrow out of a tray: hand the list out. */
+  export: ['M12 15V4', 'M7.5 8.5 12 4l4.5 4.5', 'M5 19h14'],
   pin: ['M9 4h6l-1 6 3 3v2H7v-2l3-3z', 'M12 15v5'],
 } as const;

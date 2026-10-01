@@ -601,5 +601,26 @@
   },
   "popupPinned": {
     "message": "Pinned"
+  },
+  "popupExport": {
+    "message": "Export the list as addresses"
+  },
+  "popupExportTitle": {
+    "message": "Export accounts"
+  },
+  "popupExportHint": {
+    "message": "One profile address per line, in the order of the list. Paste it into “Add accounts” to rebuild the list."
+  },
+  "popupExportCopy": {
+    "message": "Copy"
+  },
+  "popupExportSave": {
+    "message": "Save as a file"
+  },
+  "popupExportSaved": {
+    "message": "Saved as $1."
+  },
+  "popupExportCopyFailed": {
+    "message": "Could not copy to the clipboard ($1). Save it as a file instead."
   }
 }

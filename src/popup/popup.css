@@ -121,24 +121,29 @@ h1 {
 }
 /* A slim thumb without a track or arrows, in place of the system scrollbar. */
 #list::-webkit-scrollbar,
-#addresses::-webkit-scrollbar {
+#addresses::-webkit-scrollbar,
+#exported::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 #list::-webkit-scrollbar-track,
 #addresses::-webkit-scrollbar-track,
-#addresses::-webkit-scrollbar-corner {
+#exported::-webkit-scrollbar-track,
+#addresses::-webkit-scrollbar-corner,
+#exported::-webkit-scrollbar-corner {
   background: transparent;
 }
 #list::-webkit-scrollbar-thumb,
-#addresses::-webkit-scrollbar-thumb {
+#addresses::-webkit-scrollbar-thumb,
+#exported::-webkit-scrollbar-thumb {
   background: var(--rule);
   background-clip: padding-box;
   border: 3px solid transparent;
   border-radius: 5px;
 }
 #list::-webkit-scrollbar-thumb:hover,
-#addresses::-webkit-scrollbar-thumb:hover {
+#addresses::-webkit-scrollbar-thumb:hover,
+#exported::-webkit-scrollbar-thumb:hover {
   background-color: var(--ink-2);
 }
 .row {
@@ -257,6 +262,7 @@ h1 {
 /* The two views share one layout; the settings replace the account list. */
 #accounts,
 #adding,
+#exporting,
 #settings {
   display: flex;
   flex-direction: column;
@@ -279,11 +285,14 @@ h1 {
 }
 /* The view that takes pasted profile addresses. */
 #adding .hint,
-#add-result {
+#exporting .hint,
+#add-result,
+#export-result {
   color: var(--ink-2);
   font-size: 12px;
 }
-#addresses {
+#addresses,
+#exported {
   display: block;
   width: 100%;
   margin: 0;
@@ -307,6 +316,14 @@ h1 {
 .actions .btn {
   flex: none;
   margin: 0;
+}
+.actions span {
+  flex: 1;
+  min-width: 0;
+}
+.titlebar .tools {
+  padding: 0;
+  gap: 4px;
 }
 #saved {
   color: var(--ink-2);

@@ -17,6 +17,7 @@ Status: in development, not published to any extension store.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
 - The toolbar popup lists the managed accounts; a row opens the profile. Accounts can be pinned to the top of the list.
   - Its **+** button takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
+  - The export button next to it gives the list back as addresses, in the order shown, to copy or save as a text file.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 - Times are shown on a 24-hour clock; the settings can switch to 12-hour.
 
@@ -78,6 +79,7 @@ npm run check        # type check, unit tests, production build
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
 - 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。帳號可以釘選到清單最上方。
   - 清單上的 **+** 按鈕可貼上個人頁網址（每行一個），把這些帳號加入清單，過程不會連線到網站。各帳號的資料夾在第一次下載時設定。
+  - 旁邊的匯出按鈕會依清單目前的順序列出所有帳號的網址，可複製或存成文字檔。
 - 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
 - 時間以 24 小時制顯示，可在設定中改為 12 小時制。
 

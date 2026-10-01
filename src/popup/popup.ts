@@ -117,12 +117,18 @@ async function entries(): Promise<Entry[]> {
   return [...accounts.map((account) => ({ account })), ...pending.map((p) => ({ pending: p }))];
 }
 
+/** Every entry in the order the list shows them: pinned first, each group by name. The export follows it. */
+async function listed(): Promise<Entry[]> {
+  return (await entries()).sort((a, b) => Number(pinnedOf(b)) - Number(pinnedOf(a)) || nameOf(a).localeCompare(nameOf(b)));
+}
+
 async function render(): Promise<void> {
-  const all = (await entries()).sort((a, b) => Number(pinnedOf(b)) - Number(pinnedOf(a)) || nameOf(a).localeCompare(nameOf(b)));
+  const all = await listed();
   const needle = filter.value.trim().toLowerCase();
   const shown = needle ? all.filter((e) => nameOf(e).toLowerCase().includes(needle) || folderOf(e).toLowerCase().includes(needle)) : all;
   count.textContent = all.length > 0 ? t('popupCount', n(all.length)) : t('popupTitle');
   filter.hidden = all.length === 0;
+  document.getElementById('export')!.hidden = all.length === 0;
   if (shown.length === 0) {
     list.replaceChildren(h('div', { class: 'empty', text: all.length === 0 ? t('popupEmpty') : t('popupNoMatch') }));
   } else {
@@ -141,6 +147,43 @@ async function addPasted(): Promise<void> {
   await putPending(fresh.map((username) => ({ platform: PASTE_PLATFORM, username, addedAt: Date.now() })));
   box.value = rejected.join('\n');
   text('add-result', t('popupAddResult', n(fresh.length), n(usernames.length - fresh.length), n(rejected.length)));
+}
+
+/** One profile address per entry, in the order of the list, whatever the filter shows. */
+async function openExport(): Promise<void> {
+  const lines = (await listed()).flatMap((entry) => {
+    const { platform, username } = 'account' in entry ? entry.account : entry.pending;
+    return PROFILE_URL[platform]?.(username) ?? [];
+  });
+  (document.getElementById('exported') as HTMLTextAreaElement).value = lines.join('\n');
+  text('export-result', '');
+  show('exporting');
+}
+
+async function copyExport(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText((document.getElementById('exported') as HTMLTextAreaElement).value);
+    text('export-result', t('checkCopied'));
+  } catch (e) {
+    text('export-result', t('popupExportCopyFailed', e instanceof Error ? e.name : String(e)));
+  }
+}
+
+/** Saves the addresses as a text file through the browser's download handling. */
+function saveExport(): void {
+  const at = new Date();
+  const two = (v: number): string => String(v).padStart(2, '0');
+  const name = `memfolio-accounts-${at.getFullYear()}${two(at.getMonth() + 1)}${two(at.getDate())}-${two(at.getHours())}${two(at.getMinutes())}${two(at.getSeconds())}.txt`;
+  const href = URL.createObjectURL(new Blob([(document.getElementById('exported') as HTMLTextAreaElement).value + '\n'], { type: 'text/plain' }));
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = name;
+  a.style.display = 'none';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 60_000);
+  text('export-result', t('popupExportSaved', name));
 }
 
 /** Asks a platform tab to open the folder import; folder handles live there, not in the popup. */
@@ -179,6 +222,12 @@ function renderText(): void {
   label('options', ICONS.settings, t('popupOptions'));
   label('back', ICONS.back, t('popupBack'));
   label('add', ICONS.plus, t('popupAdd'));
+  label('export', ICONS.export, t('popupExport'));
+  text('exporting-title', t('popupExportTitle'));
+  text('exporting-hint', t('popupExportHint'));
+  text('export-copy', t('popupExportCopy'));
+  text('export-save', t('popupExportSave'));
+  (document.getElementById('exported') as HTMLTextAreaElement).setAttribute('aria-label', t('popupExportTitle'));
   text('adding-title', t('popupAddTitle'));
   text('adding-hint', t('popupAddHint'));
   text('add-go', t('popupAddGo'));
@@ -214,11 +263,11 @@ function renderVersion(): void {
   text('version', `v${chrome.runtime.getManifest().version}`);
 }
 
-type View = 'accounts' | 'adding' | 'settings';
+type View = 'accounts' | 'adding' | 'exporting' | 'settings';
 
 /** The popup shows one view at a time; the account list is the one to go back to. */
 function show(view: View): void {
-  for (const id of ['accounts', 'adding', 'settings']) document.getElementById(id)!.hidden = id !== view;
+  for (const id of ['accounts', 'adding', 'exporting', 'settings']) document.getElementById(id)!.hidden = id !== view;
   document.getElementById('options')!.hidden = view !== 'accounts';
   document.getElementById('back')!.hidden = view === 'accounts';
 }
@@ -289,6 +338,9 @@ async function main(): Promise<void> {
     document.getElementById('addresses')!.focus();
   });
   document.getElementById('add-go')!.addEventListener('click', () => void addPasted());
+  document.getElementById('export')!.addEventListener('click', () => void openExport());
+  document.getElementById('export-copy')!.addEventListener('click', () => void copyExport());
+  document.getElementById('export-save')!.addEventListener('click', saveExport);
   await initSettings();
 
   onStorageChange(() => void render());
