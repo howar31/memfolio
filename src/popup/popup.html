@@ -21,13 +21,6 @@
     </section>
     <section id="settings" hidden>
       <h2 id="settings-title"></h2>
-      <label class="option">
-        <input id="developer-mode" type="checkbox" />
-        <span>
-          <span class="name" id="developer-mode-name"></span>
-          <span class="hint" id="developer-mode-hint"></span>
-        </span>
-      </label>
       <label class="field">
         <span class="name" id="language-name"></span>
         <span class="hint" id="language-hint"></span>
@@ -45,13 +38,21 @@
           <option id="single-save-folder" value="folder"></option>
         </select>
       </label>
-      <p id="saved" role="status" aria-live="polite"></p>
-      <div class="field">
+      <div class="field sep">
         <span class="name" id="import-name"></span>
         <span class="hint" id="import-hint"></span>
         <button id="import" class="btn" type="button"></button>
       </div>
+      <label class="option sep">
+        <input id="developer-mode" type="checkbox" />
+        <span>
+          <span class="name" id="developer-mode-name"></span>
+          <span class="hint" id="developer-mode-hint"></span>
+        </span>
+      </label>
+      <p id="saved" role="status" aria-live="polite"></p>
     </section>
+    <footer id="version"></footer>
     <script src="popup.js"></script>
   </body>
 </html>

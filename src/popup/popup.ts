@@ -130,6 +130,11 @@ function renderText(): void {
   text('single-save-folder', t('optSingleSaveFolder'));
 }
 
+/** The version comes from the manifest, so the band always names the build that is loaded. */
+function renderVersion(): void {
+  text('version', `v${chrome.runtime.getManifest().version}`);
+}
+
 /** The popup shows either the account list or the settings. */
 function showSettings(on: boolean): void {
   document.getElementById('accounts')!.hidden = on;
@@ -179,6 +184,7 @@ async function initSettings(): Promise<void> {
 async function main(): Promise<void> {
   await initI18n();
   renderText();
+  renderVersion();
   filter.addEventListener('input', () => void render());
   document.getElementById('import')!.addEventListener('click', () => void openImport());
   await initSettings();

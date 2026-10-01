@@ -735,7 +735,8 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
   await waitFor(async () => (await popup.$eval('#options', (e) => e.title)) === (await ctx.msg('popupOptions')), 'the popup');
   assertEqual(await popup.$('#check'), null, 'the popup has no folder check entry');
-  assertEqual(await popup.$('footer'), null, 'the popup has no bottom row');
+  assertEqual(await popup.$eval('footer', (e) => e.textContent), await popup.evaluate(() => `v${chrome.runtime.getManifest().version}`), 'the band at the bottom shows the version');
+  assertEqual(await popup.$$eval('footer button, footer a', (els) => els.length), 0, 'the band holds no controls');
   assertEqual(await popup.$eval('#settings', (e) => e.hidden), true, 'the settings are closed at first');
 
   await popup.click('#options');
@@ -743,6 +744,19 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
   assertEqual(await popup.$eval('#developer-mode-name', (e) => e.textContent), await ctx.msg('optDevMode'), 'the setting is named');
   assertEqual(await popup.$eval('#developer-mode', (e) => e.checked), false, 'developer mode is off by default');
+  assertEqual(
+    await popup.evaluate(() => {
+      const inputs = [...document.querySelectorAll('#settings input, #settings select, #settings button')];
+      return inputs[inputs.length - 1].id;
+    }),
+    'developer-mode',
+    'developer mode is the last setting',
+  );
+  assertEqual(await popup.evaluate(() => {
+    const end = getComputedStyle(document.querySelector('footer'));
+    const top = getComputedStyle(document.querySelector('header'));
+    return end.borderBottomColor === top.borderBottomColor && end.borderBottomWidth === top.borderBottomWidth;
+  }), true, 'the popup ends with the same line as the header');
   await popup.click('#developer-mode');
   await waitFor(async () => (await ctx.storage()).settings?.developerMode === true, 'the setting to be stored');
 
