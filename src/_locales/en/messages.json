@@ -562,5 +562,8 @@
   },
   "popupRemoveYes": {
     "message": "Remove"
+  },
+  "pageStale": {
+    "message": "Memfolio was updated or reloaded. Refresh this page to use it again."
   }
 }

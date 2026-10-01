@@ -1,7 +1,7 @@
 // Content script for instagram.com (isolated world). Everything that talks to
 // the platform or to the disk runs here; the popup only reads summaries.
 
-import { initI18n, uiLanguage } from '../../core/i18n';
+import { initI18n, t, uiLanguage } from '../../core/i18n';
 import { IMPORT_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
 import { allAccounts, getSettings, onStorageChange } from '../../core/records';
 import { surface } from '../../ui/host';
@@ -17,7 +17,34 @@ import { downloadCurrentReel, downloadStory, floatingButtonsFor } from './viewer
 let lastHref = '';
 let route: Route = { kind: 'other' };
 
+// A reload, update or removal of the extension leaves this script running in
+// open pages without its extension: every extension call then throws. The
+// script notices, stops everything it started and asks for a page refresh.
+const life = new AbortController();
+let routeTimer: ReturnType<typeof setInterval> | undefined;
+let domObserver: MutationObserver | undefined;
+let staleNotice = '';
+
+function alive(): boolean {
+  try {
+    return chrome.runtime?.id !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+function retire(): void {
+  if (life.signal.aborted) return;
+  life.abort();
+  clearInterval(routeTimer);
+  domObserver?.disconnect();
+  document.querySelectorAll('.memfolio-btn').forEach((el) => el.remove());
+  surface.retire(staleNotice);
+}
+
 function applyRoute(): void {
+  if (life.signal.aborted) return;
+  if (!alive()) return retire();
   if (location.href === lastHref) return;
   lastHref = location.href;
   route = parseRoute(location.href);
@@ -31,18 +58,19 @@ function applyRoute(): void {
 /** The site is a single-page app: watch address changes without touching its history functions. */
 function watchRoute(): void {
   const nav = (window as unknown as { navigation?: EventTarget }).navigation;
-  nav?.addEventListener('navigatesuccess', applyRoute);
-  window.addEventListener('popstate', applyRoute);
-  setInterval(applyRoute, 1000);
+  nav?.addEventListener('navigatesuccess', applyRoute, { signal: life.signal });
+  window.addEventListener('popstate', applyRoute, { signal: life.signal });
+  routeTimer = setInterval(applyRoute, 1000);
   applyRoute();
 }
 
 function watchDom(): void {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  new MutationObserver(() => {
+  domObserver = new MutationObserver(() => {
     clearTimeout(timer);
-    timer = setTimeout(scanPage, 300);
-  }).observe(document.body, { childList: true, subtree: true });
+    timer = setTimeout(() => (alive() ? scanPage() : retire()), 300);
+  });
+  domObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function watchHotkey(): void {
@@ -56,7 +84,7 @@ function watchHotkey(): void {
     if (r.kind === 'post') void downloadPost(r.shortcode);
     else if (r.kind === 'reels-feed') void downloadCurrentReel();
     else void downloadStory(false);
-  });
+  }, { signal: life.signal });
 }
 
 /** Drops folder handles whose account was removed from the list in the popup. */
@@ -89,7 +117,22 @@ async function onStoredChange(): Promise<void> {
   profileCard.refresh();
 }
 
+/** An extension call made between two checks still fails; that failure also ends the script, without a report. */
+function watchInvalidation(): void {
+  window.addEventListener(
+    'unhandledrejection',
+    (ev) => {
+      if (!/Extension context invalidated/.test(String((ev.reason as Error | undefined)?.message ?? ev.reason))) return;
+      ev.preventDefault();
+      retire();
+    },
+    { signal: life.signal },
+  );
+}
+
 function main(): void {
+  staleNotice = t('pageStale');
+  watchInvalidation();
   profileCard.onTools({ import: () => void runImport(), check: () => void openFolderCheck() });
   chrome.runtime.onMessage.addListener((message: unknown) => {
     const type = (message as { type?: string } | null)?.type;
@@ -99,7 +142,7 @@ function main(): void {
   void dropOrphanHandles().catch((e) => console.warn('[memfolio]', e));
   watchRoute();
   watchDom();
-  watchHover();
+  watchHover(life.signal);
   watchHotkey();
   void openToolIfAsked().catch((e) => console.warn('[memfolio]', e));
 }

@@ -258,7 +258,7 @@ function hoverTargetAt(x: number, y: number): HoverTarget | 'self' | null {
  * the pointer. The button is part of the extension's own surface; nothing is
  * inserted into the page's markup.
  */
-export function watchHover(): void {
+export function watchHover(signal: AbortSignal): void {
   let owner: Element | null = null;
   let point: { x: number; y: number } | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -288,9 +288,9 @@ export function watchHover(): void {
       point = { x: ev.clientX, y: ev.clientY };
       timer ??= setTimeout(update, 60);
     },
-    { capture: true, passive: true },
+    { capture: true, passive: true, signal },
   );
   // The button's position is fixed to the viewport; it is recomputed on the next pointer move.
-  document.addEventListener('scroll', hide, true);
-  window.addEventListener('resize', hide);
+  document.addEventListener('scroll', hide, { capture: true, signal });
+  window.addEventListener('resize', hide, { signal });
 }

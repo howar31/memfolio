@@ -141,6 +141,16 @@ class Surface {
     this.hover = null;
   }
 
+  /** Leaves only a lasting message: the controls of a script that lost its extension would do nothing. */
+  retire(message: string): void {
+    this.ensure();
+    this.hideHover();
+    this.cardSlot.replaceChildren();
+    this.fabs.replaceChildren();
+    this.root.querySelectorAll('.overlay').forEach((el) => el.remove());
+    this.toast(message, 'warn', null);
+  }
+
   setCard(card: HTMLElement | null): void {
     this.ensure();
     // The card is rebuilt on every change; the ball keeps the keyboard focus across that.

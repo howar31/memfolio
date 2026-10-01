@@ -562,5 +562,8 @@
   },
   "popupRemoveYes": {
     "message": "移除"
+  },
+  "pageStale": {
+    "message": "Memfolio 已更新或重新載入，請重新整理這個頁面後再使用。"
   }
 }

@@ -879,6 +879,27 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   assertEqual((await opfs.names(page, 'root/acct')).length, 3, 'files are untouched by removal');
 });
 
+scenario('a page whose extension was reloaded stops quietly and asks for a refresh', async (ctx) => {
+  const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(1) }));
+  await waitFor(async () => hasButton(page, await ctx.msg('downloadAll')), 'the account panel');
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const notice = await ctx.msg('pageStale');
+
+  // The page that asks for the reload goes away with the old extension.
+  await ctx.ext.evaluate(() => chrome.runtime.reload()).catch(() => {});
+  // Moving inside the site is what makes the old script call into its extension again.
+  await new Promise((r) => setTimeout(r, 500));
+  await page.evaluate(() => history.pushState(null, '', '/acct/reels/'));
+
+  await waitText(page, notice);
+  assertEqual(await page.evaluate(() => document.querySelector('memfolio-surface').shadowRoot.querySelector('.ball') === null), true, 'the button of the old script is gone');
+  // Long enough for several of the script's periodic checks.
+  await new Promise((r) => setTimeout(r, 2500));
+  assertEqual(errors.filter((m) => m.includes('Extension context invalidated')), [], 'no error from calls into the extension that is gone');
+  assertEqual((await surfaceText(page)).split(notice).length - 1, 1, 'the notice is shown once');
+});
+
 // ---- runner -----------------------------------------------------------------
 
 let failed = 0;

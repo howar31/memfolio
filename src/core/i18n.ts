@@ -28,17 +28,30 @@ export async function initI18n(): Promise<void> {
 
 /** BCP 47 tag of the language the UI is shown in. */
 export function uiLanguage(): string {
-  return chosen ? CATALOGS[chosen].tag : chrome.i18n.getUILanguage();
+  if (chosen) return CATALOGS[chosen].tag;
+  try {
+    return chrome.i18n.getUILanguage();
+  } catch {
+    return 'en';
+  }
+}
+
+function fill(message: string, subs: Array<string | number>): string {
+  return message.replace(/\$([1-9])/g, (_, d: string) => String(subs[Number(d) - 1] ?? ''));
 }
 
 /** Localised text; `$1`..`$9` in the message are replaced by `subs`. */
 export function t(key: MessageKey, ...subs: Array<string | number>): string {
   if (chosen) {
     const message = CATALOGS[chosen].catalog[key]?.message;
-    if (message) return message.replace(/\$([1-9])/g, (_, d: string) => String(subs[Number(d) - 1] ?? ''));
+    if (message) return fill(message, subs);
   }
-  const text = chrome.i18n.getMessage(key, subs.map(String));
-  return text || key;
+  try {
+    return chrome.i18n.getMessage(key, subs.map(String)) || key;
+  } catch {
+    // The extension was reloaded or removed under a page that still runs this script.
+    return fill((en as Catalog)[key]?.message ?? key, subs);
+  }
 }
 
 /** Number with the locale's digit grouping. */
