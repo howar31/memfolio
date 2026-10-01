@@ -80,4 +80,5 @@ export const ICONS = {
   /** Two sliders: settings. */
   settings: ['M4 8h7', 'M17 8h3', 'M11 8a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M4 16h3', 'M13 16h7', 'M7 16a3 3 0 1 0 6 0a3 3 0 1 0-6 0'],
   back: ['M20 12H5', 'M11 6l-6 6 6 6'],
+  plus: ['M12 5v14', 'M5 12h14'],
 } as const;

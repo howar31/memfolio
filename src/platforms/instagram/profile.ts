@@ -1,7 +1,7 @@
 import { buildFileIndex } from '../../core/file-index';
 import { n, t, when } from '../../core/i18n';
 import { sleep } from '../../core/pacing';
-import { findAccountByUsername, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
+import { findAccountByUsername, getSettings, putAccount, removePending, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
 import { h, logoMark } from '../../ui/dom';
@@ -100,6 +100,8 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   // 2. Where do its files go? Checked before any listing request.
   const folder = await resolveAccountFolder(userId, username);
   if (!folder) return;
+  // The account now has a record under its id; an entry made from its address alone is done.
+  await removePending(PLATFORM, username);
   const index = await buildFileIndex(folder.dir);
   if (folder.record.fileCount > 0 && index.matchedCount === 0 && !folder.acceptedEmpty) {
     const go = await surface.dialog({

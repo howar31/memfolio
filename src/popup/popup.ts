@@ -1,14 +1,17 @@
-// Read-only list of managed accounts plus the settings. It shows summaries written by the
-// content script and opens profile pages; it never touches folders or the platform.
+// List of managed accounts plus the settings. It shows summaries written by the content
+// script, takes pasted profile addresses and opens profile pages; it never touches folders
+// or the platform.
 
 import { initI18n, n, setLanguage, t, uiLanguage, when } from '../core/i18n';
 import { IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { allAccounts, getSettings, onStorageChange, removeAccount, setSettings, type AccountRecord, type AccountStatus, type Language, type SingleSave } from '../core/records';
-import { profileUrl } from '../platforms/instagram/routes';
+import { allAccounts, allPending, getSettings, onStorageChange, putPending, removeAccount, removePending, setSettings, type AccountRecord, type AccountStatus, type Language, type PendingAccount, type SingleSave } from '../core/records';
+import { profileNamesIn, profileUrl } from '../platforms/instagram/routes';
 import { ICONS, h, icon } from '../ui/dom';
 
 const PROFILE_URL: Record<string, (username: string) => string> = { instagram: profileUrl };
 const HOME_URL = 'https://www.instagram.com/';
+/** Pasted addresses are read as addresses of this platform. */
+const PASTE_PLATFORM = 'instagram';
 
 const STATUS_TEXT: Partial<Record<AccountStatus, Parameters<typeof t>[0]>> = {
   imported: 'statusImported',
@@ -24,39 +27,49 @@ const list = document.getElementById('list')!;
 const filter = document.getElementById('filter') as HTMLInputElement;
 const count = document.getElementById('count')!;
 
-function row(account: AccountRecord): HTMLElement {
-  const statusKey = STATUS_TEXT[account.lastStatus];
+/** An account with a record, or one known by its address only. */
+type Entry = { account: AccountRecord } | { pending: PendingAccount };
+
+function row(entry: Entry): HTMLElement {
+  const account = 'account' in entry ? entry.account : null;
+  const { platform, username } = 'account' in entry ? entry.account : entry.pending;
+  const statusKey = account ? STATUS_TEXT[account.lastStatus] : undefined;
   const open = h(
     'button',
     {
       class: 'open',
-      title: t('popupOpenHint', account.username),
+      title: t('popupOpenHint', username),
       on: {
         click: () => {
-          const url = PROFILE_URL[account.platform]?.(account.username);
+          const url = PROFILE_URL[platform]?.(username);
           if (url) void chrome.tabs.create({ url });
         },
       },
     },
-    h('div', { class: 'name', text: `@${account.username}` }),
-    h('div', { class: 'path', text: account.relPath ?? account.folderName, title: account.relPath ? t('popupRelative') : undefined }),
-    statusKey ? h('div', { class: `status ${ERROR_STATUS.has(account.lastStatus) ? 'error' : ''}`, text: t(statusKey) }) : null,
+    h('div', { class: 'name', text: `@${username}` }),
+    account
+      ? h('div', { class: 'path', text: account.relPath ?? account.folderName, title: account.relPath ? t('popupRelative') : undefined })
+      : h('div', { class: 'path', text: t('popupNeverRun') }),
+    account && statusKey ? h('div', { class: `status ${ERROR_STATUS.has(account.lastStatus) ? 'error' : ''}`, text: t(statusKey) }) : null,
   );
-  const side = h(
-    'div',
-    { class: 'side' },
-    h('div', { class: 'files', text: t('popupFiles', n(account.fileCount)) }),
-    h('div', { text: account.lastRunAt ? when(account.lastRunAt) : t('popupNeverRun') }),
-  );
+  const side = account
+    ? h(
+        'div',
+        { class: 'side' },
+        h('div', { class: 'files', text: t('popupFiles', n(account.fileCount)) }),
+        h('div', { text: account.lastRunAt ? when(account.lastRunAt) : t('popupNeverRun') }),
+      )
+    : h('div', { class: 'side' });
   const remove = h('button', { class: 'remove', title: t('popupRemove'), attrs: { 'aria-label': t('popupRemove') } }, icon([...ICONS.close], 14));
   // Removing asks first, on a line of its own under the entry.
   const cancel = h('button', { class: 'btn', text: t('cancel') });
+  const drop = (): void => void (account ? removeAccount(platform, account.id) : removePending(platform, username));
   const confirm = h(
     'div',
     { class: 'confirm', attrs: { role: 'alert' } },
-    h('span', { text: t('popupRemoveConfirm') }),
+    h('span', { text: account ? t('popupRemoveConfirm') : t('popupRemovePending') }),
     cancel,
-    h('button', { class: 'btn danger', text: t('popupRemoveYes'), on: { click: () => void removeAccount(account.platform, account.id) } }),
+    h('button', { class: 'btn danger', text: t('popupRemoveYes'), on: { click: drop } }),
   );
   confirm.hidden = true;
   const el = h('div', { class: 'row' }, open, side, remove, confirm);
@@ -70,19 +83,42 @@ function row(account: AccountRecord): HTMLElement {
   return el;
 }
 
+const nameOf = (entry: Entry): string => ('account' in entry ? entry.account.username : entry.pending.username);
+const folderOf = (entry: Entry): string => ('account' in entry ? (entry.account.relPath ?? entry.account.folderName) : '');
+const sameAccount = (platform: string, username: string) => (a: AccountRecord): boolean =>
+  a.platform === platform && a.username.toLowerCase() === username.toLowerCase();
+
+/** Managed accounts, then the pasted ones that have no record of the same name. */
+async function entries(): Promise<Entry[]> {
+  const accounts = await allAccounts();
+  const pending = (await allPending()).filter((p) => !accounts.some(sameAccount(p.platform, p.username)));
+  return [...accounts.map((account) => ({ account })), ...pending.map((p) => ({ pending: p }))];
+}
+
 async function render(): Promise<void> {
-  const accounts = (await allAccounts()).sort((a, b) => a.username.localeCompare(b.username));
+  const all = (await entries()).sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   const needle = filter.value.trim().toLowerCase();
-  const shown = needle
-    ? accounts.filter((a) => a.username.toLowerCase().includes(needle) || (a.relPath ?? a.folderName).toLowerCase().includes(needle))
-    : accounts;
-  count.textContent = accounts.length > 0 ? t('popupCount', n(accounts.length)) : t('popupTitle');
-  filter.hidden = accounts.length === 0;
+  const shown = needle ? all.filter((e) => nameOf(e).toLowerCase().includes(needle) || folderOf(e).toLowerCase().includes(needle)) : all;
+  count.textContent = all.length > 0 ? t('popupCount', n(all.length)) : t('popupTitle');
+  filter.hidden = all.length === 0;
   if (shown.length === 0) {
-    list.replaceChildren(h('div', { class: 'empty', text: accounts.length === 0 ? t('popupEmpty') : t('popupNoMatch') }));
+    list.replaceChildren(h('div', { class: 'empty', text: all.length === 0 ? t('popupEmpty') : t('popupNoMatch') }));
   } else {
     list.replaceChildren(...shown.map(row));
   }
+}
+
+/** Adds the accounts named by the pasted addresses; lines that name none stay in the box. */
+async function addPasted(): Promise<void> {
+  const box = document.getElementById('addresses') as HTMLTextAreaElement;
+  if (box.value.trim() === '') return;
+  const { usernames, rejected } = profileNamesIn(box.value);
+  const accounts = await allAccounts();
+  const listed = new Set((await allPending()).filter((p) => p.platform === PASTE_PLATFORM).map((p) => p.username));
+  const fresh = usernames.filter((u) => !listed.has(u) && !accounts.some(sameAccount(PASTE_PLATFORM, u)));
+  await putPending(fresh.map((username) => ({ platform: PASTE_PLATFORM, username, addedAt: Date.now() })));
+  box.value = rejected.join('\n');
+  text('add-result', t('popupAddResult', n(fresh.length), n(usernames.length - fresh.length), n(rejected.length)));
 }
 
 /** Asks a platform tab to open the folder import; folder handles live there, not in the popup. */
@@ -120,6 +156,11 @@ function renderText(): void {
   filter.setAttribute('aria-label', t('popupSearch'));
   label('options', ICONS.settings, t('popupOptions'));
   label('back', ICONS.back, t('popupBack'));
+  label('add', ICONS.plus, t('popupAdd'));
+  text('adding-title', t('popupAddTitle'));
+  text('adding-hint', t('popupAddHint'));
+  text('add-go', t('popupAddGo'));
+  (document.getElementById('addresses') as HTMLTextAreaElement).setAttribute('aria-label', t('popupAddHint'));
   text('import-name', t('popupImport'));
   text('import-hint', t('popupImportHint'));
   text('import', t('popupImportStart'));
@@ -149,12 +190,13 @@ function renderVersion(): void {
   text('version', `v${chrome.runtime.getManifest().version}`);
 }
 
-/** The popup shows either the account list or the settings. */
-function showSettings(on: boolean): void {
-  document.getElementById('accounts')!.hidden = on;
-  document.getElementById('settings')!.hidden = !on;
-  document.getElementById('options')!.hidden = on;
-  document.getElementById('back')!.hidden = !on;
+type View = 'accounts' | 'adding' | 'settings';
+
+/** The popup shows one view at a time; the account list is the one to go back to. */
+function show(view: View): void {
+  for (const id of ['accounts', 'adding', 'settings']) document.getElementById(id)!.hidden = id !== view;
+  document.getElementById('options')!.hidden = view !== 'accounts';
+  document.getElementById('back')!.hidden = view === 'accounts';
 }
 
 /** Settings are stored the moment they change: a popup closes as soon as it loses focus. */
@@ -196,9 +238,9 @@ async function initSettings(): Promise<void> {
 
   document.getElementById('options')!.addEventListener('click', () => {
     saved.textContent = '';
-    showSettings(true);
+    show('settings');
   });
-  document.getElementById('back')!.addEventListener('click', () => showSettings(false));
+  document.getElementById('back')!.addEventListener('click', () => show('accounts'));
 }
 
 async function main(): Promise<void> {
@@ -207,6 +249,12 @@ async function main(): Promise<void> {
   renderVersion();
   filter.addEventListener('input', () => void render());
   document.getElementById('import')!.addEventListener('click', () => void openImport());
+  document.getElementById('add')!.addEventListener('click', () => {
+    text('add-result', '');
+    show('adding');
+    document.getElementById('addresses')!.focus();
+  });
+  document.getElementById('add-go')!.addEventListener('click', () => void addPasted());
   await initSettings();
 
   onStorageChange(() => void render());

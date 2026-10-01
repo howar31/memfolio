@@ -309,7 +309,7 @@
     "message": "以帳號或資料夾篩選"
   },
   "popupEmpty": {
-    "message": "清單上還沒有帳號。到個人檔案頁按「下載全部」，或匯入你已有的資料夾。"
+    "message": "清單上還沒有帳號。到個人檔案頁按「下載全部」、用「+」貼上個人頁網址，或匯入你已有的資料夾。"
   },
   "popupNoMatch": {
     "message": "沒有符合篩選條件的帳號。"
@@ -565,5 +565,23 @@
   },
   "pageStale": {
     "message": "Memfolio 已更新或重新載入，請重新整理這個頁面後再使用。"
+  },
+  "popupAdd": {
+    "message": "以網址加入帳號"
+  },
+  "popupAddTitle": {
+    "message": "加入帳號"
+  },
+  "popupAddHint": {
+    "message": "貼上個人頁網址，每行一個。各帳號的資料夾會在第一次下載時設定。"
+  },
+  "popupAddGo": {
+    "message": "加入"
+  },
+  "popupAddResult": {
+    "message": "已加入 $1 個，$2 個已在清單中，$3 行不是個人頁網址。"
+  },
+  "popupRemovePending": {
+    "message": "從清單移除？"
   }
 }

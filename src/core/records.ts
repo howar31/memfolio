@@ -76,6 +76,36 @@ export async function findAccountByUsername(platform: string, username: string):
   return (await allAccounts()).find((a) => a.platform === platform && a.username.toLowerCase() === wanted) ?? null;
 }
 
+/** An account named by its profile address only: no id and no folder until its first run. */
+export interface PendingAccount {
+  platform: string;
+  /** Lower case. */
+  username: string;
+  addedAt: number;
+}
+
+const PENDING_PREFIX = 'pending:';
+
+function pendingKey(platform: string, username: string): string {
+  return `${PENDING_PREFIX}${platform}:${username.toLowerCase()}`;
+}
+
+export async function putPending(entries: PendingAccount[]): Promise<void> {
+  if (entries.length === 0) return;
+  await chrome.storage.local.set(Object.fromEntries(entries.map((e) => [pendingKey(e.platform, e.username), e])));
+}
+
+export async function removePending(platform: string, username: string): Promise<void> {
+  await chrome.storage.local.remove(pendingKey(platform, username));
+}
+
+export async function allPending(): Promise<PendingAccount[]> {
+  const all = await chrome.storage.local.get(null);
+  return Object.entries(all)
+    .filter(([k]) => k.startsWith(PENDING_PREFIX))
+    .map(([, v]) => v as PendingAccount);
+}
+
 export async function getSettings(): Promise<Settings> {
   const got = await chrome.storage.local.get(SETTINGS_KEY);
   return { ...DEFAULT_SETTINGS, ...(got[SETTINGS_KEY] as Partial<Settings> | undefined) };
@@ -89,7 +119,7 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
 export function onStorageChange(cb: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k.startsWith(ACCOUNT_PREFIX))) cb();
+    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k.startsWith(ACCOUNT_PREFIX) || k.startsWith(PENDING_PREFIX))) cb();
   });
 }
 

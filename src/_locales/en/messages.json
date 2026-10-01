@@ -309,7 +309,7 @@
     "message": "Filter by account or folder"
   },
   "popupEmpty": {
-    "message": "No accounts yet. Open a profile and press Download All, or import folders you already have."
+    "message": "No accounts yet. Open a profile and press Download All, add profile addresses with +, or import folders you already have."
   },
   "popupNoMatch": {
     "message": "No account matches the filter."
@@ -565,5 +565,23 @@
   },
   "pageStale": {
     "message": "Memfolio was updated or reloaded. Refresh this page to use it again."
+  },
+  "popupAdd": {
+    "message": "Add accounts by address"
+  },
+  "popupAddTitle": {
+    "message": "Add accounts"
+  },
+  "popupAddHint": {
+    "message": "Paste profile addresses, one per line. The folder of each account is set up at its first download."
+  },
+  "popupAddGo": {
+    "message": "Add"
+  },
+  "popupAddResult": {
+    "message": "Added: $1. Already listed: $2. Not a profile address: $3."
+  },
+  "popupRemovePending": {
+    "message": "Remove from the list?"
   }
 }

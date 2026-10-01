@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRoute, profileUrl } from '../../src/platforms/instagram/routes';
+import { parseRoute, profileNamesIn, profileUrl } from '../../src/platforms/instagram/routes';
 import { idToShortcode, shortcodeToId } from '../../src/platforms/instagram/shortcode';
 
 const at = (path: string): ReturnType<typeof parseRoute> => parseRoute(`https://www.instagram.com${path}`);
@@ -98,5 +98,51 @@ describe('shortcode conversion', () => {
   it('ignores the 28-character suffix of private-profile shortcodes', () => {
     const base = idToShortcode('3141592653589793238');
     expect(shortcodeToId(base + 'x'.repeat(28))).toBe('3141592653589793238');
+  });
+});
+
+describe('profileNamesIn', () => {
+  it('takes one profile address per line, whatever tab or query it carries', () => {
+    const text = [
+      'https://www.instagram.com/first.user/',
+      'https://instagram.com/second_user',
+      'https://www.instagram.com/third/reels/',
+      'https://www.instagram.com/fourth/tagged/?hl=en#top',
+    ].join('\n');
+    expect(profileNamesIn(text)).toEqual({ usernames: ['first.user', 'second_user', 'third', 'fourth'], rejected: [] });
+  });
+
+  it('accepts an address without the scheme', () => {
+    expect(profileNamesIn('www.instagram.com/some.user/\ninstagram.com/other').usernames).toEqual(['some.user', 'other']);
+  });
+
+  it('ignores blank lines and surrounding spaces', () => {
+    expect(profileNamesIn('\n  https://www.instagram.com/some.user/  \r\n\n')).toEqual({ usernames: ['some.user'], rejected: [] });
+  });
+
+  it('names an account once, in lower case', () => {
+    const text = 'https://www.instagram.com/Some.User/\nhttps://www.instagram.com/some.user/reels/';
+    expect(profileNamesIn(text).usernames).toEqual(['some.user']);
+  });
+
+  it('hands back the lines that are not a profile address', () => {
+    const text = [
+      'https://www.instagram.com/p/ABC123/',
+      'https://www.instagram.com/some.user/',
+      'https://www.instagram.com/stories/some.user/123/',
+      'https://example.com/some.user/',
+      'some.user',
+      'https://www.instagram.com/explore/',
+    ].join('\n');
+    expect(profileNamesIn(text)).toEqual({
+      usernames: ['some.user'],
+      rejected: [
+        'https://www.instagram.com/p/ABC123/',
+        'https://www.instagram.com/stories/some.user/123/',
+        'https://example.com/some.user/',
+        'some.user',
+        'https://www.instagram.com/explore/',
+      ],
+    });
   });
 });

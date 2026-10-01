@@ -16,6 +16,7 @@ Status: in development, not published to any extension store.
 - One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
 - The toolbar popup lists the managed accounts; a row opens the profile.
+  - Its **+** button takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 
 It sends no analytics and no error reports, and loads no remote code. It asks for the `storage` permission and runs on `www.instagram.com` only.
@@ -75,6 +76,7 @@ npm run check        # type check, unit tests, production build
 - 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
 - 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。
+  - 清單上的 **+** 按鈕可貼上個人頁網址（每行一個），把這些帳號加入清單，過程不會連線到網站。各帳號的資料夾在第一次下載時設定。
 - 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
 
 不傳送任何分析資料或錯誤回報，不載入遠端程式碼。只要求 `storage` 權限，只在 `www.instagram.com` 執行。

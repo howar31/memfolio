@@ -37,7 +37,8 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
 }
@@ -119,19 +120,25 @@ h1 {
   overflow-y: auto;
 }
 /* A slim thumb without a track or arrows, in place of the system scrollbar. */
-#list::-webkit-scrollbar {
+#list::-webkit-scrollbar,
+#addresses::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
-#list::-webkit-scrollbar-track {
+#list::-webkit-scrollbar-track,
+#addresses::-webkit-scrollbar-track,
+#addresses::-webkit-scrollbar-corner {
   background: transparent;
 }
-#list::-webkit-scrollbar-thumb {
+#list::-webkit-scrollbar-thumb,
+#addresses::-webkit-scrollbar-thumb {
   background: var(--rule);
   background-clip: padding-box;
   border: 3px solid transparent;
   border-radius: 5px;
 }
-#list::-webkit-scrollbar-thumb:hover {
+#list::-webkit-scrollbar-thumb:hover,
+#addresses::-webkit-scrollbar-thumb:hover {
   background-color: var(--ink-2);
 }
 .row {
@@ -236,6 +243,7 @@ h1 {
 
 /* The two views share one layout; the settings replace the account list. */
 #accounts,
+#adding,
 #settings {
   display: flex;
   flex-direction: column;
@@ -244,7 +252,7 @@ h1 {
 }
 .titlebar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -252,6 +260,40 @@ h1 {
   margin: 0;
   font-size: 15px;
   font-weight: 650;
+}
+.titlebar .iconbtn {
+  margin: -4px 0;
+}
+/* The view that takes pasted profile addresses. */
+#adding .hint,
+#add-result {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+#addresses {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  font-size: 12px;
+  /* The popup cannot grow past 600 px; the box stops before that. */
+  min-height: 72px;
+  max-height: 380px;
+  resize: vertical;
+  white-space: pre;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.actions .btn {
+  flex: none;
+  margin: 0;
 }
 #saved {
   color: var(--ink-2);

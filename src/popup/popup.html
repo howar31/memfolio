@@ -17,9 +17,21 @@
     <section id="accounts">
       <div class="titlebar">
         <h2 id="count"></h2>
+        <button id="add" class="iconbtn" type="button"></button>
       </div>
       <input id="filter" type="search" autocomplete="off" />
       <main id="list" class="group"></main>
+    </section>
+    <section id="adding" hidden>
+      <div class="titlebar">
+        <h2 id="adding-title"></h2>
+      </div>
+      <div class="hint" id="adding-hint"></div>
+      <textarea id="addresses" rows="10" spellcheck="false" autocomplete="off"></textarea>
+      <div class="actions">
+        <span id="add-result" role="status" aria-live="polite"></span>
+        <button id="add-go" class="btn" type="button"></button>
+      </div>
     </section>
     <section id="settings" hidden>
       <div class="titlebar">

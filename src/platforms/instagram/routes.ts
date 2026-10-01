@@ -55,3 +55,18 @@ export function parseRoute(href: string): Route {
 export function profileUrl(username: string): string {
   return `https://www.instagram.com/${encodeURIComponent(username)}/`;
 }
+
+/**
+ * Account names in pasted text with one profile address per line. The scheme may be
+ * left out. Lines that are not a profile address come back untouched.
+ */
+export function profileNamesIn(text: string): { usernames: string[]; rejected: string[] } {
+  const usernames = new Set<string>();
+  const rejected: string[] = [];
+  for (const line of text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+    const route = parseRoute(/^https?:\/\//i.test(line) ? line : `https://${line}`);
+    if (route.kind === 'profile') usernames.add(route.username.toLowerCase());
+    else rejected.push(line);
+  }
+  return { usernames: [...usernames], rejected };
+}

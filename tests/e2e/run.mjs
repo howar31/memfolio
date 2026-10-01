@@ -879,6 +879,83 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   assertEqual((await opfs.names(page, 'root/acct')).length, 3, 'files are untouched by removal');
 });
 
+scenario('profile addresses pasted into the popup become entries of the list', async (ctx) => {
+  const popup = await ctx.browser.newPage();
+  await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
+  await waitFor(async () => (await popup.$eval('#add', (e) => e.title)) === (await ctx.msg('popupAdd')), 'the popup');
+  assertEqual(await popup.$eval('#adding', (e) => e.hidden), true, 'the paste view is closed at first');
+
+  await popup.click('#add');
+  assertEqual(await popup.$eval('#adding', (e) => e.hidden), false, 'the paste view opens');
+  assertEqual(await popup.$eval('#accounts', (e) => e.hidden), true, 'the account list makes room');
+  const pasted = [`${ORIGIN}/first.user/`, 'instagram.com/Second/reels/', `${ORIGIN}/p/ABC123/`, `${ORIGIN}/first.user/tagged/`].join('\n');
+  assertEqual(await popup.$eval('#addresses', (e) => getComputedStyle(e).resize), 'vertical', 'the box can be made taller or shorter');
+  await popup.$eval('#addresses', (e, v) => (e.value = v), pasted);
+  await popup.click('#add-go');
+  await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 2, 0, 1)), 'the result of adding');
+  assertEqual(
+    Object.keys(await ctx.storage()).filter((k) => k.startsWith('pending:')).sort(),
+    ['pending:instagram:first.user', 'pending:instagram:second'],
+    'one stored entry per account',
+  );
+  assertEqual(await popup.$eval('#addresses', (e) => e.value), `${ORIGIN}/p/ABC123/`, 'the line that names no account stays for correction');
+
+  // The same account again is not added twice.
+  await popup.$eval('#addresses', (e, v) => (e.value = v), `${ORIGIN}/second/`);
+  await popup.click('#add-go');
+  await waitFor(async () => (await popup.$eval('#add-result', (e) => e.textContent)) === (await ctx.msg('popupAddResult', 0, 1, 0)), 'the result of adding a listed account');
+
+  await popup.click('#back');
+  assertEqual(await popup.$eval('#accounts', (e) => e.hidden), false, 'back to the account list');
+  assertEqual(await popup.$eval('#count', (e) => e.textContent), await ctx.msg('popupCount', 2), 'pasted accounts are counted');
+  const rows = await popup.$$eval('.row .open', (els) => els.map((e) => e.innerText));
+  assertEqual(rows.map((r) => r.split('\n')[0]), ['@first.user', '@second'], 'one entry per account');
+  assert(rows.every((r) => r.includes('\n')), 'each entry has a second line');
+  assertEqual(await popup.$$eval('.row .path', (els) => els.map((e) => e.textContent)), Array(2).fill(await ctx.msg('popupNeverRun')), 'the second line says nothing was downloaded yet');
+  assertEqual(await popup.$$eval('.row .files', (els) => els.length), 0, 'no file count before a folder exists');
+
+  await popup.evaluate(() => {
+    window.__opened = [];
+    chrome.tabs.create = async (options) => {
+      window.__opened.push(options.url);
+      return {};
+    };
+  });
+  await popup.click('.row .open');
+  assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/first.user/`], 'clicking an entry opens the profile');
+
+  await popup.hover('.row');
+  await popup.click('.row .remove');
+  await popup.click('.row .confirm .danger');
+  await waitFor(async () => !('pending:instagram:first.user' in (await ctx.storage())), 'the entry to be removed');
+  await waitFor(async () => (await popup.$$eval('.row', (els) => els.length)) === 1, 'the list without the removed entry');
+});
+
+scenario('a pasted account becomes a managed one on its first run', async (ctx) => {
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:acct': { platform: 'instagram', username: 'acct', addedAt: 1 } }));
+  const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(2) }));
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+  assertEqual('pending:instagram:acct' in (await ctx.storage()), false, 'the pasted entry is gone');
+  assertEqual((await ctx.account('42')).username, 'acct', 'the account is managed under its id');
+});
+
+scenario('a pasted new name of a managed account joins its record on the first run', async (ctx) => {
+  const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(2) }));
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ 'pending:instagram:renamed': { platform: 'instagram', username: 'renamed', addedAt: 1 } }));
+  const posts = [3, 2, 1].map((n) => makePost(n, { username: 'renamed' }));
+  const later = await ctx.openProfile('/renamed/', newState({ posts, relayUsers: [{ username: 'renamed', pk: '42' }] }));
+  await click(later, await ctx.msg('downloadAll'));
+  await runFinished(ctx, later);
+  const stored = await ctx.storage();
+  assertEqual(Object.keys(stored).filter((k) => k.startsWith('pending:') || k.startsWith('account:')), ['account:instagram:42'], 'one record, no pasted entry left');
+  assertEqual([stored['account:instagram:42'].username, stored['account:instagram:42'].folderName], ['renamed', 'acct'], 'the record takes the new name and keeps its folder');
+  assertEqual((await opfs.names(later, 'root/acct')).length, 3, 'new files go into the folder the account already had');
+});
+
 scenario('a page whose extension was reloaded stops quietly and asks for a refresh', async (ctx) => {
   const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(1) }));
   await waitFor(async () => hasButton(page, await ctx.msg('downloadAll')), 'the account panel');
