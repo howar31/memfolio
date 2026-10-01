@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Memfolio</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1><span class="tab">Memfolio</span></h1>
+      <div class="tools">
+        <span id="count"></span>
+        <button id="options" class="iconbtn" type="button"></button>
+        <button id="back" class="iconbtn" type="button" hidden></button>
+      </div>
+    </header>
+    <section id="accounts">
+      <input id="filter" type="search" autocomplete="off" />
+      <main id="list"></main>
+    </section>
+    <section id="settings" hidden>
+      <h2 id="settings-title"></h2>
+      <label class="option">
+        <input id="developer-mode" type="checkbox" />
+        <span>
+          <span class="name" id="developer-mode-name"></span>
+          <span class="hint" id="developer-mode-hint"></span>
+        </span>
+      </label>
+      <label class="field">
+        <span class="name" id="language-name"></span>
+        <span class="hint" id="language-hint"></span>
+        <select id="language">
+          <option id="language-auto" value="auto"></option>
+          <option value="en" lang="en">English</option>
+          <option value="zh_TW" lang="zh-TW">繁體中文</option>
+        </select>
+      </label>
+      <p id="saved" role="status" aria-live="polite"></p>
+      <div class="field">
+        <span class="name" id="import-name"></span>
+        <span class="hint" id="import-hint"></span>
+        <button id="import" class="btn" type="button"></button>
+      </div>
+    </section>
+    <script src="popup.js"></script>
+  </body>
+</html>

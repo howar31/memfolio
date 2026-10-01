@@ -1,0 +1,512 @@
+{
+  "extName": {
+    "message": "Memfolio"
+  },
+  "extDescription": {
+    "message": "Save photos and videos from social platforms into folders on your computer. Files you already have are not downloaded again."
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "chooseFolder": {
+    "message": "Choose folder"
+  },
+  "chooseAnother": {
+    "message": "Choose another folder"
+  },
+  "useAnyway": {
+    "message": "Use this folder"
+  },
+  "downloadAnyway": {
+    "message": "Download"
+  },
+  "useBrowserDownload": {
+    "message": "Save with browser download"
+  },
+  "downloadAll": {
+    "message": "Download All"
+  },
+  "downloadAllHint": {
+    "message": "Download what is new. Stops listing at the first page that is already on disk."
+  },
+  "fullScan": {
+    "message": "Full scan"
+  },
+  "fullScanHint": {
+    "message": "List every page and download anything that is missing."
+  },
+  "tabPosts": {
+    "message": "Posts"
+  },
+  "tabReels": {
+    "message": "Reels"
+  },
+  "tabTagged": {
+    "message": "Tagged"
+  },
+  "cardToggle": {
+    "message": "Show or hide this panel"
+  },
+  "cardFiles": {
+    "message": "Files in the folder: $1"
+  },
+  "cardLastRun": {
+    "message": "Last run: $1"
+  },
+  "cardNeverRun": {
+    "message": "Not run yet"
+  },
+  "cardNotManaged": {
+    "message": "This account has no folder yet. The first download sets one up."
+  },
+  "cardListing": {
+    "message": "Lists: $1"
+  },
+  "noteFolderMissing": {
+    "message": "The folder was not found on the last run."
+  },
+  "noteNeedsFullScan": {
+    "message": "The last run did not finish. The next run lists every page."
+  },
+  "noteStopped": {
+    "message": "The platform ended the last run."
+  },
+  "importOpen": {
+    "message": "Import existing folders"
+  },
+  "statusResolving": {
+    "message": "Checking the account and its folder…"
+  },
+  "statusListing": {
+    "message": "Listing: posts $1, new files $2"
+  },
+  "statusDownloading": {
+    "message": "Downloading $1 of $2"
+  },
+  "forcedFullScan": {
+    "message": "The last run did not finish, so this run lists every page."
+  },
+  "noAccountId": {
+    "message": "Could not determine the account id of @$1. Are you logged in?"
+  },
+  "resultCancelled": {
+    "message": "Cancelled."
+  },
+  "resultSaved": {
+    "message": "$1: $2 new, $3 already there."
+  },
+  "resultFailed": {
+    "message": "Failed: $1. Details are in the browser console."
+  },
+  "resultWillFullScan": {
+    "message": "The next run lists every page to fill what is missing."
+  },
+  "downloadFailed": {
+    "message": "Download failed: $1"
+  },
+  "retryNotice": {
+    "message": "The platform answered HTTP $1. Retrying in $2 s (attempt $3 of $4)."
+  },
+  "stopLogin": {
+    "message": "The platform asks you to log in. Requests stopped. ($1)"
+  },
+  "stopChallenge": {
+    "message": "The platform shows a verification or restriction page. Requests stopped. Open the site and resolve it first. ($1)"
+  },
+  "stopRateLimited": {
+    "message": "The platform keeps limiting requests. Requests stopped. Try again later. ($1)"
+  },
+  "stopBudget": {
+    "message": "The hourly request limit of this extension is reached. Try again later. ($1)"
+  },
+  "stopHttp": {
+    "message": "The platform refused the request. ($1)"
+  },
+  "stopBadResponse": {
+    "message": "The platform answered in an unexpected form. ($1)"
+  },
+  "stopGraphql": {
+    "message": "The platform reported an error. ($1)"
+  },
+  "stopNetwork": {
+    "message": "Network error. ($1)"
+  },
+  "noPicker": {
+    "message": "This browser does not offer the folder picker. In Brave, enable the File System Access API under brave://flags."
+  },
+  "permTitle": {
+    "message": "Allow access to the folder"
+  },
+  "permMessage": {
+    "message": "The browser needs your confirmation to write into “$1” again."
+  },
+  "permGrant": {
+    "message": "Allow"
+  },
+  "pickRootTitle": {
+    "message": "Choose the download folder"
+  },
+  "pickRootMessage": {
+    "message": "Accounts you download for the first time get a folder named after the account inside this folder."
+  },
+  "rootMissingTitle": {
+    "message": "Download folder not found"
+  },
+  "rootMissingMessage": {
+    "message": "The download folder “$1” was moved, renamed or deleted. Choose the download folder again."
+  },
+  "linkTitle": {
+    "message": "Choose the folder of this account"
+  },
+  "linkMessage": {
+    "message": "“$1” inside “$2” is a link to another folder. The browser does not open links from inside a folder. Choose this account's folder directly: the real folder, or a symbolic link to it (a Windows junction does not work)."
+  },
+  "folderMissingTitle": {
+    "message": "Folder not found"
+  },
+  "folderMissingMessage": {
+    "message": "The folder of @$1 (“$2”) was moved, renamed or deleted. Nothing was requested or downloaded. Choose where the folder is now."
+  },
+  "folderMissingSingle": {
+    "message": "The folder of @$1 (“$2”) was moved, renamed or deleted. To reconnect it, run Download All on the account's profile."
+  },
+  "relinkTitle": {
+    "message": "Reconnect the folder"
+  },
+  "relinkMessage": {
+    "message": "@$1 is on your list with the folder “$2”, but the browser no longer holds access to it. Choose that folder again."
+  },
+  "wrongFolderTitle": {
+    "message": "No files of this account here"
+  },
+  "wrongFolderMessage": {
+    "message": "“$1” contains no files of @$2, while the last run counted $3. Using it downloads everything again into this folder."
+  },
+  "emptyFolderTitle": {
+    "message": "The folder is empty"
+  },
+  "emptyFolderMessage": {
+    "message": "“$1” held $2 files on the last run and holds none now. Downloading fetches everything again."
+  },
+  "fetchingPost": {
+    "message": "Reading the post…"
+  },
+  "postNotFound": {
+    "message": "Could not tell which post this is."
+  },
+  "slideNotFound": {
+    "message": "Could not tell which picture of the post is shown. Use the button for the whole post instead."
+  },
+  "btnPost": {
+    "message": "Download this post"
+  },
+  "btnSlide": {
+    "message": "Download this picture or video"
+  },
+  "btnReel": {
+    "message": "Download reel"
+  },
+  "btnStory": {
+    "message": "Download this story"
+  },
+  "btnStoryAll": {
+    "message": "Download all stories"
+  },
+  "fetchingStory": {
+    "message": "Reading the stories…"
+  },
+  "storyNotFound": {
+    "message": "No stories were returned for this page."
+  },
+  "storyCurrentNotFound": {
+    "message": "Could not tell which story is shown. Use “Download all stories” instead."
+  },
+  "savingBrowser": {
+    "message": "Saving $1 of $2 with browser download…"
+  },
+  "savedBrowser": {
+    "message": "Handed to the browser's download folder: $1."
+  },
+  "savedBrowserFailed": {
+    "message": "Handed to the browser's download folder: $1. Failed: $2."
+  },
+  "savingFolder": {
+    "message": "Saving $1 of $2…"
+  },
+  "savedFolder": {
+    "message": "$1: $2 new, $3 already there."
+  },
+  "savedFolderFailed": {
+    "message": "$1: $2 new, $3 already there, $4 failed."
+  },
+  "importTitle": {
+    "message": "Import existing folders"
+  },
+  "importIntro": {
+    "message": "Choose a folder that contains your existing downloads. Its subfolders are searched up to three levels deep for files named by this extension. Only file names are read; nothing is changed.\nFolders reached through links are not visible to the browser."
+  },
+  "importScanning": {
+    "message": "Searching… folders read: $1"
+  },
+  "importNothing": {
+    "message": "No downloaded files were found in “$1” (folders read: $2)."
+  },
+  "importFound": {
+    "message": "Folders with downloaded files: $1 (folders read: $2). Tick the accounts to add to your list."
+  },
+  "importTruncated": {
+    "message": "The search stopped after $1 folders. Choose a smaller folder to cover the rest."
+  },
+  "importColAccount": {
+    "message": "Account"
+  },
+  "importColFolder": {
+    "message": "Folder (relative)"
+  },
+  "importColFiles": {
+    "message": "Files"
+  },
+  "importFlagManaged": {
+    "message": "Already on your list"
+  },
+  "importFlagDuplicate": {
+    "message": "This account has files in more than one folder"
+  },
+  "importFlagOthers": {
+    "message": "Also holds files of other accounts: $1"
+  },
+  "importConfirm": {
+    "message": "Add ticked accounts"
+  },
+  "importDone": {
+    "message": "Accounts added to your list: $1."
+  },
+  "importFailed": {
+    "message": "Import failed: $1"
+  },
+  "popupSearch": {
+    "message": "Filter by account or folder"
+  },
+  "popupEmpty": {
+    "message": "No accounts yet. Open a profile and press Download All, or import folders you already have."
+  },
+  "popupNoMatch": {
+    "message": "No account matches the filter."
+  },
+  "popupCount": {
+    "message": "Accounts: $1"
+  },
+  "popupFiles": {
+    "message": "Files: $1"
+  },
+  "popupNeverRun": {
+    "message": "Not run yet"
+  },
+  "popupOpenHint": {
+    "message": "Open the profile of @$1"
+  },
+  "popupRemove": {
+    "message": "Remove from list"
+  },
+  "popupRemoveConfirm": {
+    "message": "Remove? Files stay on disk."
+  },
+  "popupImport": {
+    "message": "Import existing folders"
+  },
+  "popupRelative": {
+    "message": "relative path"
+  },
+  "statusImported": {
+    "message": "Imported, not run yet"
+  },
+  "statusPartial": {
+    "message": "Some files failed on the last run"
+  },
+  "statusStopped": {
+    "message": "The platform ended the last run"
+  },
+  "statusCancelled": {
+    "message": "The last run was cancelled"
+  },
+  "statusFolderMissing": {
+    "message": "Folder not found"
+  },
+  "statusNeedsRelink": {
+    "message": "Folder needs to be reconnected"
+  },
+  "checkOpen": {
+    "message": "Check a folder"
+  },
+  "checkTitle": {
+    "message": "Folder check"
+  },
+  "checkIntro": {
+    "message": "The browser does not tell an extension whether a folder is a link (symlink, junction) or a real folder. This check shows what the browser reports for a folder you pick and compares it with the folders it already knows.\nNothing is written unless you press a test button."
+  },
+  "checkName": {
+    "message": "Name"
+  },
+  "checkLocation": {
+    "message": "Location"
+  },
+  "checkKind": {
+    "message": "Kind"
+  },
+  "checkRead": {
+    "message": "Reading"
+  },
+  "checkOwners": {
+    "message": "Account ids in file names"
+  },
+  "checkAccounts": {
+    "message": "Managed account using this folder"
+  },
+  "checkWrite": {
+    "message": "Write test"
+  },
+  "checkCompare": {
+    "message": "Comparison with “$1”"
+  },
+  "checkLocInside": {
+    "message": "$1 (relative path)"
+  },
+  "checkLocNone": {
+    "message": "Not inside the download folder or an imported parent folder"
+  },
+  "checkKindReal": {
+    "message": "Real folder: “$1” opens it through ordinary folders."
+  },
+  "checkKindLink": {
+    "message": "Link: its path is inside “$1”, but the browser cannot open “$2” from there. The browser hides links from a folder's listing."
+  },
+  "checkKindUnknown": {
+    "message": "Cannot tell. Pick a folder that contains it to compare against."
+  },
+  "checkKindSame": {
+    "message": "This is “$1” itself."
+  },
+  "checkParentOutside": {
+    "message": "“$1” does not contain this folder."
+  },
+  "checkReadOk": {
+    "message": "Works. Files: $1 (downloaded media: $2). Subfolders: $3."
+  },
+  "checkReadFail": {
+    "message": "Fails ($1)"
+  },
+  "checkReadNoPerm": {
+    "message": "No permission"
+  },
+  "checkOwnerLine": {
+    "message": "$1, files: $2"
+  },
+  "checkNone": {
+    "message": "None"
+  },
+  "checkWriteNotRun": {
+    "message": "Not run"
+  },
+  "checkWriteOk": {
+    "message": "Works: a temporary file was created, written, read back and removed."
+  },
+  "checkWriteFail": {
+    "message": "Fails while $1 ($2)"
+  },
+  "checkStepCreate": {
+    "message": "creating the file"
+  },
+  "checkStepWrite": {
+    "message": "writing"
+  },
+  "checkStepRead": {
+    "message": "reading back"
+  },
+  "checkStepDelete": {
+    "message": "removing the file"
+  },
+  "checkBtnWrite": {
+    "message": "Test writing"
+  },
+  "checkBtnParent": {
+    "message": "Pick a containing folder"
+  },
+  "checkBtnCompare": {
+    "message": "Compare with another folder"
+  },
+  "checkBtnAgain": {
+    "message": "Check another folder"
+  },
+  "checkBtnMarker": {
+    "message": "Confirm with a temporary file"
+  },
+  "checkCmpSameEntry": {
+    "message": "The browser treats both as the same folder (same path)."
+  },
+  "checkCmpSameListing": {
+    "message": "Different paths, identical file names (files: $1). One may be a link to the other; a temporary file can confirm it."
+  },
+  "checkCmpDifferent": {
+    "message": "Different folders (files: $1 and $2)."
+  },
+  "checkMarkerShared": {
+    "message": "Confirmed: a file written through one is visible through the other. Both are the same physical folder, so one is a link to the other."
+  },
+  "checkMarkerSeparate": {
+    "message": "Confirmed: two separate folders with equal file names."
+  },
+  "checkMarkerFail": {
+    "message": "The temporary file could not be written ($1)."
+  },
+  "optionsTitle": {
+    "message": "Settings"
+  },
+  "optDevMode": {
+    "message": "Developer mode"
+  },
+  "optDevModeHint": {
+    "message": "Shows diagnostic tools in the account panel on profile pages. Currently: “Check a folder”."
+  },
+  "optLanguage": {
+    "message": "Language"
+  },
+  "optLanguageHint": {
+    "message": "The extension's name and description in the browser's extension list follow the browser's language."
+  },
+  "optLanguageAuto": {
+    "message": "Follow the browser"
+  },
+  "optSaved": {
+    "message": "Saved. Open tabs pick the change up right away."
+  },
+  "popupBack": {
+    "message": "Back to accounts"
+  },
+  "popupImportHint": {
+    "message": "Adds accounts from folders that already hold downloads. Opens on an Instagram tab, where you pick the folder."
+  },
+  "popupImportStart": {
+    "message": "Open the import"
+  },
+  "popupOptions": {
+    "message": "Settings"
+  },
+  "checkBtnExport": {
+    "message": "Export JSON"
+  },
+  "checkBtnCopy": {
+    "message": "Copy JSON"
+  },
+  "checkExported": {
+    "message": "Handed to the browser's download folder: $1. It holds folder names and account names, no file contents."
+  },
+  "checkCopied": {
+    "message": "Copied to the clipboard."
+  },
+  "checkCopyFailed": {
+    "message": "Could not copy to the clipboard ($1). Use “Export JSON” instead."
+  }
+}

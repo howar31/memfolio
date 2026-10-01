@@ -1,0 +1,89 @@
+# Memfolio
+
+A browser extension that saves photos and videos from social platforms into folders on your computer. Files that are already in the folder are not downloaded again. The first supported platform is Instagram.
+
+Status: in development, not published to any extension store.
+
+## What it does
+
+- **Download All** on a profile page, for the tab you are viewing (posts, Reels, tagged).
+  - A normal run stops listing at the first page that is already on disk.
+  - **Full scan** lists every page and fills in anything missing.
+  - A run can be cancelled; the next run continues where files are missing.
+- Single downloads: a post, one picture of a carousel, a thumbnail, a reel, stories and highlights. Hotkey: `Ctrl/Cmd + Shift + D`.
+- One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
+- **Import existing folders** rebuilds the account list from files that are already on disk.
+- The toolbar popup lists the managed accounts; a row opens the profile.
+- Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
+
+It sends no analytics and no error reports, and loads no remote code. It asks for the `storage` permission and runs on `www.instagram.com` only.
+
+## File names
+
+```
+<username>_<unix time>_<media id>_<account id>.<ext>
+```
+
+A file counts as downloaded when a file with the same `<media id>_<account id>` exists in the folder, whatever its username, timestamp or extension.
+
+## Requirements
+
+Chrome, Edge or another Chromium browser, version 111 or later. The folder features use the File System Access API, which Firefox and Safari do not provide.
+
+Folder links on Windows: a directory symbolic link (`mklink /D`) can be picked in the folder dialog and behaves like the folder it points to. A junction (`mklink /J`) cannot: the browser shows it as empty. The browser does not list links that sit inside a picked folder; when an account's folder cannot be opened or created there, the extension asks you to pick it, and you can pick the symbolic link or the real folder.
+
+Developer mode (popup settings, off by default) adds "Check a folder": it shows what the browser reports for a folder you pick and can export the result as JSON.
+
+## Build
+
+```
+npm install
+npm run build        # unpacked extension in dist/
+```
+
+Load it: open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the `dist` folder.
+
+## Development
+
+```
+npm test             # unit tests
+npm run test:e2e     # built extension in Chrome against a mocked platform
+npm run check        # type check, unit tests, production build
+```
+
+`npm run test:e2e` needs the test browser once: `npx puppeteer browsers install chrome`.
+
+---
+
+# Memfolio（中文說明）
+
+把社群平台上的相片與影片存進電腦資料夾的瀏覽器擴充功能，資料夾裡已經有的檔案不會重複下載。第一個支援的平台是 Instagram。
+
+狀態：開發中，尚未上架。
+
+## 功能
+
+- 在個人檔案頁按 **下載全部**，依目前所在分頁（貼文、Reels、被標註）下載。
+  - 一般執行會在列到第一個已全部存在的頁面時停止。
+  - **完整掃描** 會列出每一頁並補上缺少的檔案。
+  - 執行中可以取消，下次執行會從缺少檔案的地方接續。
+- 單項下載：一則貼文、輪播中的一張、縮圖、Reel、限時動態與精選。快捷鍵：`Ctrl/Cmd + Shift + D`。
+- 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
+- **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
+- 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。
+- 介面語言：英文與繁體中文。預設跟隨瀏覽器的語言，也可以在 popup 的設定中指定。
+
+不傳送任何分析資料或錯誤回報，不載入遠端程式碼。只要求 `storage` 權限，只在 `www.instagram.com` 執行。
+
+## 安裝（開發版）
+
+```
+npm install
+npm run build
+```
+
+開啟 `chrome://extensions` 或 `edge://extensions`，啟用開發人員模式，選「載入未封裝項目」並選擇 `dist` 資料夾。
+
+Windows 上的資料夾連結：目錄符號連結（`mklink /D`）可以在資料夾選擇視窗中直接選取，行為與它指向的資料夾相同。Junction（`mklink /J`）不行：瀏覽器會把它顯示成空資料夾。瀏覽器不會列出已選資料夾內部的連結；帳號資料夾在那裡開不了也建不了時，擴充功能會請你選擇，此時可以選符號連結或實體資料夾。
+
+開發者模式（在 popup 的設定中，預設關閉）會多出「檢查資料夾」：顯示瀏覽器對所選資料夾回報的內容，並可將結果匯出為 JSON。

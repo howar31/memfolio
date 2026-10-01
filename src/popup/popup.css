@@ -1,0 +1,235 @@
+:root {
+  --sheet: #ffffff;
+  --sheet-2: #f3f6f4;
+  --ink: #1b1f1d;
+  --ink-2: #56605b;
+  --rule: #d5dcd8;
+  --green: #1e6b52;
+  --green-ink: #ffffff;
+  --amber: #a15c00;
+  --red: #b3261e;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sheet: #1c211f;
+    --sheet-2: #262c29;
+    --ink: #e9edeb;
+    --ink-2: #a3aea9;
+    --rule: #3a423e;
+    --green: #5cc2a0;
+    --green-ink: #0e1a15;
+    --amber: #f0b45a;
+    --red: #ff8a80;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  width: 440px;
+  margin: 0;
+  background: var(--sheet);
+  color: var(--ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 12px 14px 0;
+  border-bottom: 3px solid var(--green);
+}
+h1 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+/* The folder tab: the one recurring shape of the product. */
+.tab {
+  display: inline-block;
+  padding: 7px 14px 6px;
+  background: var(--green);
+  color: var(--green-ink);
+  font-weight: 650;
+  border-radius: 7px 7px 0 0;
+}
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 3px;
+}
+#count {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.iconbtn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.iconbtn:hover {
+  background: var(--sheet-2);
+  color: var(--ink);
+}
+
+#filter {
+  display: block;
+  width: calc(100% - 28px);
+  margin: 12px 14px 4px;
+  padding: 6px 8px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+#list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: stretch;
+  border-bottom: 1px solid var(--rule);
+}
+.row:hover {
+  background: var(--sheet-2);
+}
+.open {
+  min-width: 0;
+  padding: 9px 8px 9px 14px;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.name {
+  font-weight: 650;
+}
+.path,
+.status {
+  overflow-wrap: anywhere;
+}
+.path {
+  color: var(--ink-2);
+}
+.status {
+  color: var(--amber);
+}
+.status.error {
+  color: var(--red);
+}
+.side {
+  padding: 9px 6px;
+  text-align: right;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.side .files {
+  color: var(--ink);
+}
+.remove {
+  width: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  opacity: 0;
+}
+.row:hover .remove,
+.remove:focus-visible,
+.remove.confirm {
+  opacity: 1;
+}
+.remove.confirm {
+  width: auto;
+  padding: 0 10px;
+  color: var(--red);
+  font-weight: 600;
+}
+.empty {
+  padding: 22px 14px;
+  color: var(--ink-2);
+}
+
+/* Settings view: replaces the account list inside the popup. */
+#settings h2 {
+  margin: 14px 14px 12px;
+  font-size: 13px;
+}
+#settings .option,
+#settings .field {
+  display: block;
+  margin: 0 14px 16px;
+}
+#settings .option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+#settings .option input {
+  margin-top: 3px;
+}
+#settings .name,
+#settings .hint {
+  display: block;
+}
+#settings .hint {
+  color: var(--ink-2);
+}
+#settings select {
+  display: block;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 4px 6px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+#saved {
+  min-height: 1.45em;
+  margin: -6px 14px 10px;
+  color: var(--ink-2);
+}
+#settings .field:last-child {
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.btn {
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--sheet-2);
+}
+[hidden] {
+  display: none !important;
+}

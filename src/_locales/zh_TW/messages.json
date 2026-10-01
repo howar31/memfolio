@@ -1,0 +1,512 @@
+{
+  "extName": {
+    "message": "Memfolio"
+  },
+  "extDescription": {
+    "message": "把社群平台上的相片與影片存進電腦裡的資料夾，已經有的檔案不會重複下載。"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "close": {
+    "message": "關閉"
+  },
+  "chooseFolder": {
+    "message": "選擇資料夾"
+  },
+  "chooseAnother": {
+    "message": "改選其他資料夾"
+  },
+  "useAnyway": {
+    "message": "使用這個資料夾"
+  },
+  "downloadAnyway": {
+    "message": "下載"
+  },
+  "useBrowserDownload": {
+    "message": "改用瀏覽器下載"
+  },
+  "downloadAll": {
+    "message": "下載全部"
+  },
+  "downloadAllHint": {
+    "message": "下載新增的內容。列到第一個已全部存在的頁面就停止。"
+  },
+  "fullScan": {
+    "message": "完整掃描"
+  },
+  "fullScanHint": {
+    "message": "列出每一頁，下載所有缺少的檔案。"
+  },
+  "tabPosts": {
+    "message": "貼文"
+  },
+  "tabReels": {
+    "message": "Reels"
+  },
+  "tabTagged": {
+    "message": "被標註"
+  },
+  "cardToggle": {
+    "message": "顯示或收合這個面板"
+  },
+  "cardFiles": {
+    "message": "資料夾內有 $1 個檔案"
+  },
+  "cardLastRun": {
+    "message": "上次執行：$1"
+  },
+  "cardNeverRun": {
+    "message": "尚未執行"
+  },
+  "cardNotManaged": {
+    "message": "這個帳號還沒有資料夾，第一次下載時會設定。"
+  },
+  "cardListing": {
+    "message": "列表來源：$1"
+  },
+  "noteFolderMissing": {
+    "message": "上次執行時找不到資料夾。"
+  },
+  "noteNeedsFullScan": {
+    "message": "上次執行沒有完成，下次會列出每一頁。"
+  },
+  "noteStopped": {
+    "message": "上次執行被平台中止。"
+  },
+  "importOpen": {
+    "message": "匯入既有資料夾"
+  },
+  "statusResolving": {
+    "message": "正在確認帳號與資料夾…"
+  },
+  "statusListing": {
+    "message": "列表中：$1 則貼文，$2 個新檔案"
+  },
+  "statusDownloading": {
+    "message": "下載中：第 $1 個，共 $2 個"
+  },
+  "forcedFullScan": {
+    "message": "上次執行沒有完成，這次會列出每一頁。"
+  },
+  "noAccountId": {
+    "message": "無法取得 @$1 的帳號 id。是否已登入？"
+  },
+  "resultCancelled": {
+    "message": "已取消。"
+  },
+  "resultSaved": {
+    "message": "$1：新下載 $2 個，已存在 $3 個。"
+  },
+  "resultFailed": {
+    "message": "$1 個檔案失敗，細節在瀏覽器主控台。"
+  },
+  "resultWillFullScan": {
+    "message": "下次執行會列出每一頁，補上缺少的檔案。"
+  },
+  "downloadFailed": {
+    "message": "下載失敗：$1"
+  },
+  "retryNotice": {
+    "message": "平台回應 HTTP $1，$2 秒後重試（第 $3 次，共 $4 次）。"
+  },
+  "stopLogin": {
+    "message": "平台要求登入，已停止發送請求。（$1）"
+  },
+  "stopChallenge": {
+    "message": "平台顯示驗證或限制頁面，已停止發送請求。請先到網站上處理。（$1）"
+  },
+  "stopRateLimited": {
+    "message": "平台持續限制請求，已停止發送請求。請稍後再試。（$1）"
+  },
+  "stopBudget": {
+    "message": "已達本擴充功能的每小時請求上限，請稍後再試。（$1）"
+  },
+  "stopHttp": {
+    "message": "平台拒絕了請求。（$1）"
+  },
+  "stopBadResponse": {
+    "message": "平台回應的格式不符預期。（$1）"
+  },
+  "stopGraphql": {
+    "message": "平台回報錯誤。（$1）"
+  },
+  "stopNetwork": {
+    "message": "網路錯誤。（$1）"
+  },
+  "noPicker": {
+    "message": "這個瀏覽器沒有提供資料夾選擇器。Brave 請到 brave://flags 啟用 File System Access API。"
+  },
+  "permTitle": {
+    "message": "允許存取資料夾"
+  },
+  "permMessage": {
+    "message": "瀏覽器需要你再次確認，才能寫入「$1」。"
+  },
+  "permGrant": {
+    "message": "允許"
+  },
+  "pickRootTitle": {
+    "message": "選擇下載資料夾"
+  },
+  "pickRootMessage": {
+    "message": "第一次下載的帳號，會在這個資料夾裡建立以帳號名稱命名的資料夾。"
+  },
+  "rootMissingTitle": {
+    "message": "找不到下載資料夾"
+  },
+  "rootMissingMessage": {
+    "message": "下載資料夾「$1」已被搬移、改名或刪除。請重新選擇下載資料夾。"
+  },
+  "linkTitle": {
+    "message": "選擇這個帳號的資料夾"
+  },
+  "linkMessage": {
+    "message": "「$2」裡的「$1」是指向其他資料夾的連結，瀏覽器無法從資料夾內部開啟連結。請直接選擇這個帳號的資料夾：實體資料夾，或指向它的符號連結（Windows 的 junction 不行）。"
+  },
+  "folderMissingTitle": {
+    "message": "找不到資料夾"
+  },
+  "folderMissingMessage": {
+    "message": "@$1 的資料夾（「$2」）已被搬移、改名或刪除。目前沒有發送任何請求，也沒有下載。請選擇資料夾現在的位置。"
+  },
+  "folderMissingSingle": {
+    "message": "@$1 的資料夾（「$2」）已被搬移、改名或刪除。要重新連結，請到該帳號的個人檔案頁執行「下載全部」。"
+  },
+  "relinkTitle": {
+    "message": "重新連結資料夾"
+  },
+  "relinkMessage": {
+    "message": "@$1 在你的清單上，資料夾是「$2」，但瀏覽器已經沒有它的存取權。請重新選擇那個資料夾。"
+  },
+  "wrongFolderTitle": {
+    "message": "這裡沒有這個帳號的檔案"
+  },
+  "wrongFolderMessage": {
+    "message": "「$1」裡沒有 @$2 的檔案，而上次執行時有 $3 個。使用它會把全部內容重新下載到這個資料夾。"
+  },
+  "emptyFolderTitle": {
+    "message": "資料夾是空的"
+  },
+  "emptyFolderMessage": {
+    "message": "「$1」上次執行時有 $2 個檔案，現在沒有。下載會把全部內容重新抓一次。"
+  },
+  "fetchingPost": {
+    "message": "正在讀取貼文…"
+  },
+  "postNotFound": {
+    "message": "無法判斷這是哪一則貼文。"
+  },
+  "slideNotFound": {
+    "message": "無法判斷目前顯示的是貼文中的哪一張，請改用整則貼文的下載按鈕。"
+  },
+  "btnPost": {
+    "message": "下載這則貼文"
+  },
+  "btnSlide": {
+    "message": "下載這張相片或這段影片"
+  },
+  "btnReel": {
+    "message": "下載 Reel"
+  },
+  "btnStory": {
+    "message": "下載這則限時動態"
+  },
+  "btnStoryAll": {
+    "message": "下載全部限時動態"
+  },
+  "fetchingStory": {
+    "message": "正在讀取限時動態…"
+  },
+  "storyNotFound": {
+    "message": "這個頁面沒有取得任何限時動態。"
+  },
+  "storyCurrentNotFound": {
+    "message": "無法判斷目前顯示的是哪一則，請改用「下載全部限時動態」。"
+  },
+  "savingBrowser": {
+    "message": "以瀏覽器下載儲存中：第 $1 個，共 $2 個…"
+  },
+  "savedBrowser": {
+    "message": "已將 $1 個檔案交給瀏覽器的下載資料夾。"
+  },
+  "savedBrowserFailed": {
+    "message": "已將 $1 個檔案交給瀏覽器的下載資料夾，$2 個失敗。"
+  },
+  "savingFolder": {
+    "message": "儲存中：第 $1 個，共 $2 個…"
+  },
+  "savedFolder": {
+    "message": "$1：新下載 $2 個，已存在 $3 個。"
+  },
+  "savedFolderFailed": {
+    "message": "$1：新下載 $2 個，已存在 $3 個，$4 個失敗。"
+  },
+  "importTitle": {
+    "message": "匯入既有資料夾"
+  },
+  "importIntro": {
+    "message": "選擇一個包含既有下載內容的資料夾。會往下搜尋最多三層子資料夾，找出以本擴充功能格式命名的檔案。只讀取檔名，不會更動任何內容。\n瀏覽器看不到透過連結指向的資料夾。"
+  },
+  "importScanning": {
+    "message": "搜尋中…已讀取 $1 個資料夾"
+  },
+  "importNothing": {
+    "message": "在「$1」裡沒有找到已下載的檔案（已讀取 $2 個資料夾）。"
+  },
+  "importFound": {
+    "message": "找到 $1 個含有已下載檔案的資料夾（已讀取 $2 個資料夾）。勾選要加入清單的帳號。"
+  },
+  "importTruncated": {
+    "message": "搜尋在 $1 個資料夾後停止。其餘部分請改選範圍較小的資料夾。"
+  },
+  "importColAccount": {
+    "message": "帳號"
+  },
+  "importColFolder": {
+    "message": "資料夾（相對路徑）"
+  },
+  "importColFiles": {
+    "message": "檔案數"
+  },
+  "importFlagManaged": {
+    "message": "已在清單上"
+  },
+  "importFlagDuplicate": {
+    "message": "這個帳號在不只一個資料夾裡有檔案"
+  },
+  "importFlagOthers": {
+    "message": "另有其他 $1 個帳號的檔案"
+  },
+  "importConfirm": {
+    "message": "加入已勾選的帳號"
+  },
+  "importDone": {
+    "message": "已將 $1 個帳號加入清單。"
+  },
+  "importFailed": {
+    "message": "匯入失敗：$1"
+  },
+  "popupSearch": {
+    "message": "以帳號或資料夾篩選"
+  },
+  "popupEmpty": {
+    "message": "清單上還沒有帳號。到個人檔案頁按「下載全部」，或匯入你已有的資料夾。"
+  },
+  "popupNoMatch": {
+    "message": "沒有符合篩選條件的帳號。"
+  },
+  "popupCount": {
+    "message": "$1 個帳號"
+  },
+  "popupFiles": {
+    "message": "$1 個檔案"
+  },
+  "popupNeverRun": {
+    "message": "尚未執行"
+  },
+  "popupOpenHint": {
+    "message": "開啟 @$1 的個人檔案"
+  },
+  "popupRemove": {
+    "message": "從清單移除"
+  },
+  "popupRemoveConfirm": {
+    "message": "確定移除？檔案會留在磁碟上。"
+  },
+  "popupImport": {
+    "message": "匯入既有資料夾"
+  },
+  "popupRelative": {
+    "message": "相對路徑"
+  },
+  "statusImported": {
+    "message": "已匯入，尚未執行"
+  },
+  "statusPartial": {
+    "message": "上次執行有檔案失敗"
+  },
+  "statusStopped": {
+    "message": "上次執行被平台中止"
+  },
+  "statusCancelled": {
+    "message": "上次執行已取消"
+  },
+  "statusFolderMissing": {
+    "message": "找不到資料夾"
+  },
+  "statusNeedsRelink": {
+    "message": "資料夾需要重新連結"
+  },
+  "checkOpen": {
+    "message": "檢查資料夾"
+  },
+  "checkTitle": {
+    "message": "資料夾檢查"
+  },
+  "checkIntro": {
+    "message": "瀏覽器不會告訴擴充功能一個資料夾是連結（symlink、junction）還是實體資料夾。這個檢查會顯示瀏覽器對你所選資料夾回報的內容，並和它已經知道的資料夾比對。\n除非你按下測試按鈕，否則不會寫入任何東西。"
+  },
+  "checkName": {
+    "message": "名稱"
+  },
+  "checkLocation": {
+    "message": "位置"
+  },
+  "checkKind": {
+    "message": "判定"
+  },
+  "checkRead": {
+    "message": "讀取"
+  },
+  "checkOwners": {
+    "message": "檔名中的帳號 id"
+  },
+  "checkAccounts": {
+    "message": "使用這個資料夾的管理中帳號"
+  },
+  "checkWrite": {
+    "message": "寫入測試"
+  },
+  "checkCompare": {
+    "message": "與「$1」比較"
+  },
+  "checkLocInside": {
+    "message": "$1（相對路徑）"
+  },
+  "checkLocNone": {
+    "message": "不在下載資料夾或已匯入的上層資料夾內"
+  },
+  "checkKindReal": {
+    "message": "實體資料夾：從「$1」可以經由一般資料夾逐層開啟到它。"
+  },
+  "checkKindLink": {
+    "message": "連結：它的路徑在「$1」之內，但瀏覽器從那裡開不到「$2」。瀏覽器不會列出資料夾裡的連結。"
+  },
+  "checkKindUnknown": {
+    "message": "無法判定。請選一個包含它的資料夾來比對。"
+  },
+  "checkKindSame": {
+    "message": "這就是「$1」本身。"
+  },
+  "checkParentOutside": {
+    "message": "「$1」不包含這個資料夾。"
+  },
+  "checkReadOk": {
+    "message": "可以。檔案：$1 個（下載的媒體：$2 個）。子資料夾：$3 個。"
+  },
+  "checkReadFail": {
+    "message": "失敗（$1）"
+  },
+  "checkReadNoPerm": {
+    "message": "沒有權限"
+  },
+  "checkOwnerLine": {
+    "message": "$1，檔案 $2 個"
+  },
+  "checkNone": {
+    "message": "無"
+  },
+  "checkWriteNotRun": {
+    "message": "尚未執行"
+  },
+  "checkWriteOk": {
+    "message": "成功：已建立、寫入、讀回並移除一個暫存檔。"
+  },
+  "checkWriteFail": {
+    "message": "在$1時失敗（$2）"
+  },
+  "checkStepCreate": {
+    "message": "建立檔案"
+  },
+  "checkStepWrite": {
+    "message": "寫入"
+  },
+  "checkStepRead": {
+    "message": "讀回"
+  },
+  "checkStepDelete": {
+    "message": "移除檔案"
+  },
+  "checkBtnWrite": {
+    "message": "測試寫入"
+  },
+  "checkBtnParent": {
+    "message": "選擇包含它的資料夾"
+  },
+  "checkBtnCompare": {
+    "message": "與另一個資料夾比較"
+  },
+  "checkBtnAgain": {
+    "message": "檢查其他資料夾"
+  },
+  "checkBtnMarker": {
+    "message": "以暫存檔確認"
+  },
+  "checkCmpSameEntry": {
+    "message": "瀏覽器把兩者視為同一個資料夾（路徑相同）。"
+  },
+  "checkCmpSameListing": {
+    "message": "路徑不同，檔名清單相同（$1 個檔案）。其中一個可能是指向另一個的連結，可用暫存檔確認。"
+  },
+  "checkCmpDifferent": {
+    "message": "不同的資料夾（檔案數：$1 與 $2）。"
+  },
+  "checkMarkerShared": {
+    "message": "已確認：透過其中一個寫入的檔案，從另一個看得到。兩者是同一個實體資料夾，其中一個是指向另一個的連結。"
+  },
+  "checkMarkerSeparate": {
+    "message": "已確認：兩者是檔名相同的兩個獨立資料夾。"
+  },
+  "checkMarkerFail": {
+    "message": "無法寫入暫存檔（$1）。"
+  },
+  "optionsTitle": {
+    "message": "設定"
+  },
+  "optDevMode": {
+    "message": "開發者模式"
+  },
+  "optDevModeHint": {
+    "message": "在個人檔案頁面的帳號面板顯示診斷工具。目前有：「檢查資料夾」。"
+  },
+  "optLanguage": {
+    "message": "語言"
+  },
+  "optLanguageHint": {
+    "message": "瀏覽器擴充功能清單中的名稱與說明會跟隨瀏覽器的語言。"
+  },
+  "optLanguageAuto": {
+    "message": "跟隨瀏覽器"
+  },
+  "optSaved": {
+    "message": "已儲存，已開啟的分頁會立即套用。"
+  },
+  "popupBack": {
+    "message": "返回帳號清單"
+  },
+  "popupImportHint": {
+    "message": "從已有下載內容的資料夾加入帳號。會在 Instagram 分頁開啟，由你在那裡選擇資料夾。"
+  },
+  "popupImportStart": {
+    "message": "開啟匯入"
+  },
+  "popupOptions": {
+    "message": "設定"
+  },
+  "checkBtnExport": {
+    "message": "匯出 JSON"
+  },
+  "checkBtnCopy": {
+    "message": "複製 JSON"
+  },
+  "checkExported": {
+    "message": "已交給瀏覽器的下載資料夾：$1。內容包含資料夾名稱與帳號名稱，不含檔案內容。"
+  },
+  "checkCopied": {
+    "message": "已複製到剪貼簿。"
+  },
+  "checkCopyFailed": {
+    "message": "無法複製到剪貼簿（$1）。請改用「匯出 JSON」。"
+  }
+}

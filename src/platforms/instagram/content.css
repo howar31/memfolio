@@ -1,0 +1,25 @@
+/* The one control placed in the page's own markup: the button in a post's
+   action row. Everything else lives in the extension's shadow root. */
+.memfolio-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: inherit;
+}
+.memfolio-btn:focus-visible {
+  outline: 2px solid #1e6b52;
+  outline-offset: 2px;
+}
+.memfolio-busy {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.memfolio-post-btn {
+  width: 40px;
+  height: 40px;
+}
+.memfolio-post-btn:hover {
+  opacity: 0.6;
+}
