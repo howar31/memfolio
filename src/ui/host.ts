@@ -51,7 +51,7 @@ class Surface {
     const style = document.createElement('style');
     style.textContent = HOST_CSS;
     this.toasts = h('div', { class: 'toasts', attrs: { role: 'status', 'aria-live': 'polite' } });
-    this.cardSlot = h('div', { class: 'card-slot', attrs: { style: 'width:100%' } });
+    this.cardSlot = h('div', { class: 'card-slot' });
     this.fabs = h('div', { class: 'fabs' });
     this.root.append(style, h('div', { class: 'dock' }, this.toasts, this.cardSlot, this.fabs));
     document.documentElement.append(this.host);
@@ -143,7 +143,10 @@ class Surface {
 
   setCard(card: HTMLElement | null): void {
     this.ensure();
+    // The card is rebuilt on every change; the ball keeps the keyboard focus across that.
+    const focused = this.root.activeElement?.classList.contains('ball') === true;
     this.cardSlot.replaceChildren(...(card ? [card] : []));
+    if (focused) card?.querySelector<HTMLElement>('.ball')?.focus();
   }
 
   setFloatingButtons(buttons: FloatingButton[]): void {

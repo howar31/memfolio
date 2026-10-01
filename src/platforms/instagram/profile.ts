@@ -29,7 +29,8 @@ const TAB_LABEL: Record<ProfileTab, Parameters<typeof t>[0]> = { posts: 'tabPost
 let current: Target | null = null;
 let active: ActiveRun | null = null;
 let lastResult: ToastHandle | null = null;
-let collapsed = false;
+// The panel starts closed; the state lasts as long as the page does.
+let expanded = false;
 let renderSeq = 0;
 // Used by the test build only.
 // eslint-disable-next-line prefer-const
@@ -205,16 +206,23 @@ function statusNote(record: AccountRecord, tab: ProfileTab): { text: string; err
 async function buildCard(): Promise<HTMLElement | null> {
   const target = active ?? current;
   if (!target) return null;
+  const ball = h(
+    'button',
+    {
+      class: `ball ${active ? (active.ratio === null ? 'busy unknown' : 'busy') : ''}`,
+      title: t('cardToggle'),
+      attrs: { 'aria-label': t('cardToggle'), 'aria-expanded': String(expanded) },
+      on: { click: () => ((expanded = !expanded), void render()) },
+    },
+    h('span', { class: 'core' }, icon([...ICONS.folder], 20)),
+  );
+  // The ring around the ball follows the run while the panel is closed.
+  if (active && active.ratio !== null) ball.style.setProperty('--p', String(Math.round(active.ratio * 100)));
+  if (!expanded) return h('div', { class: 'card' }, ball);
+
   const record = await findAccountByUsername(PLATFORM, target.username);
   const { developerMode } = await getSettings();
-
-  const tab = h(
-    'button',
-    { class: 'tab', title: t('cardToggle'), on: { click: () => ((collapsed = !collapsed), void render()) } },
-    icon([...ICONS.folder], 16),
-    h('span', { text: `@${target.username}` }),
-  );
-  const body = h('div', { class: 'body' });
+  const body = h('div', { class: 'body' }, h('div', { class: 'who', text: `@${target.username}` }));
 
   if (record) {
     body.append(h('div', { class: 'path', text: record.relPath ?? record.folderName }));
@@ -257,7 +265,7 @@ async function buildCard(): Promise<HTMLElement | null> {
       ),
     );
   }
-  return h('div', { class: `card ${collapsed ? 'collapsed' : ''}` }, tab, body);
+  return h('div', { class: 'card' }, body, ball);
 }
 
 async function render(): Promise<void> {
@@ -266,7 +274,7 @@ async function render(): Promise<void> {
   if (seq === renderSeq) surface.setCard(card);
 }
 
-/** The account card shown on profile pages. It stays visible while a run is in progress. */
+/** The ball and its account panel on profile pages. They stay while a run is in progress. */
 export const profileCard = {
   show(target: Target): void {
     current = target;

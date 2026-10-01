@@ -115,6 +115,12 @@ async function launch() {
       await page.goto(ORIGIN + path, { waitUntil: 'load' });
       return page;
     },
+    /** Opens a profile page and expands the account panel, which starts as a ball. */
+    async openProfile(path, state) {
+      const page = await ctx.open(path, state);
+      await clickBall(page);
+      return page;
+    },
     async close() {
       // Unfinished downloads can keep the browser from closing; do not wait for it indefinitely.
       await Promise.race([browser.close(), new Promise((r) => setTimeout(r, 3000))]);
@@ -182,6 +188,18 @@ async function clickHover(page, selector) {
     }, selector);
     throw new Error(`${e.message}; at the element centre: ${JSON.stringify(at)}`);
   });
+  await handle.click();
+}
+
+const ballExpanded = (page) =>
+  page.evaluate(() => document.querySelector('memfolio-surface')?.shadowRoot?.querySelector('.ball')?.getAttribute('aria-expanded') ?? null);
+
+/** Presses the ball that shows or hides the account panel. */
+async function clickBall(page) {
+  const handle = await waitFor(async () => {
+    const h = await page.evaluateHandle(() => document.querySelector('memfolio-surface')?.shadowRoot?.querySelector('.ball') ?? null);
+    return h.asElement();
+  }, 'the ball');
   await handle.click();
 }
 
@@ -259,7 +277,7 @@ const scenario = (name, fn) => scenarios.push({ name, fn });
 
 scenario('first run downloads every file, then runs are incremental', async (ctx) => {
   const state = newState({ posts: makeTimeline(30) });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await waitText(page, '@acct');
   await waitText(page, await ctx.msg('cardNotManaged'));
 
@@ -336,9 +354,36 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   assertEqual(record.fileCount, expected.length + 2, 'file count in the summary');
 });
 
+scenario('the account panel starts as a ball and opens on a click', async (ctx) => {
+  const page = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
+  const downloadAll = await ctx.msg('downloadAll');
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the ball, not expanded');
+  assertEqual(await hasButton(page, downloadAll), false, 'no Download All while the panel is closed');
+  assert(!(await surfaceText(page)).includes('@acct'), 'no account name while the panel is closed');
+
+  await clickBall(page);
+  await waitFor(() => hasButton(page, downloadAll), 'the panel after a click on the ball');
+  await waitText(page, '@acct');
+  assertEqual(await ballExpanded(page), 'true', 'the ball reports the open panel');
+
+  // Moving inside the site keeps the panel as it is.
+  await page.evaluate(() => history.pushState(null, '', '/acct/reels/'));
+  await waitText(page, await ctx.msg('cardListing', await ctx.msg('tabReels')));
+  assertEqual(await hasButton(page, downloadAll), true, 'still open on another tab of the profile');
+
+  await clickBall(page);
+  await waitFor(async () => !(await hasButton(page, downloadAll)), 'the panel to close on a second click');
+
+  await clickBall(page);
+  await waitFor(() => hasButton(page, downloadAll), 'the panel to open again');
+  await page.reload({ waitUntil: 'load' });
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the ball after a reload');
+  assertEqual(await hasButton(page, downloadAll), false, 'closed again after a reload');
+});
+
 scenario('rate limiting is retried, a login redirect stops the run', async (ctx) => {
   const state = newState({ posts: makeTimeline(14), failStatuses: [429, 503] });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   assertEqual(callsNamed(state, POSTS).length, 4, 'two failed attempts, then two pages');
@@ -367,7 +412,7 @@ scenario('rate limiting is retried, a login redirect stops the run', async (ctx)
 
 scenario('cancelling leaves no partial file and the next run completes', async (ctx) => {
   const state = newState({ posts: makeTimeline(12), mediaDelayMs: 150 });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, page);
   await waitFor(async () => (await opfs.names(page, 'root/acct'))?.length >= 2, 'the first downloads');
   await click(page, await ctx.msg('cancel'));
@@ -390,7 +435,7 @@ scenario('cancelling leaves no partial file and the next run completes', async (
 
 scenario('a missing folder is reported before any request and can be reconnected', async (ctx) => {
   const state = newState({ posts: makeTimeline(6) });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   const expected = expectedFiles(state.posts);
@@ -459,7 +504,7 @@ scenario('import registers existing folders and shows their relative path', asyn
   assertEqual(await ctx.account('77'), null, 'minor owners of a folder are not imported');
 
   // The profile now downloads into the imported folder without asking for a root.
-  const profile = await ctx.open('/acct/', state);
+  const profile = await ctx.openProfile('/acct/', state);
   await waitText(profile, 'archive/alice/instagram');
   await click(profile, await ctx.msg('downloadAll'));
   await runFinished(ctx, profile);
@@ -473,7 +518,7 @@ scenario('reels and tagged tabs list their own content', async (ctx) => {
   const tagged = [makePost(20, { owner: '77', username: 'friend' }), makePost(19, { owner: '88', username: 'other' })];
   const state = newState({ posts: makeTimeline(3), reels, tagged, mediaInfo: 'dead' });
 
-  const page = await ctx.open('/acct/reels/', state);
+  const page = await ctx.openProfile('/acct/reels/', state);
   await waitText(page, await ctx.msg('tabReels'));
   await firstRun(ctx, page);
   await runFinished(ctx, page);
@@ -486,7 +531,7 @@ scenario('reels and tagged tabs list their own content', async (ctx) => {
   const resolve = callsNamed(state, 'PolarisPostRootQuery')[0];
   assertEqual([resolve.params.fb_dtsg, resolve.params.lsd, resolve.params.fb_api_req_friendly_name], ['DTSGTOKEN', 'LSDTOKEN', 'PolarisPostRootQuery'], 'session parameters on other queries');
 
-  const tab = await ctx.open('/acct/tagged/', state);
+  const tab = await ctx.openProfile('/acct/tagged/', state);
   await waitText(tab, await ctx.msg('tabTagged'));
   await click(tab, await ctx.msg('downloadAll'));
   await runFinished(ctx, tab);
@@ -501,12 +546,12 @@ scenario('the first run on the reels tab lists every page even when the newest r
   const reels = Array.from({ length: 14 }, (_, i) => makePost(40 - i, { kind: 'video' }));
   const state = newState({ posts: reels.slice(0, 12), reels, mediaInfo: 'dead' });
 
-  const grid = await ctx.open('/acct/', state);
+  const grid = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, grid);
   await runFinished(ctx, grid);
   assertEqual((await opfs.names(grid, 'root/acct')).length, 12, 'the main grid holds the newest reels');
 
-  const tab = await ctx.open('/acct/reels/', state);
+  const tab = await ctx.openProfile('/acct/reels/', state);
   await waitText(tab, await ctx.msg('tabReels'));
   await click(tab, await ctx.msg('downloadAll'));
   await runFinished(ctx, tab);
@@ -516,7 +561,7 @@ scenario('the first run on the reels tab lists every page even when the newest r
 
 scenario('account id falls back to the search query when the page does not hold it', async (ctx) => {
   const state = newState({ posts: makeTimeline(2), relayUsers: [], searchUsers: [{ username: 'acct_fan', pk: '1' }, { username: 'acct', pk: '42' }] });
-  const page = await ctx.open('/acct/tagged/', state);
+  const page = await ctx.openProfile('/acct/tagged/', state);
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   assertEqual(callsNamed(state, 'PolarisSearchBoxRefetchableQuery').length, 1, 'one search request');
@@ -525,7 +570,7 @@ scenario('account id falls back to the search query when the page does not hold 
 
 scenario('a single download uses the browser unless the account folder is chosen in the settings', async (ctx) => {
   const state = newState({ posts: makeTimeline(5) });
-  const profile = await ctx.open('/acct/', state);
+  const profile = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, profile);
   await runFinished(ctx, profile);
   await closeToasts(profile);
@@ -537,7 +582,7 @@ scenario('a single download uses the browser unless the account folder is chosen
 scenario('with the account folder setting a single post goes into the account folder when managed, else to browser downloads', async (ctx) => {
   await ctx.ext.evaluate(() => chrome.storage.local.set({ settings: { singleSave: 'folder' } }));
   const state = newState({ posts: makeTimeline(5) });
-  const profile = await ctx.open('/acct/', state);
+  const profile = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, profile);
   await runFinished(ctx, profile);
   // Pointing at a thumbnail offers the whole post; the page's own markup is left as it was.
@@ -626,7 +671,7 @@ scenario('stories are saved through the browser download', async (ctx) => {
 
 scenario('the folder check reports what the browser exposes for a picked folder', async (ctx) => {
   const state = newState({ posts: makeTimeline(4) });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, page);
   await runFinished(ctx, page);
   const files = await opfs.names(page, 'root/acct');
@@ -733,7 +778,7 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
 
 scenario('the language is chosen in the popup settings', async (ctx) => {
   const zh = JSON.parse(await readFile(join(EXT_DIR, '_locales/zh_TW/messages.json'), 'utf8'));
-  const page = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
+  const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(1) }));
   await waitFor(async () => hasButton(page, await ctx.msg('downloadAll')), 'the account card');
 
   const popup = await ctx.browser.newPage();
@@ -751,7 +796,7 @@ scenario('the language is chosen in the popup settings', async (ctx) => {
   // A tab that was already open follows the change.
   await waitFor(() => hasButton(page, zh.downloadAll.message), 'the open account card in the chosen language');
   // A tab loaded afterwards starts in the chosen language, and so does a popup opened afterwards.
-  const later = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
+  const later = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(1) }));
   await waitFor(() => hasButton(later, zh.downloadAll.message), 'a new account card in the chosen language');
   const popupLater = await ctx.browser.newPage();
   await popupLater.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
@@ -765,7 +810,7 @@ scenario('the language is chosen in the popup settings', async (ctx) => {
 
 scenario('popup lists accounts, opens profiles and removes entries', async (ctx) => {
   const state = newState({ posts: makeTimeline(3) });
-  const page = await ctx.open('/acct/', state);
+  const page = await ctx.openProfile('/acct/', state);
   await firstRun(ctx, page);
   await runFinished(ctx, page);
 

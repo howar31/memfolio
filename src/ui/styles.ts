@@ -1,5 +1,5 @@
 // Styles of the in-page surface (shadow root). The palette is a muted green on
-// plain sheets; the one recurring shape is the folder tab on the account card.
+// plain sheets; the account panel opens from a round button at the bottom right.
 export const HOST_CSS = `
 :host {
   all: initial;
@@ -54,20 +54,28 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 }
 .toast .x:hover { background: var(--sheet-2); color: var(--ink); }
 
-.card { width: 100%; }
-.card .tab {
-  display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
-  padding: 5px 12px 4px; margin-left: 10px;
-  background: var(--green); color: var(--green-ink); font-weight: 650;
-  border: 0; border-radius: 7px 7px 0 0; cursor: pointer;
-}
-.card .tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Only the panel and the ball take clicks; the strip beside the ball stays the page's. */
+.card-slot { width: 100%; pointer-events: none; }
+.card { width: 100%; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
+.card > * { pointer-events: auto; }
 .card .body {
-  background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--green);
+  width: 100%; background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--green);
   border-radius: 4px; box-shadow: var(--shadow); padding: 12px;
 }
-.card.collapsed .body { display: none; }
-.card.collapsed .tab { border-radius: 7px; box-shadow: var(--shadow); }
+.card .who { margin-bottom: 4px; color: var(--green); font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ball {
+  position: relative; width: 52px; height: 52px; margin: -4px; padding: 4px;
+  border: 0; border-radius: 50%; background: none; cursor: pointer;
+}
+.ball::before { content: ""; position: absolute; inset: 0; border-radius: 50%; }
+.ball .core {
+  position: relative; display: grid; place-items: center; width: 100%; height: 100%;
+  border-radius: 50%; background: var(--green); color: var(--green-ink); box-shadow: var(--shadow);
+}
+.ball:hover .core { filter: brightness(1.08); }
+.ball.busy::before { background: conic-gradient(var(--green) calc(var(--p, 0) * 1%), var(--rule) 0); }
+.ball.busy.unknown::before { background: conic-gradient(var(--green) 30%, var(--rule) 0); animation: spin 1.4s linear infinite; }
+.ball.busy .core { box-shadow: 0 0 0 2px var(--sheet); }
 .card .path { font-weight: 600; overflow-wrap: anywhere; }
 .card .meta { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .card .note { margin-top: 6px; color: var(--amber); }
@@ -126,10 +134,12 @@ td .sub { color: var(--ink-2); }
 td .flag { color: var(--amber); }
 
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
   .bar > i { transition: none; }
   .bar.unknown > i { animation: none; width: 100%; opacity: 0.4; }
+  .ball.busy.unknown::before { animation: none; }
 }
 `;
