@@ -37,11 +37,15 @@ export interface Settings {
   language: Language;
   /** Where a single download goes: the browser's download folder, or the account folder when the account is managed. */
   singleSave: SingleSave;
+  /** Clock used for times of day. */
+  timeFormat: TimeFormat;
 }
 
 export type SingleSave = 'browser' | 'folder';
 
-export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser' };
+export type TimeFormat = '24' | '12';
+
+export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24' };
 
 const ACCOUNT_PREFIX = 'account:';
 const SETTINGS_KEY = 'settings';

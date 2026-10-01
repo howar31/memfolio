@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../src/_locales/en/messages.json';
 import zhTW from '../../src/_locales/zh_TW/messages.json';
-import { initI18n, n, setLanguage, t, uiLanguage } from '../../src/core/i18n';
+import { initI18n, n, setLanguage, t, uiLanguage, when } from '../../src/core/i18n';
 
 let stored: Record<string, unknown> = {};
 
@@ -46,5 +46,30 @@ describe('ui language', () => {
     expect(t('optDevMode')).toBe('browser:optDevMode:');
     setLanguage('fr' as never);
     expect(t('optDevMode')).toBe('browser:optDevMode:');
+  });
+});
+
+describe('time of day', () => {
+  const evening = new Date(2026, 9, 1, 20, 26).getTime();
+
+  it('is shown on a 24-hour clock by default', async () => {
+    stored = { settings: { language: 'en' } };
+    await initI18n();
+    expect(when(evening)).toContain('20:26');
+  });
+
+  it('is shown on a 12-hour clock when the settings say so', async () => {
+    stored = { settings: { language: 'en', timeFormat: '12' } };
+    await initI18n();
+    expect(when(evening)).toContain('8:26');
+    expect(when(evening)).toContain('PM');
+  });
+
+  it('goes back to 24 hours when the setting is cleared', async () => {
+    stored = { settings: { language: 'en', timeFormat: '12' } };
+    await initI18n();
+    stored = { settings: { language: 'en' } };
+    await initI18n();
+    expect(when(evening)).toContain('20:26');
   });
 });

@@ -300,6 +300,9 @@ h1 {
   font-size: 12px;
   text-align: right;
 }
+#settings {
+  gap: 8px;
+}
 #settings h3 {
   margin: 0 0 4px 2px;
   font-size: 12px;
@@ -320,7 +323,7 @@ h1 {
   grid-template-columns: 1fr auto;
   gap: 2px 12px;
   align-items: center;
-  padding: 9px 12px;
+  padding: 7px 12px;
 }
 label.item {
   cursor: pointer;

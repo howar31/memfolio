@@ -1,6 +1,6 @@
 import en from '../_locales/en/messages.json';
 import zhTW from '../_locales/zh_TW/messages.json';
-import { getSettings, type Language } from './records';
+import { getSettings, type Language, type TimeFormat } from './records';
 
 export type MessageKey = keyof typeof en;
 
@@ -21,9 +21,17 @@ export function setLanguage(language: Language): void {
   chosen = language !== 'auto' && language in CATALOGS ? language : null;
 }
 
-/** Reads the language setting; call before the first `t()`. */
+let timeFormat: TimeFormat = '24';
+
+export function setTimeFormat(format: TimeFormat): void {
+  timeFormat = format === '12' ? '12' : '24';
+}
+
+/** Reads the language and clock settings; call before the first `t()`. */
 export async function initI18n(): Promise<void> {
-  setLanguage((await getSettings()).language);
+  const settings = await getSettings();
+  setLanguage(settings.language);
+  setTimeFormat(settings.timeFormat);
 }
 
 /** BCP 47 tag of the language the UI is shown in. */
@@ -59,7 +67,7 @@ export function n(value: number): string {
   return value.toLocaleString(uiLanguage());
 }
 
-/** Compact date and time in the UI language. */
+/** Compact date and time in the UI language, on the chosen clock. */
 export function when(timestamp: number): string {
-  return new Date(timestamp).toLocaleString(uiLanguage(), { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(timestamp).toLocaleString(uiLanguage(), { dateStyle: 'medium', timeStyle: 'short', hourCycle: timeFormat === '12' ? 'h12' : 'h23' });
 }

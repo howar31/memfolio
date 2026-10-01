@@ -2,9 +2,9 @@
 // script, takes pasted profile addresses and opens profile pages; it never touches folders
 // or the platform.
 
-import { initI18n, n, setLanguage, t, uiLanguage, when } from '../core/i18n';
+import { initI18n, n, setLanguage, setTimeFormat, t, uiLanguage, when } from '../core/i18n';
 import { IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { allAccounts, allPending, getSettings, onStorageChange, putPending, removeAccount, removePending, setSettings, type AccountRecord, type AccountStatus, type Language, type PendingAccount, type SingleSave } from '../core/records';
+import { allAccounts, allPending, getSettings, onStorageChange, putPending, removeAccount, removePending, setSettings, type AccountRecord, type AccountStatus, type Language, type PendingAccount, type SingleSave, type TimeFormat } from '../core/records';
 import { profileNamesIn, profileUrl } from '../platforms/instagram/routes';
 import { ICONS, h, icon } from '../ui/dom';
 
@@ -177,8 +177,10 @@ function renderText(): void {
   text('developer-mode-name', t('optDevMode'));
   text('developer-mode-hint', t('optDevModeHint'));
   text('language-name', t('optLanguage'));
-  text('language-hint', t('optLanguageHint'));
   text('language-auto', t('optLanguageAuto'));
+  text('time-format-name', t('optTimeFormat'));
+  text('time-format-24', t('optTimeFormat24'));
+  text('time-format-12', t('optTimeFormat12'));
   text('single-save-name', t('optSingleSave'));
   text('single-save-hint', t('optSingleSaveHint'));
   text('single-save-browser', t('optSingleSaveBrowser'));
@@ -225,6 +227,16 @@ async function initSettings(): Promise<void> {
     await setSettings({ language: value });
     setLanguage(value);
     renderText();
+    showSaved();
+    await render();
+  });
+
+  const timeFormat = document.getElementById('time-format') as HTMLSelectElement;
+  timeFormat.value = settings.timeFormat;
+  timeFormat.addEventListener('change', async () => {
+    const value = timeFormat.value as TimeFormat;
+    await setSettings({ timeFormat: value });
+    setTimeFormat(value);
     showSaved();
     await render();
   });

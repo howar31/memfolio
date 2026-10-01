@@ -775,6 +775,10 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
 
   assertEqual(await popup.$eval('#single-save', (e) => e.value), 'browser', 'single downloads use the browser by default');
   assertEqual(await popup.$eval('#single-save-name', (e) => e.textContent), await ctx.msg('optSingleSave'), 'the single download setting is named');
+  assertEqual(await popup.$eval('#time-format', (e) => e.value), '24', 'times use the 24-hour clock by default');
+  assertEqual(await popup.$eval('#time-format-name', (e) => e.textContent), await ctx.msg('optTimeFormat'), 'the time format setting is named');
+  await popup.select('#time-format', '12');
+  await waitFor(async () => (await ctx.storage()).settings?.timeFormat === '12', 'the time format to be stored');
   await popup.select('#single-save', 'folder');
   await waitFor(async () => (await ctx.storage()).settings?.singleSave === 'folder', 'the single download setting to be stored');
 

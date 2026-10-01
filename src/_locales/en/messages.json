@@ -491,9 +491,6 @@
   "optLanguage": {
     "message": "Language"
   },
-  "optLanguageHint": {
-    "message": "The browser's extension list keeps the browser's language."
-  },
   "optLanguageAuto": {
     "message": "Follow the browser"
   },
@@ -583,5 +580,14 @@
   },
   "popupRemovePending": {
     "message": "Remove from the list?"
+  },
+  "optTimeFormat": {
+    "message": "Time format"
+  },
+  "optTimeFormat24": {
+    "message": "24-hour"
+  },
+  "optTimeFormat12": {
+    "message": "12-hour"
   }
 }

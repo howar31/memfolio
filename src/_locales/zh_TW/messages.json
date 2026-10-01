@@ -491,9 +491,6 @@
   "optLanguage": {
     "message": "語言"
   },
-  "optLanguageHint": {
-    "message": "瀏覽器擴充功能清單中的名稱與說明會跟隨瀏覽器的語言。"
-  },
   "optLanguageAuto": {
     "message": "跟隨瀏覽器"
   },
@@ -583,5 +580,14 @@
   },
   "popupRemovePending": {
     "message": "從清單移除？"
+  },
+  "optTimeFormat": {
+    "message": "時間格式"
+  },
+  "optTimeFormat24": {
+    "message": "24 小時制"
+  },
+  "optTimeFormat12": {
+    "message": "12 小時制"
   }
 }
