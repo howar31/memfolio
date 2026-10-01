@@ -486,7 +486,7 @@
     "message": "開發者模式"
   },
   "optDevModeHint": {
-    "message": "在個人檔案頁面的帳號面板顯示診斷工具。目前有：「檢查資料夾」。"
+    "message": "在個人檔案頁面顯示診斷工具：「檢查資料夾」。"
   },
   "optLanguage": {
     "message": "語言"
@@ -501,7 +501,7 @@
     "message": "單項下載存到"
   },
   "optSingleSaveHint": {
-    "message": "適用於一則貼文、輪播中的一張、縮圖與 Reel。帳號資料夾只用於已管理的帳號，並略過已存在的檔案；限時動態與精選一律存到瀏覽器的下載資料夾。"
+    "message": "適用於一則貼文、輪播中的一張、縮圖與 Reel。帳號資料夾只用於已管理的帳號；限時動態與精選一律存到瀏覽器的下載資料夾。"
   },
   "optSingleSaveBrowser": {
     "message": "瀏覽器的下載資料夾"
@@ -516,7 +516,7 @@
     "message": "返回帳號清單"
   },
   "popupImportHint": {
-    "message": "從已有下載內容的資料夾加入帳號。會在 Instagram 分頁開啟，由你在那裡選擇資料夾。"
+    "message": "從已有下載內容的資料夾加入帳號，在 Instagram 分頁進行。"
   },
   "popupImportStart": {
     "message": "開啟匯入"
@@ -538,5 +538,29 @@
   },
   "checkCopyFailed": {
     "message": "無法複製到剪貼簿（$1）。請改用「匯出 JSON」。"
+  },
+  "sponsorTitle": {
+    "message": "贊助 Memfolio"
+  },
+  "sponsorHint": {
+    "message": "Memfolio 免費提供，由個人開發與維護。"
+  },
+  "sponsorAction": {
+    "message": "贊助"
+  },
+  "optGroupGeneral": {
+    "message": "一般"
+  },
+  "optGroupFolders": {
+    "message": "資料夾"
+  },
+  "optGroupAdvanced": {
+    "message": "進階"
+  },
+  "popupTitle": {
+    "message": "帳號"
+  },
+  "popupRemoveYes": {
+    "message": "移除"
   }
 }

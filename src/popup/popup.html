@@ -10,47 +10,69 @@
     <header>
       <h1><span class="tab">Memfolio</span></h1>
       <div class="tools">
-        <span id="count"></span>
         <button id="options" class="iconbtn" type="button"></button>
         <button id="back" class="iconbtn" type="button" hidden></button>
       </div>
     </header>
     <section id="accounts">
+      <div class="titlebar">
+        <h2 id="count"></h2>
+      </div>
       <input id="filter" type="search" autocomplete="off" />
-      <main id="list"></main>
+      <main id="list" class="group"></main>
     </section>
     <section id="settings" hidden>
-      <h2 id="settings-title"></h2>
-      <label class="field">
-        <span class="name" id="language-name"></span>
-        <span class="hint" id="language-hint"></span>
-        <select id="language">
-          <option id="language-auto" value="auto"></option>
-          <option value="en" lang="en">English</option>
-          <option value="zh_TW" lang="zh-TW">繁體中文</option>
-        </select>
-      </label>
-      <label class="field">
-        <span class="name" id="single-save-name"></span>
-        <span class="hint" id="single-save-hint"></span>
-        <select id="single-save">
-          <option id="single-save-browser" value="browser"></option>
-          <option id="single-save-folder" value="folder"></option>
-        </select>
-      </label>
-      <div class="field sep">
-        <span class="name" id="import-name"></span>
-        <span class="hint" id="import-hint"></span>
-        <button id="import" class="btn" type="button"></button>
+      <div class="titlebar">
+        <h2 id="settings-title"></h2>
+        <span id="saved" role="status" aria-live="polite"></span>
       </div>
-      <label class="option sep">
-        <input id="developer-mode" type="checkbox" />
-        <span>
-          <span class="name" id="developer-mode-name"></span>
-          <span class="hint" id="developer-mode-hint"></span>
-        </span>
-      </label>
-      <p id="saved" role="status" aria-live="polite"></p>
+      <div id="thanks">
+        <span class="name" id="thanks-name"></span>
+        <span class="hint" id="thanks-hint"></span>
+        <a id="page-link" class="go" href="https://donate.howar31.com/" target="_blank" rel="noopener"></a>
+      </div>
+      <div>
+        <h3 id="group-general"></h3>
+        <div class="group">
+          <label class="item">
+            <span class="name" id="language-name"></span>
+            <select id="language">
+              <option id="language-auto" value="auto"></option>
+              <option value="en" lang="en">English</option>
+              <option value="zh_TW" lang="zh-TW">繁體中文</option>
+            </select>
+            <span class="hint" id="language-hint"></span>
+          </label>
+          <label class="item">
+            <span class="name" id="single-save-name"></span>
+            <select id="single-save">
+              <option id="single-save-browser" value="browser"></option>
+              <option id="single-save-folder" value="folder"></option>
+            </select>
+            <span class="hint" id="single-save-hint"></span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <h3 id="group-folders"></h3>
+        <div class="group">
+          <div class="item">
+            <span class="name" id="import-name"></span>
+            <button id="import" class="btn" type="button"></button>
+            <span class="hint" id="import-hint"></span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 id="group-advanced"></h3>
+        <div class="group">
+          <label class="item">
+            <span class="name" id="developer-mode-name"></span>
+            <input id="developer-mode" class="switch" type="checkbox" role="switch" />
+            <span class="hint" id="developer-mode-hint"></span>
+          </label>
+        </div>
+      </div>
     </section>
     <footer id="version"></footer>
     <script src="popup.js"></script>

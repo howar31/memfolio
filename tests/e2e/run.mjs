@@ -745,6 +745,19 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   assertEqual(await popup.$eval('#developer-mode-name', (e) => e.textContent), await ctx.msg('optDevMode'), 'the setting is named');
   assertEqual(await popup.$eval('#developer-mode', (e) => e.checked), false, 'developer mode is off by default');
   assertEqual(
+    await popup.$eval('#page-link', (e) => [e.href, e.target, e.textContent]),
+    ['https://donate.howar31.com/', '_blank', await ctx.msg('sponsorAction')],
+    'the block at the top links to the sponsor page in a new tab',
+  );
+  assertEqual(await popup.evaluate(() => document.querySelector('#settings .titlebar').nextElementSibling.id), 'thanks', 'that block comes first');
+  assertEqual(
+    await popup.$$eval('#settings h3', (els) => els.map((e) => e.textContent)),
+    [await ctx.msg('optGroupGeneral'), await ctx.msg('optGroupFolders'), await ctx.msg('optGroupAdvanced')],
+    'the settings are grouped: general, folders, advanced',
+  );
+  const settingsHeight = await popup.evaluate(() => document.body.scrollHeight);
+  assert(settingsHeight <= 600, `the settings fit the height of a popup (${settingsHeight} px)`);
+  assertEqual(
     await popup.evaluate(() => {
       const inputs = [...document.querySelectorAll('#settings input, #settings select, #settings button')];
       return inputs[inputs.length - 1].id;
@@ -847,11 +860,20 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/acct/`], 'clicking a row opens the profile');
 
   await popup.hover('.row');
+  assertEqual(await popup.$eval('.row .confirm', (e) => e.hidden), true, 'no question before the remove button is pressed');
   await popup.click('.row .remove');
-  assert((await ctx.account('42')) !== null, 'first click only asks');
+  assert((await ctx.account('42')) !== null, 'the remove button only asks');
+  const sideBefore = await popup.$eval('.row .side', (e) => e.getBoundingClientRect().width);
+  assertEqual(await popup.$eval('.row .confirm', (e) => [e.hidden, e.querySelector('span').textContent]), [false, await ctx.msg('popupRemoveConfirm')], 'the question sits on its own line');
+  assertEqual(await popup.$eval('.row .side', (e) => e.getBoundingClientRect().width), sideBefore, 'the entry keeps its layout while asking');
+  await popup.click('.row .confirm .btn:not(.danger)');
+  assertEqual(await popup.$eval('.row .confirm', (e) => e.hidden), true, 'cancel closes the question');
+  assert((await ctx.account('42')) !== null, 'cancel removes nothing');
   await popup.click('.row .remove');
+  await popup.click('.row .confirm .danger');
   await waitFor(async () => (await ctx.account('42')) === null, 'the account to be removed');
   await waitFor(async () => (await popup.$eval('#list', (l) => l.innerText)).includes(await ctx.msg('popupEmpty')), 'the empty state');
+  assertEqual(await popup.$eval('#count', (e) => e.textContent), await ctx.msg('popupTitle'), 'the title without a count when the list is empty');
 
   // The files stay on disk; only the list entry and, on the next page load, the stored handle go away.
   assertEqual((await opfs.names(page, 'root/acct')).length, 3, 'files are untouched by removal');

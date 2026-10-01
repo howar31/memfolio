@@ -486,13 +486,13 @@
     "message": "Developer mode"
   },
   "optDevModeHint": {
-    "message": "Shows diagnostic tools in the account panel on profile pages. Currently: “Check a folder”."
+    "message": "Shows diagnostic tools on profile pages: “Check a folder”."
   },
   "optLanguage": {
     "message": "Language"
   },
   "optLanguageHint": {
-    "message": "The extension's name and description in the browser's extension list follow the browser's language."
+    "message": "The browser's extension list keeps the browser's language."
   },
   "optLanguageAuto": {
     "message": "Follow the browser"
@@ -501,7 +501,7 @@
     "message": "Single downloads go to"
   },
   "optSingleSaveHint": {
-    "message": "Applies to a post, one picture of a carousel, a thumbnail and a reel. The account folder is used only for managed accounts and skips files already there; stories and highlights always use the browser's download folder."
+    "message": "Applies to a post, one picture of a carousel, a thumbnail and a reel. The account folder is used only for managed accounts; stories and highlights always use the browser's download folder."
   },
   "optSingleSaveBrowser": {
     "message": "The browser's download folder"
@@ -516,7 +516,7 @@
     "message": "Back to accounts"
   },
   "popupImportHint": {
-    "message": "Adds accounts from folders that already hold downloads. Opens on an Instagram tab, where you pick the folder."
+    "message": "Adds accounts from folders that already hold downloads. Runs on an Instagram tab."
   },
   "popupImportStart": {
     "message": "Open the import"
@@ -538,5 +538,29 @@
   },
   "checkCopyFailed": {
     "message": "Could not copy to the clipboard ($1). Use “Export JSON” instead."
+  },
+  "sponsorTitle": {
+    "message": "Sponsor Memfolio"
+  },
+  "sponsorHint": {
+    "message": "Memfolio is free and maintained by one person."
+  },
+  "sponsorAction": {
+    "message": "Sponsor"
+  },
+  "optGroupGeneral": {
+    "message": "General"
+  },
+  "optGroupFolders": {
+    "message": "Folders"
+  },
+  "optGroupAdvanced": {
+    "message": "Advanced"
+  },
+  "popupTitle": {
+    "message": "Accounts"
+  },
+  "popupRemoveYes": {
+    "message": "Remove"
   }
 }

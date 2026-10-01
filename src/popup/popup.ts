@@ -49,20 +49,25 @@ function row(account: AccountRecord): HTMLElement {
     h('div', { text: account.lastRunAt ? when(account.lastRunAt) : t('popupNeverRun') }),
   );
   const remove = h('button', { class: 'remove', title: t('popupRemove'), attrs: { 'aria-label': t('popupRemove') } }, icon([...ICONS.close], 14));
-  remove.addEventListener('click', () => {
-    if (remove.classList.contains('confirm')) {
-      void removeAccount(account.platform, account.id);
-      return;
-    }
-    // Two clicks: the first one only asks.
-    remove.classList.add('confirm');
-    remove.textContent = t('popupRemoveConfirm');
-    setTimeout(() => {
-      remove.classList.remove('confirm');
-      remove.replaceChildren(icon([...ICONS.close], 14));
-    }, 4000);
-  });
-  return h('div', { class: 'row' }, open, side, remove);
+  // Removing asks first, on a line of its own under the entry.
+  const cancel = h('button', { class: 'btn', text: t('cancel') });
+  const confirm = h(
+    'div',
+    { class: 'confirm', attrs: { role: 'alert' } },
+    h('span', { text: t('popupRemoveConfirm') }),
+    cancel,
+    h('button', { class: 'btn danger', text: t('popupRemoveYes'), on: { click: () => void removeAccount(account.platform, account.id) } }),
+  );
+  confirm.hidden = true;
+  const el = h('div', { class: 'row' }, open, side, remove, confirm);
+  const ask = (on: boolean): void => {
+    confirm.hidden = !on;
+    el.classList.toggle('asking', on);
+    (on ? cancel : remove).focus();
+  };
+  remove.addEventListener('click', () => ask(confirm.hidden));
+  cancel.addEventListener('click', () => ask(false));
+  return el;
 }
 
 async function render(): Promise<void> {
@@ -71,7 +76,7 @@ async function render(): Promise<void> {
   const shown = needle
     ? accounts.filter((a) => a.username.toLowerCase().includes(needle) || (a.relPath ?? a.folderName).toLowerCase().includes(needle))
     : accounts;
-  count.textContent = accounts.length > 0 ? t('popupCount', n(accounts.length)) : '';
+  count.textContent = accounts.length > 0 ? t('popupCount', n(accounts.length)) : t('popupTitle');
   filter.hidden = accounts.length === 0;
   if (shown.length === 0) {
     list.replaceChildren(h('div', { class: 'empty', text: accounts.length === 0 ? t('popupEmpty') : t('popupNoMatch') }));
@@ -119,6 +124,15 @@ function renderText(): void {
   text('import-hint', t('popupImportHint'));
   text('import', t('popupImportStart'));
   text('settings-title', t('optionsTitle'));
+  text('thanks-name', t('sponsorTitle'));
+  text('thanks-hint', t('sponsorHint'));
+  const link = document.getElementById('page-link')!;
+  const heart = icon([...ICONS.heart], 15);
+  heart.setAttribute('stroke-width', '1.8');
+  link.replaceChildren(heart, t('sponsorAction'));
+  text('group-general', t('optGroupGeneral'));
+  text('group-folders', t('optGroupFolders'));
+  text('group-advanced', t('optGroupAdvanced'));
   text('developer-mode-name', t('optDevMode'));
   text('developer-mode-hint', t('optDevModeHint'));
   text('language-name', t('optLanguage'));
@@ -141,19 +155,25 @@ function showSettings(on: boolean): void {
   document.getElementById('settings')!.hidden = !on;
   document.getElementById('options')!.hidden = on;
   document.getElementById('back')!.hidden = !on;
-  count.hidden = on;
 }
 
 /** Settings are stored the moment they change: a popup closes as soon as it loses focus. */
 async function initSettings(): Promise<void> {
   const settings = await getSettings();
   const saved = document.getElementById('saved')!;
+  let savedTimer: ReturnType<typeof setTimeout> | undefined;
+  // The note appears beside the title and goes away by itself.
+  const showSaved = (): void => {
+    saved.textContent = t('optSaved');
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(() => (saved.textContent = ''), 4000);
+  };
 
   const developerMode = document.getElementById('developer-mode') as HTMLInputElement;
   developerMode.checked = settings.developerMode;
   developerMode.addEventListener('change', async () => {
     await setSettings({ developerMode: developerMode.checked });
-    saved.textContent = t('optSaved');
+    showSaved();
   });
 
   const language = document.getElementById('language') as HTMLSelectElement;
@@ -163,7 +183,7 @@ async function initSettings(): Promise<void> {
     await setSettings({ language: value });
     setLanguage(value);
     renderText();
-    saved.textContent = t('optSaved');
+    showSaved();
     await render();
   });
 
@@ -171,7 +191,7 @@ async function initSettings(): Promise<void> {
   singleSave.value = settings.singleSave;
   singleSave.addEventListener('change', async () => {
     await setSettings({ singleSave: singleSave.value as SingleSave });
-    saved.textContent = t('optSaved');
+    showSaved();
   });
 
   document.getElementById('options')!.addEventListener('click', () => {

@@ -95,7 +95,7 @@ h1 {
   padding: 0;
   background: none;
   border: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -106,12 +106,12 @@ h1 {
 
 #filter {
   display: block;
-  width: calc(100% - 28px);
-  margin: 12px 14px 4px;
-  padding: 6px 8px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 10px;
   background: var(--sheet);
   border: 1px solid var(--rule);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 #list {
@@ -120,122 +120,246 @@ h1 {
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: stretch;
-  border-bottom: 1px solid var(--rule);
+  grid-template-columns: 1fr auto 36px;
+  align-items: center;
 }
-.row:hover {
+.row + .row {
+  border-top: 1px solid var(--rule);
+}
+.row:hover,
+.row.asking {
   background: var(--sheet-2);
 }
 .open {
   min-width: 0;
-  padding: 9px 8px 9px 14px;
+  padding: 10px 8px 10px 12px;
   text-align: left;
   background: none;
   border: 0;
   cursor: pointer;
 }
 .name {
-  font-weight: 650;
+  font-weight: 600;
 }
+.open .name,
 .path,
 .status {
   overflow-wrap: anywhere;
 }
 .path {
+  font-size: 12px;
   color: var(--ink-2);
 }
 .status {
+  font-size: 12px;
   color: var(--warn);
 }
 .status.error {
   color: var(--red);
 }
 .side {
-  padding: 9px 6px;
+  padding: 10px 6px;
   text-align: right;
+  font-size: 12px;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .side .files {
+  font-size: 13px;
   color: var(--ink);
 }
 .remove {
-  width: 30px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   padding: 0;
   background: none;
   border: 0;
+  border-radius: 6px;
   color: var(--ink-2);
   cursor: pointer;
   opacity: 0;
 }
+.remove:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
 .row:hover .remove,
-.remove:focus-visible,
-.remove.confirm {
+.row.asking .remove,
+.remove:focus-visible {
   opacity: 1;
 }
-.remove.confirm {
-  width: auto;
-  padding: 0 10px;
+/* The question about removing an entry: a line of its own, so nothing above it moves. */
+.confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  border-top: 1px dashed var(--rule);
+  font-size: 12px;
+}
+.confirm span {
+  flex: 1;
+  min-width: 0;
+}
+.confirm .btn {
+  margin: 0;
+  padding: 3px 10px;
+}
+.btn.danger {
+  border-color: var(--red);
   color: var(--red);
-  font-weight: 600;
 }
 .empty {
-  padding: 22px 14px;
+  padding: 18px 12px;
   color: var(--ink-2);
 }
 
-/* Settings view: replaces the account list inside the popup. */
-#settings h2 {
-  margin: 14px 14px 12px;
-  font-size: 13px;
-}
-#settings .option,
-#settings .field {
-  display: block;
-  margin: 0 14px 16px;
-}
-#settings .option {
+/* The two views share one layout; the settings replace the account list. */
+#accounts,
+#settings {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: flex-start;
-  cursor: pointer;
+  padding: 10px 14px 6px;
 }
-#settings .option input {
-  margin-top: 3px;
+.titlebar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
-#settings .name,
-#settings .hint {
-  display: block;
-}
-#settings .hint {
-  color: var(--ink-2);
-}
-#settings select {
-  display: block;
-  max-width: 100%;
-  margin-top: 6px;
-  padding: 4px 6px;
-  background: var(--sheet);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+.titlebar h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
 }
 #saved {
-  min-height: 1.45em;
-  margin: -6px 14px 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  text-align: right;
+}
+#settings h3 {
+  margin: 0 0 4px 2px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--ink-2);
 }
-#settings .sep {
-  padding-top: 14px;
+.group {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.group > .item + .item {
   border-top: 1px solid var(--rule);
+}
+.item,
+#thanks {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  align-items: center;
+  padding: 9px 12px;
+}
+label.item {
+  cursor: pointer;
+}
+.item .name {
+  font-weight: 600;
+}
+.item .hint,
+#thanks .hint {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.item .hint {
+  grid-column: 1 / -1;
+}
+#settings select,
+#settings .btn {
+  max-width: 220px;
+  padding: 4px 10px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+#settings .btn {
+  margin: 0;
+}
+/* A checkbox drawn as a switch. */
+.switch {
+  appearance: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--rule);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sheet);
+  transition: left 120ms;
+}
+.switch:checked {
+  background: var(--accent);
+}
+.switch:checked::after {
+  left: 18px;
+}
+.switch:focus-visible {
+  outline-offset: 2px;
+}
+/* The block at the top of the settings with the one outside link. */
+#thanks {
+  background: var(--sheet-2);
+  border-radius: 8px;
+}
+#thanks .name {
+  font-weight: 650;
+}
+#thanks .go {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  background: #b4532c;
+  color: #ffffff;
+  font-weight: 650;
+  text-decoration: none;
+}
+#thanks .go:hover {
+  filter: brightness(1.08);
+}
+#thanks .go:focus-visible {
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
 }
 .btn {
   margin-top: 8px;
   padding: 5px 12px;
   background: var(--sheet);
   border: 1px solid var(--rule);
-  border-radius: 4px;
+  border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
 }

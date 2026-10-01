@@ -44,16 +44,16 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .toasts { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
 .toast {
-  position: relative; width: 100%; padding: 10px 34px 10px 12px;
-  background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--accent);
-  border-radius: 4px; box-shadow: var(--shadow); white-space: pre-line; overflow-wrap: anywhere;
+  position: relative; width: 100%; padding: 10px 34px 10px 16px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: inset 4px 0 0 var(--accent), var(--shadow); white-space: pre-line; overflow-wrap: anywhere;
   animation: rise 140ms ease-out;
 }
-.toast.warn { border-left-color: var(--warn); }
-.toast.error { border-left-color: var(--red); }
+.toast.warn { box-shadow: inset 4px 0 0 var(--warn), var(--shadow); }
+.toast.error { box-shadow: inset 4px 0 0 var(--red), var(--shadow); }
 .toast .x {
   position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; padding: 2px;
-  display: grid; place-items: center; border: 0; background: none; color: var(--ink-2); cursor: pointer; border-radius: 4px;
+  display: grid; place-items: center; border: 0; background: none; color: var(--ink-2); cursor: pointer; border-radius: 6px;
 }
 .toast .x:hover { background: var(--sheet-2); color: var(--ink); }
 
@@ -62,10 +62,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .card { width: 100%; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
 .card > * { pointer-events: auto; }
 .card .body {
-  width: 100%; background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--accent);
-  border-radius: 4px; box-shadow: var(--shadow); padding: 12px;
+  width: 100%; background: var(--sheet); border: 1px solid var(--rule);
+  border-radius: 8px; box-shadow: var(--shadow); padding: 12px;
 }
-.card .who { margin-bottom: 4px; color: var(--accent); font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .who { margin-bottom: 4px; font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The button has the shape of the logo's tile, so the mark is not cut off. */
 .ball {
   position: relative; width: 52px; height: 52px; margin: -4px; padding: 4px;
@@ -82,17 +82,17 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .ball.busy.unknown::before { background: var(--spark); animation: pulse 1.4s ease-in-out infinite; }
 .ball.busy .core { box-shadow: 0 0 0 2px var(--sheet); }
 .card .path { font-weight: 600; overflow-wrap: anywhere; }
-.card .meta { color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.card .note { margin-top: 6px; color: var(--warn); }
+.card .meta { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.card .note { margin-top: 6px; font-size: 12px; color: var(--warn); }
 .card .note.error { color: var(--red); }
 .card .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.card .more { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.card .more { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule); font-size: 12px; }
 .bar { height: 4px; margin-top: 8px; background: var(--sheet-2); border-radius: 2px; overflow: hidden; }
 .bar > i { display: block; height: 100%; width: 0; background: var(--spark); transition: width 200ms linear; }
 .bar.unknown > i { width: 35%; animation: slide 1.4s ease-in-out infinite; }
 
 .btn {
-  padding: 6px 12px; border: 1px solid var(--rule); border-radius: 4px;
+  padding: 5px 12px; border: 1px solid var(--rule); border-radius: 6px;
   background: var(--sheet); color: var(--ink); cursor: pointer; font-weight: 600;
 }
 .btn:hover { background: var(--sheet-2); }
@@ -104,14 +104,14 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .fabs { display: flex; gap: 8px; }
 .fab {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
-  background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; box-shadow: var(--shadow);
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: var(--shadow);
   cursor: pointer; font-weight: 600;
 }
 .fab:hover { background: var(--sheet-2); }
 
 .hoverbtn {
   position: fixed; z-index: 2147482999; width: 34px; height: 34px; padding: 0;
-  display: grid; place-items: center; border: 0; border-radius: 4px;
+  display: grid; place-items: center; border: 0; border-radius: 8px;
   background: rgba(20, 24, 22, 0.82); color: #fff; cursor: pointer;
 }
 .hoverbtn:hover { background: #8a5a3c; }
@@ -123,10 +123,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 }
 .dialog {
   width: min(460px, 100%); max-height: calc(100vh - 32px); overflow: auto;
-  background: var(--sheet); border-top: 3px solid var(--accent); border-radius: 4px; box-shadow: var(--shadow); padding: 18px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: var(--shadow); padding: 18px;
 }
 .dialog.wide { width: min(720px, 100%); }
-.dialog h2 { margin: 0 0 8px; font-size: 16px; font-weight: 650; }
+.dialog h2 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
 .dialog p { margin: 0 0 8px; white-space: pre-line; overflow-wrap: anywhere; }
 .dialog .buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
