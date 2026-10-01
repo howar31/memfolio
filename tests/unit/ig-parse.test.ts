@@ -122,6 +122,33 @@ describe('mediaFromNode', () => {
   });
 });
 
+describe('mediaFromNode without a timestamp', () => {
+  // Shape of a carousel on the tagged tab: no `taken_at`, children carry `id` only.
+  const trimmed = {
+    pk: '3000000000000000009',
+    code: 'CODE9',
+    media_type: 8,
+    carousel_media_count: 2,
+    user: { username: 'other', pk: '77' },
+    carousel_media: [
+      { id: '3000000000000000007_77', media_type: 1, image_versions2: { candidates: [image(1440, 1800, 'a')] } },
+      { id: '3000000000000000008_77', media_type: 1, image_versions2: { candidates: [image(1440, 1800, 'b')] } },
+    ],
+  };
+
+  it('takes the creation time encoded in the media id', () => {
+    const items = mediaFromNode(trimmed);
+    expect(items.map((i) => i.id)).toEqual(['3000000000000000007_77', '3000000000000000008_77']);
+    // 2022-12-24T02:11:30Z
+    expect(items.map((i) => i.takenAt)).toEqual([1671847890, 1671847890]);
+    expect(items[0]).toMatchObject({ ownerId: '77', ownerUsername: 'other', shortcode: 'CODE9', kind: 'image' });
+  });
+
+  it('refuses a node that has neither a timestamp nor a usable id', () => {
+    expect(() => mediaFromNode({ ...trimmed, pk: 'x' })).toThrow('media without taken_at');
+  });
+});
+
 describe('legacyMediaFromShortcodeMedia', () => {
   const owner = { id: '42', username: 'acct' };
 

@@ -101,10 +101,15 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   }
 
   // 3. List and download.
-  const base = tab === 'posts' ? posts : tab === 'reels' ? reelsSource(gql, userId) : taggedSource(gql, userId);
-  const forced = requested !== 'full' && folder.record.needsFullScan[tab] === true;
+  const base = tab === 'posts' ? posts : tab === 'reels' ? reelsSource(gql, userId, username) : taggedSource(gql, userId);
+  // Stopping at the first page that is already on disk is only valid for a tab
+  // that has been listed to its end before. Files of the main grid may predate
+  // this record (import); the other tabs start with one complete listing.
+  const flagged = folder.record.needsFullScan[tab] === true;
+  const listedBefore = folder.record.listed?.[tab] === true;
+  const forced = requested !== 'full' && (flagged || (tab !== 'posts' && !listedBefore));
   const mode: RunMode = requested === 'full' || forced ? 'full' : 'incremental';
-  if (forced) surface.toast(t('forcedFullScan'));
+  if (forced && flagged) surface.toast(t('forcedFullScan'));
   console.info(`[memfolio] ${username}/${tab}: ${mode} run, ${index.matchedCount} files in "${folder.dir.name}"`);
 
   const result = await runAccountDownload({
@@ -130,8 +135,8 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   });
 
   // 4. Record the outcome.
-  const previousFlag = folder.record.needsFullScan[tab] === true;
-  const flag = needsFullScan(result) ? true : result.listing === 'complete' && !result.cancelled ? false : previousFlag;
+  const complete = result.listing === 'complete' && !result.cancelled && !needsFullScan(result);
+  const flag = needsFullScan(result) ? true : complete ? false : flagged;
   const record: AccountRecord = {
     ...folder.record,
     username,
@@ -139,6 +144,7 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
     lastRunAt: Date.now(),
     lastStatus: statusOf(result),
     needsFullScan: { ...folder.record.needsFullScan, [tab]: flag },
+    listed: { ...folder.record.listed, [tab]: listedBefore || complete },
   };
   await putAccount(record);
   if (result.failed.length > 0) console.warn('[memfolio] failed media:', result.failed);

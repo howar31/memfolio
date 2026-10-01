@@ -82,6 +82,16 @@ function one(media: Json, parent: { ownerId: string; ownerUsername: string; take
 }
 
 /**
+ * Creation time (Unix seconds) encoded in a media id: its upper bits count
+ * milliseconds since 2011-08-24T21:07:01.721Z. Used when a listing leaves the
+ * timestamp out (carousels on the tagged tab).
+ */
+function createdAtFromPk(pk: string | null | undefined): number | null {
+  if (!pk || !/^\d{15,20}$/.test(pk)) return null;
+  return Number(((BigInt(pk) >> 23n) + 1314220021721n) / 1000n);
+}
+
+/**
  * Converts one media object of the v1 shape (timeline, tagged, single post,
  * story item) into downloadable items; a carousel yields one item per child.
  * Carousel children use the parent's timestamp: listings do not give them one.
@@ -98,8 +108,8 @@ export function mediaFromNode(node: unknown, owner?: OwnerOverride): MediaItem[]
   const ownerUsername = owner?.ownerUsername ?? str(user?.username);
   if (!ownerId || !ownerUsername) throw new Error('media without owner');
 
-  const takenAt = Number(media.taken_at);
-  if (!Number.isFinite(takenAt)) throw new Error('media without taken_at');
+  const takenAt = Number.isFinite(Number(media.taken_at)) ? Number(media.taken_at) : createdAtFromPk(str(media.pk) ?? idParts[0]);
+  if (takenAt === null) throw new Error('media without taken_at');
   const parent = { ownerId, ownerUsername, takenAt, shortcode: str(media.code) };
 
   if (Array.isArray(media.carousel_media) && media.carousel_media.length > 0) {
@@ -109,6 +119,36 @@ export function mediaFromNode(node: unknown, owner?: OwnerOverride): MediaItem[]
     });
   }
   return [one(media, parent)];
+}
+
+/**
+ * Converts one entry of the reels tab listing. It names the reel (media id and
+ * shortcode) but carries neither a video URL nor, usually, the author's name
+ * and the timestamp; the item is looked up by shortcode before download and
+ * replaced by that result, so the missing fields are placeholders here.
+ */
+export function reelFromListingNode(node: unknown, profileUsername: string): MediaItem {
+  if (!isObject(node)) throw new Error('reel node is not an object');
+  const media = isObject(node.media) ? node.media : node;
+  const idParts = str(media.id)?.split('_') ?? [];
+  const user = isObject(media.user) ? media.user : null;
+  const pk = str(media.pk) ?? idParts[0];
+  const ownerId = idParts[1] ?? str(user?.pk);
+  const shortcode = str(media.code);
+  if (!pk || !ownerId) throw new Error('reel without media id');
+  if (!shortcode) throw new Error('reel without shortcode');
+  const takenAt = Number(media.taken_at);
+  return {
+    id: `${pk}_${ownerId}`,
+    pk,
+    ownerId,
+    ownerUsername: str(user?.username) ?? profileUsername,
+    takenAt: Number.isFinite(takenAt) ? takenAt : 0,
+    kind: 'video',
+    url: null,
+    shortcode,
+    basenames: [],
+  };
 }
 
 function legacyOne(node: Json, parent: { ownerId: string; ownerUsername: string; takenAt: number; shortcode: string | null }): MediaItem {

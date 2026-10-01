@@ -142,6 +142,7 @@ export async function runImport(): Promise<void> {
         lastRunAt: previous?.lastRunAt ?? null,
         lastStatus: previous && previous.lastStatus !== 'folder-missing' && previous.lastStatus !== 'needs-relink' ? previous.lastStatus : 'imported',
         needsFullScan: previous?.needsFullScan ?? {},
+        listed: previous?.listed ?? {},
         addedAt: previous?.addedAt ?? Date.now(),
       });
       imported += 1;

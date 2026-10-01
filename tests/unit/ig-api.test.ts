@@ -82,27 +82,61 @@ describe('postsSource', () => {
 });
 
 describe('reelsSource', () => {
-  const reelNode = (n: number) => ({ media: { ...node(n), media_type: 2, video_versions: null } });
+  // The listing names the reel but carries no author name, timestamp or video URL.
+  const reelNode = (n: number) => {
+    const { pk, id, code, image_versions2 } = node(n);
+    return { __typename: 'XDTClipsItemDict', media: { pk, id, code, media_type: 2, image_versions2, video_versions: null } };
+  };
   const data = { xdt_api__v1__clips__user__connection_v2: { edges: [{ node: reelNode(1) }], page_info: { end_cursor: 'R', has_next_page: true } } };
 
   it('lists by user id and returns items that still need a URL', async () => {
     const r = recorder([data]);
-    const page = await reelsSource(r.gql, '42').fetchPage(null, signal);
+    const page = await reelsSource(r.gql, '42', 'acct').fetchPage(null, signal);
     expect(r.calls[0]!.name).toBe('PolarisProfileReelsTabContentQuery_connection');
-    expect(r.calls[0]!.variables).toEqual({ data: { include_feed_video: true, page_size: 12, target_user_id: '42' } });
-    expect(page.items[0]).toMatchObject({ kind: 'video', url: null, shortcode: 'C1' });
+    expect(r.calls[0]!.variables).toEqual({
+      after: null,
+      data: { include_feed_video: true, page_size: 12, target_user_id: '42' },
+      first: 3,
+      id: '42',
+      __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+    });
+    expect(page.items[0]).toMatchObject({ id: '3000000000000000001_42', ownerId: '42', ownerUsername: 'acct', kind: 'video', url: null, shortcode: 'C1' });
     expect(page.nextCursor).toBe('R');
   });
 
-  it('adds the pagination fields from the second page on', async () => {
+  it('finds the connection when the response nests it under another object', async () => {
+    const r = recorder([{ node: { __typename: 'XDTUserDict', ...data } }]);
+    const page = await reelsSource(r.gql, '42', 'acct').fetchPage(null, signal);
+    expect(page.items).toHaveLength(1);
+    expect(page.nextCursor).toBe('R');
+  });
+
+  it('stops when no entry of a page can be read', async () => {
+    const broken = { xdt_api__v1__clips__user__connection_v2: { edges: [{ node: { media: { pk: '1' } } }], page_info: {} } };
+    const r = recorder([broken]);
+    await expect(reelsSource(r.gql, '42', 'acct').fetchPage(null, signal)).rejects.toMatchObject({
+      reason: 'bad-response',
+      message: expect.stringContaining('reel without media id'),
+    });
+  });
+
+  it('names the fields it received when there is no connection', async () => {
+    const r = recorder([{ node: { other: 1 }, extensions: null }]);
+    await expect(reelsSource(r.gql, '42', 'acct').fetchPage(null, signal)).rejects.toMatchObject({
+      reason: 'bad-response',
+      message: expect.stringContaining('node{other}'),
+    });
+  });
+
+  it('passes the cursor from the second page on', async () => {
     const r = recorder([data]);
-    await reelsSource(r.gql, '42').fetchPage('R', signal);
+    await reelsSource(r.gql, '42', 'acct').fetchPage('R', signal);
     expect(r.calls[0]!.variables).toEqual({
       after: 'R',
-      before: null,
       data: { include_feed_video: true, page_size: 12, target_user_id: '42' },
-      first: 4,
-      last: null,
+      first: 3,
+      id: '42',
+      __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
     });
   });
 });
@@ -114,14 +148,30 @@ describe('taggedSource', () => {
     const r = recorder([data]);
     const page = await taggedSource(r.gql, '42').fetchPage(null, signal);
     expect(r.calls[0]!.name).toBe('PolarisProfileTaggedTabContentQuery_connection');
-    expect(r.calls[0]!.variables).toEqual({ count: 12, user_id: '42' });
+    expect(r.calls[0]!.variables).toEqual({
+      after: null,
+      before: null,
+      count: 12,
+      first: 12,
+      last: null,
+      user_id: '42',
+      __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+    });
     expect(page.items[0]).toMatchObject({ ownerId: '77', ownerUsername: 'other' });
   });
 
-  it('adds the pagination fields from the second page on', async () => {
+  it('passes the cursor from the second page on', async () => {
     const r = recorder([data]);
     await taggedSource(r.gql, '42').fetchPage('T', signal);
-    expect(r.calls[0]!.variables).toEqual({ after: 'T', before: null, count: 12, first: 12, last: null, user_id: '42' });
+    expect(r.calls[0]!.variables).toEqual({
+      after: 'T',
+      before: null,
+      count: 12,
+      first: 12,
+      last: null,
+      user_id: '42',
+      __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+    });
   });
 });
 

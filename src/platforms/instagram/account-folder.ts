@@ -38,6 +38,7 @@ async function save(id: string, username: string, dir: FileSystemDirectoryHandle
     lastRunAt: previous?.lastRunAt ?? null,
     lastStatus: previous?.lastStatus ?? 'ok',
     needsFullScan: previous?.needsFullScan ?? {},
+    listed: previous?.listed ?? {},
     addedAt: previous?.addedAt ?? Date.now(),
   };
   await putAccount(record);

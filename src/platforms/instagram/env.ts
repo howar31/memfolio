@@ -5,7 +5,7 @@ import { budgetStore } from '../../core/records';
 import { RequestGate, requestJson, type RetryPolicy } from '../../core/request';
 import { StopError, type MediaKind, type StopReason } from '../../core/types';
 import { surface } from '../../ui/host';
-import { LOOKUP_NAMES, ORIGIN, createGraphql, type SessionInfo } from './api';
+import { ORIGIN, createGraphql, type SessionInfo } from './api';
 import { bridge } from './bridge-client';
 
 export const PLATFORM = 'instagram';
@@ -79,12 +79,10 @@ async function docId(name: string): Promise<string | null> {
   const cached = docIdCache.get(name);
   if (cached) return cached;
   // Modules load lazily with the page sections that use them, so misses are not cached.
-  const found = await bridge.docIds(LOOKUP_NAMES);
-  for (const q of LOOKUP_NAMES) {
-    const id = found[q];
-    if (id) docIdCache.set(q, id);
-  }
-  const id = docIdCache.get(name) ?? null;
+  // Only the name that is needed is looked up: the page records an error for
+  // every lookup of a module it has not loaded.
+  const id = (await bridge.docIds([name]))[name] ?? null;
+  if (id) docIdCache.set(name, id);
   console.info(`[memfolio] query ${name}: id ${id ? 'from page' : 'not on page'}`);
   return id;
 }

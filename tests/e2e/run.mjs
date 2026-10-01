@@ -483,6 +483,23 @@ scenario('reels and tagged tabs list their own content', async (ctx) => {
   assertEqual([record.needsFullScan.reels, record.needsFullScan.tagged, record.fileCount], [false, false, 4], 'summary covers both tabs');
 });
 
+scenario('the first run on the reels tab lists every page even when the newest reels are on disk', async (ctx) => {
+  const reels = Array.from({ length: 14 }, (_, i) => makePost(40 - i, { kind: 'video' }));
+  const state = newState({ posts: reels.slice(0, 12), reels, mediaInfo: 'dead' });
+
+  const grid = await ctx.open('/acct/', state);
+  await firstRun(ctx, grid);
+  await runFinished(ctx, grid);
+  assertEqual((await opfs.names(grid, 'root/acct')).length, 12, 'the main grid holds the newest reels');
+
+  const tab = await ctx.open('/acct/reels/', state);
+  await waitText(tab, await ctx.msg('tabReels'));
+  await click(tab, await ctx.msg('downloadAll'));
+  await runFinished(ctx, tab);
+  assertEqual(await opfs.names(tab, 'root/acct'), expectedFiles(reels), 'reels that are not on the main grid are saved');
+  assertEqual((await ctx.account('42')).needsFullScan.reels, false, 'later runs on the tab are incremental');
+});
+
 scenario('account id falls back to the search query when the page does not hold it', async (ctx) => {
   const state = newState({ posts: makeTimeline(2), relayUsers: [], searchUsers: [{ username: 'acct_fan', pk: '1' }, { username: 'acct', pk: '42' }] });
   const page = await ctx.open('/acct/tagged/', state);

@@ -23,6 +23,8 @@ export interface AccountRecord {
   lastStatus: AccountStatus;
   /** Per listing (e.g. "posts"): the next run must walk every page. */
   needsFullScan: Record<string, boolean>;
+  /** Per listing: a run has walked every page at least once. */
+  listed?: Record<string, boolean>;
   addedAt: number;
 }
 

@@ -1,6 +1,6 @@
 import { requestJson, type RequestGate, type RequestHooks, type RetryPolicy } from '../../core/request';
 import { StopError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
-import { legacyMediaFromShortcodeMedia, mediaFromNode } from './parse';
+import { legacyMediaFromShortcodeMedia, mediaFromNode, reelFromListingNode } from './parse';
 import { shortcodeToId } from './shortcode';
 
 type Json = Record<string, unknown>;
@@ -35,11 +35,6 @@ const QUERIES = {
 
 export type QueryName = keyof typeof QUERIES;
 export const QUERY_NAMES = Object.keys(QUERIES) as QueryName[];
-/** Every name whose id is looked up on the page, alternates included. */
-export const LOOKUP_NAMES: string[] = QUERY_NAMES.flatMap((n) => {
-  const def: QueryDef = QUERIES[n];
-  return def.alternate ? [n, def.alternate] : [n];
-});
 
 /** Runs one persisted query and returns the `data` object of the response. */
 export type GraphqlFn = (name: QueryName, variables: Json, signal: AbortSignal) => Promise<Json>;
@@ -127,22 +122,36 @@ function isConnection(v: unknown): v is Connection {
   return isObject(v) && Array.isArray(v.edges);
 }
 
-/** The connection under its known field name, or any field with the connection shape if it was renamed. */
+/**
+ * The connection under its known field name, or any field with the connection
+ * shape if it was renamed. A query that refetches part of an object returns
+ * the connection one level down, inside that object.
+ */
 function connectionFrom(data: Json, field: string): Connection {
-  if (isConnection(data[field])) return data[field];
-  for (const v of Object.values(data)) if (isConnection(v)) return v;
-  throw new StopError('bad-response', 'the response does not contain a post list');
+  const holders = [data, ...Object.values(data).filter(isObject)];
+  for (const h of holders) if (isConnection(h[field])) return h[field];
+  for (const h of holders) for (const v of Object.values(h)) if (isConnection(v)) return v;
+  const seen = Object.entries(data)
+    .map(([k, v]) => (isObject(v) ? `${k}{${Object.keys(v).join(',')}}` : k))
+    .join(', ');
+  throw new StopError('bad-response', `the response does not contain a post list (fields: ${seen})`);
 }
 
-function toPage(conn: Connection): ListingPage {
+function toPage(conn: Connection, read: (node: unknown) => MediaItem[] = mediaFromNode): ListingPage {
   const items: MediaItem[] = [];
+  let firstError: string | null = null;
   for (const edge of conn.edges) {
     const node = isObject(edge) ? edge.node : null;
     try {
-      items.push(...mediaFromNode(node));
+      items.push(...read(node));
     } catch (e) {
+      firstError ??= e instanceof Error ? e.message : String(e);
       console.warn('[memfolio] skipped a post that could not be read:', e instanceof Error ? e.message : e, node);
     }
+  }
+  // A page on which nothing is readable means the response shape changed, not that the account is empty.
+  if (conn.edges.length > 0 && items.length === 0) {
+    throw new StopError('bad-response', `none of the ${conn.edges.length} posts on the page could be read (${firstError})`);
   }
   const info = isObject(conn.page_info) ? conn.page_info : {};
   const next = info.has_next_page && typeof info.end_cursor === 'string' && info.end_cursor ? info.end_cursor : null;
@@ -181,13 +190,21 @@ export function postsSource(gql: GraphqlFn, username: string): ListingSource {
 }
 
 /** Reels tab of a profile. Items come without a video URL and are resolved per reel before download. */
-export function reelsSource(gql: GraphqlFn, userId: string): ListingSource {
+export function reelsSource(gql: GraphqlFn, userId: string, username: string): ListingSource {
   return {
     async fetchPage(cursor, signal) {
-      const data = { include_feed_video: true, page_size: PAGE_SIZE, target_user_id: userId };
-      const variables = cursor ? { after: cursor, before: null, data, first: 4, last: null } : { data };
-      const res = await gql('PolarisProfileReelsTabContentQuery_connection', variables, signal);
-      return toPage(connectionFrom(res, 'xdt_api__v1__clips__user__connection_v2'));
+      const res = await gql(
+        'PolarisProfileReelsTabContentQuery_connection',
+        {
+          after: cursor,
+          data: { include_feed_video: true, page_size: PAGE_SIZE, target_user_id: userId },
+          first: 3,
+          id: userId,
+          __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+        },
+        signal,
+      );
+      return toPage(connectionFrom(res, 'xdt_api__v1__clips__user__connection_v2'), (node) => [reelFromListingNode(node, username)]);
     },
   };
 }
@@ -196,10 +213,19 @@ export function reelsSource(gql: GraphqlFn, userId: string): ListingSource {
 export function taggedSource(gql: GraphqlFn, userId: string): ListingSource {
   return {
     async fetchPage(cursor, signal) {
-      const variables = cursor
-        ? { after: cursor, before: null, count: PAGE_SIZE, first: PAGE_SIZE, last: null, user_id: userId }
-        : { count: PAGE_SIZE, user_id: userId };
-      const res = await gql('PolarisProfileTaggedTabContentQuery_connection', variables, signal);
+      const res = await gql(
+        'PolarisProfileTaggedTabContentQuery_connection',
+        {
+          after: cursor,
+          before: null,
+          count: PAGE_SIZE,
+          first: PAGE_SIZE,
+          last: null,
+          user_id: userId,
+          __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+        },
+        signal,
+      );
       return toPage(connectionFrom(res, 'xdt_api__v1__usertags__user_id__feed_connection'));
     },
   };

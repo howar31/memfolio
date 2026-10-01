@@ -8,6 +8,7 @@ Status: in development, not published to any extension store.
 
 - **Download All** on a profile page, for the tab you are viewing (posts, Reels, tagged).
   - A normal run stops listing at the first page that is already on disk.
+  - On the Reels and tagged tabs the first run lists every page; later runs stop early as above.
   - **Full scan** lists every page and fills in anything missing.
   - A run can be cancelled; the next run continues where files are missing.
 - Single downloads: a post, one picture of a carousel, a thumbnail, a reel, stories and highlights. Hotkey: `Ctrl/Cmd + Shift + D`.
@@ -65,6 +66,7 @@ npm run check        # type check, unit tests, production build
 
 - 在個人檔案頁按 **下載全部**，依目前所在分頁（貼文、Reels、被標註）下載。
   - 一般執行會在列到第一個已全部存在的頁面時停止。
+  - 在 Reels 與被標註分頁，第一次執行會列出每一頁；之後的執行同樣會提前停止。
   - **完整掃描** 會列出每一頁並補上缺少的檔案。
   - 執行中可以取消，下次執行會從缺少檔案的地方接續。
 - 單項下載：一則貼文、輪播中的一張、縮圖、Reel、限時動態與精選。快捷鍵：`Ctrl/Cmd + Shift + D`。

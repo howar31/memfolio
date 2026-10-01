@@ -159,7 +159,7 @@ function graphql(state, name, vars) {
       return { xdt_api__v1__feed__user_timeline_graphql_connection: connection(state.posts, vars.after) };
     case 'PolarisProfileReelsTabContentQuery_connection':
       // The reels grid carries no direct video URL.
-      return { xdt_api__v1__clips__user__connection_v2: connection(state.reels, vars.after, (n) => ({ media: { ...n, video_versions: null } })) };
+      return { xdt_api__v1__clips__user__connection_v2: connection(state.reels, vars.after, (n) => ({ media: { pk: n.pk, id: n.id, code: n.code, media_type: 2, image_versions2: n.image_versions2, video_versions: null } })) };
     case 'PolarisProfileTaggedTabContentQuery_connection':
       return { xdt_api__v1__usertags__user_id__feed_connection: connection(state.tagged, vars.after) };
     case 'PolarisPostRootQuery': {
