@@ -659,6 +659,9 @@
   "popupGroupName": {
     "message": "群組名稱"
   },
+  "popupGroupNameTaken": {
+    "message": "這個名稱已被使用。"
+  },
   "popupGroupEmpty": {
     "message": "這個群組還沒有帳號。"
   },

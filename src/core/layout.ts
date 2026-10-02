@@ -71,17 +71,38 @@ export function pendingKey(platform: string, username: string): string {
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** Group names are compared without their case and the space around them. */
+const nameKey = (name: string): string => name.trim().toLowerCase();
+
+/** Groups stored under one name before names had to differ: the later ones get a number. */
+function distinctNames(groups: Group[]): Group[] {
+  const all = new Set(groups.map((g) => nameKey(g.name)));
+  const seen = new Set<string>();
+  return groups.map((g) => {
+    let name = g.name;
+    for (let n = 2; seen.has(nameKey(name)); n++) {
+      const numbered = `${g.name} ${n}`;
+      if (!all.has(nameKey(numbered))) name = numbered;
+    }
+    all.add(nameKey(name));
+    seen.add(nameKey(name));
+    return name === g.name ? g : { ...g, name };
+  });
+}
+
 /** A layout read from storage, with defaults for whatever is missing or malformed. */
 export function normalizeLayout(raw: unknown): Layout {
   if (!isObject(raw)) return DEFAULT_LAYOUT;
   const sort = isObject(raw.sort) && typeof raw.sort.by === 'string' && raw.sort.by in STARTS_DESC
     ? { by: raw.sort.by as SortBy, desc: raw.sort.desc === true }
     : DEFAULT_LAYOUT.sort;
-  const groups = Array.isArray(raw.groups)
-    ? raw.groups.flatMap((g): Group[] =>
-        isObject(g) && typeof g.id === 'string' && typeof g.name === 'string' ? [{ id: g.id, name: g.name, collapsed: g.collapsed === true }] : [],
-      )
-    : [];
+  const groups = distinctNames(
+    Array.isArray(raw.groups)
+      ? raw.groups.flatMap((g): Group[] =>
+          isObject(g) && typeof g.id === 'string' && typeof g.name === 'string' ? [{ id: g.id, name: g.name, collapsed: g.collapsed === true }] : [],
+        )
+      : [],
+  );
   const ids = new Set(groups.map((g) => g.id));
   const groupOf = isObject(raw.groupOf)
     ? Object.fromEntries(Object.entries(raw.groupOf).filter((e): e is [string, string] => typeof e[1] === 'string' && ids.has(e[1])))
@@ -166,13 +187,40 @@ export function toggleDirection(layout: Layout): Layout {
   return { ...layout, sort: { ...layout.sort, desc: !layout.sort.desc } };
 }
 
+/** The group of this name, whatever its case. */
+export function findGroup(layout: Layout, name: string): Group | undefined {
+  const key = nameKey(name);
+  return layout.groups.find((g) => nameKey(g.name) === key);
+}
+
+/**
+ * True when a group cannot be given this name: it is empty, kept for a heading
+ * of the text form, or in use by a group other than `self`.
+ */
+export function nameTaken(layout: Layout, name: string, self?: string): boolean {
+  const key = nameKey(name);
+  if (key === '' || key === PINNED_HEADING || key === UNGROUPED_HEADING) return true;
+  const group = findGroup(layout, name);
+  return group !== undefined && group.id !== self;
+}
+
+/** The wanted name, or the first numbered one that is free. */
+export function freeName(layout: Layout, wanted: string): string {
+  const base = wanted.trim();
+  for (let n = 1; ; n++) {
+    const name = n === 1 ? base : `${base} ${n}`;
+    if (!nameTaken(layout, name)) return name;
+  }
+}
+
 export function addGroup(layout: Layout, id: string, name: string): Layout {
+  if (nameTaken(layout, name)) return layout;
   return { ...layout, groups: [...layout.groups, { id, name: name.trim(), collapsed: false }] };
 }
 
 export function renameGroup(layout: Layout, id: string, name: string): Layout {
   const trimmed = name.trim();
-  if (trimmed === '' || trimmed === PINNED_HEADING || trimmed === UNGROUPED_HEADING) return layout;
+  if (nameTaken(layout, trimmed, id)) return layout;
   return { ...layout, groups: layout.groups.map((g) => (g.id === id ? { ...g, name: trimmed } : g)) };
 }
 

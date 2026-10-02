@@ -659,6 +659,9 @@
   "popupGroupName": {
     "message": "Group name"
   },
+  "popupGroupNameTaken": {
+    "message": "This name is already in use."
+  },
   "popupGroupEmpty": {
     "message": "No accounts in this group."
   },

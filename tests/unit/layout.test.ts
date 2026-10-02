@@ -5,7 +5,10 @@ import {
   arrange,
   assign,
   exportText,
+  findGroup,
+  freeName,
   moveGroup,
+  nameTaken,
   normalizeLayout,
   prune,
   removeGroup,
@@ -163,6 +166,43 @@ describe('groups', () => {
     const layout = withGroups();
     expect(renameGroup(layout, 'g1', '[pinned]')).toEqual(layout);
     expect(renameGroup(layout, 'g1', ' [ungrouped] ')).toEqual(layout);
+  });
+});
+
+describe('group names', () => {
+  it('are used once, whatever the case and the space around them', () => {
+    const layout = withGroups();
+    expect(addGroup(layout, 'g3', ' first ')).toBe(layout);
+    expect(renameGroup(layout, 'g2', 'FIRST')).toBe(layout);
+    expect(nameTaken(layout, 'first')).toBe(true);
+    expect(nameTaken(layout, 'Third')).toBe(false);
+    expect(findGroup(layout, ' SECOND')?.id).toBe('g2');
+  });
+
+  it('can be written another way by the group that has them', () => {
+    const layout = withGroups();
+    expect(nameTaken(layout, 'first', 'g1')).toBe(false);
+    expect(renameGroup(layout, 'g1', 'first').groups[0]!.name).toBe('first');
+  });
+
+  it('cannot be the headings the text form keeps, nor empty', () => {
+    const layout = withGroups();
+    expect(nameTaken(layout, '[Pinned]')).toBe(true);
+    expect(nameTaken(layout, '  ')).toBe(true);
+    expect(addGroup(layout, 'g3', '[ungrouped]')).toBe(layout);
+    expect(addGroup(layout, 'g3', ' ')).toBe(layout);
+  });
+
+  it('get a number when a free one is asked for and the plain one is in use', () => {
+    const layout = withGroups();
+    expect(freeName(layout, 'Third')).toBe('Third');
+    expect(freeName(layout, 'first')).toBe('first 2');
+    expect(freeName(addGroup(layout, 'g3', 'First 2'), 'First')).toBe('First 3');
+  });
+
+  it('that were stored twice are told apart on reading', () => {
+    const stored = { groups: [{ id: 'a', name: 'Dup' }, { id: 'b', name: 'dup' }, { id: 'c', name: 'Dup 2' }, { id: 'd', name: 'Other' }] };
+    expect(normalizeLayout(stored).groups.map((g) => g.name)).toEqual(['Dup', 'dup 3', 'Dup 2', 'Other']);
   });
 });
 

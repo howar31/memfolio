@@ -1284,6 +1284,71 @@ scenario('groups split the list and sorting stays inside them', async (ctx) => {
   assertEqual((await layoutOf(ctx)).groupOf['instagram:@delta'], (await layoutOf(ctx)).groups[0].id, 'an address-only entry is keyed by its name');
 });
 
+scenario('a group name is used once', async (ctx) => {
+  await ctx.ext.evaluate(() =>
+    chrome.storage.local.set({
+      'pending:instagram:alpha': { platform: 'instagram', username: 'alpha', addedAt: 1 },
+      layout: { groups: [{ id: 'g1', name: 'Friends', collapsed: false }, { id: 'g2', name: 'Work', collapsed: false }] },
+    }),
+  );
+  const popup = await openPopup(ctx);
+  const taken = await ctx.msg('popupGroupNameTaken');
+  const fallback = await ctx.msg('popupGroupDefault');
+  const remark = (block) => popup.$eval(`${block} .gerror`, (e) => (e.hidden ? '' : e.textContent));
+  const groupNames = async () => (await layoutOf(ctx)).groups.map((g) => g.name);
+  const retype = async (block, value) => {
+    await popup.$eval(`${block} .gname`, (e) => (e.value = ''));
+    await popup.type(`${block} .gname`, value);
+  };
+  const draft = '.block[data-kind="draft"]';
+
+  // A new group cannot take a name in use, whatever its case.
+  await popup.click('#new-group');
+  await waitFor(() => popup.$(`${draft} .gname`), 'the name box of the new group');
+  assertEqual(await remark(draft), '', 'no remark at first');
+  await retype(draft, ' friends ');
+  await popup.keyboard.press('Enter');
+  await waitFor(async () => (await remark(draft)) === taken, 'the remark about the name');
+  assertEqual([await groupNames(), await popup.$eval(`${draft} .gname`, (e) => e.value)], [['Friends', 'Work'], ' friends '], 'nothing is stored and the box stays open');
+  await popup.type(`${draft} .gname`, 'x');
+  await waitFor(async () => (await remark(draft)) === '', 'the remark to go once the name changes');
+  await retype(draft, '[pinned]');
+  await popup.click(`${draft} .gsave`);
+  await waitFor(async () => (await remark(draft)) === taken, 'the remark for a heading the text form keeps');
+  await retype(draft, 'Family');
+  await popup.click(`${draft} .gsave`);
+  await waitFor(async () => (await groupNames()).length === 3, 'the group with a free name');
+  assertEqual(await groupNames(), ['Friends', 'Work', 'Family'], 'stored under the name typed');
+
+  // Renaming follows the same rule; a group may write its own name another way.
+  const work = '.block[data-block="g2"]';
+  await popup.click(`${work} .gmore`);
+  await popup.click(`${work} .grename`);
+  await retype(work, 'FAMILY');
+  await popup.keyboard.press('Enter');
+  await waitFor(async () => (await remark(work)) === taken, 'the remark when renaming');
+  assertEqual(await groupNames(), ['Friends', 'Work', 'Family'], 'the name is not changed');
+  await retype(work, 'WORK');
+  await popup.keyboard.press('Enter');
+  await waitFor(async () => (await groupNames())[1] === 'WORK', 'its own name in capitals');
+
+  // The name offered for a new group is one that is free.
+  for (const expected of [fallback, `${fallback} 2`]) {
+    await popup.click('#new-group');
+    await waitFor(() => popup.$(`${draft} .gname`), 'the name box of the new group');
+    assertEqual(await popup.$eval(`${draft} .gname`, (e) => e.value), expected, 'the offered name');
+    await popup.click(`${draft} .gsave`);
+    await waitFor(async () => (await groupNames()).includes(expected), `the group "${expected}"`);
+  }
+
+  // A pasted heading finds its group the same way.
+  await popup.click('#transfer');
+  await popup.$eval('#addresses', (e, v) => (e.value = v), ['# FRIENDS ', `${ORIGIN}/bravo/`].join('\n'));
+  await popup.click('#add-go');
+  await waitFor(async () => (await layoutOf(ctx)).groupOf['instagram:@bravo'] === 'g1', 'the pasted entry in the existing group');
+  assertEqual((await groupNames()).length, 5, 'no group was made for the heading');
+});
+
 scenario('pinned entries form a block at the top and return to their group', async (ctx) => {
   await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
     'account:instagram:1': listRecord('1', 'alpha'),

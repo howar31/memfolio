@@ -2,7 +2,7 @@
 // addresses, and handing the list out in the same form.
 
 import { n, t } from '../core/i18n';
-import { addGroup, arrange, assign, exportText, pendingKey } from '../core/layout';
+import { addGroup, arrange, assign, exportText, findGroup, pendingKey } from '../core/layout';
 import { putPending, setLayout, type PendingAccount } from '../core/records';
 import { profileNamesIn } from '../platforms/instagram/routes';
 import { newGroupId } from './list';
@@ -24,10 +24,10 @@ async function addPasted(): Promise<void> {
   const fresh = entries.filter((e) => !listed.has(e.username));
 
   let layout = list.layout;
-  for (const name of groups) if (!layout.groups.some((g) => g.name === name)) layout = addGroup(layout, newGroupId(), name);
+  for (const name of groups) layout = addGroup(layout, newGroupId(), name);
   for (const entry of fresh) {
     const key = pendingKey(PASTE_PLATFORM, entry.username);
-    const group = layout.groups.find((g) => g.name === entry.group);
+    const group = entry.group ? findGroup(layout, entry.group) : undefined;
     if (group) layout = assign(layout, key, group.id);
     // Whatever the list is sorted by, the manual order takes the new entries the way they were pasted.
     layout = { ...layout, order: [...layout.order.filter((k) => k !== key), key] };

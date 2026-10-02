@@ -3,11 +3,12 @@
 
 import { n, t, when, type MessageKey } from '../core/i18n';
 import {
-  PINNED,
-  UNGROUPED,
   addGroup,
   assign,
+  freeName,
   moveGroup,
+  nameTaken,
+  PINNED,
   prune,
   removeGroup,
   renameGroup,
@@ -15,6 +16,7 @@ import {
   setCollapsed,
   setSort,
   toggleDirection,
+  UNGROUPED,
   type Block,
   type Layout,
   type SortBy,
@@ -228,8 +230,11 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
   // A drawing in the middle of typing keeps what was typed.
   const typed = naming === block.id ? namingDraft : null;
   input.value = typed ?? block.name ?? '';
+  const error = h('div', { class: 'gerror', text: t('popupGroupNameTaken'), attrs: { role: 'alert' } });
+  error.hidden = true;
   input.addEventListener('input', () => {
     if (naming === block.id) namingDraft = input.value;
+    error.hidden = true;
   });
   // Leaving the box of a group that was being made makes no group.
   const stop = (): void => {
@@ -238,10 +243,13 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
     drafting = null;
     void render();
   };
-  const save = (): void => {
-    if (!draft) return void change((layout) => renameGroup(layout, block.id, input.value));
+  const save = async (): Promise<void> => {
+    // A name in use is said so and the box stays open; an empty one makes no change.
+    const wanted = input.value.trim();
+    if (wanted !== '' && nameTaken((await loadList()).layout, wanted, draft ? undefined : block.id)) return void (error.hidden = false);
+    if (!draft) return void change((layout) => renameGroup(layout, block.id, wanted));
     void change((layout, entries) => {
-      const made = addGroup(layout, draft.id, input.value.trim() || t('popupGroupDefault'));
+      const made = addGroup(layout, draft.id, wanted || freeName(layout, t('popupGroupDefault')));
       if (draft.entry === null) return made;
       const joined = assign(made, draft.entry, draft.id);
       return joined.sort.by === 'manual' ? reorder(joined, entries, draft.entry, null, true) : joined;
@@ -250,7 +258,7 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
   input.addEventListener('keydown', (e) => {
     // Enter that confirms an input method's composition belongs to the text, not to the box.
     if (e.isComposing) return;
-    if (e.key === 'Enter') save();
+    if (e.key === 'Enter') void save();
     else if (e.key === 'Escape') stop();
     else return;
     e.preventDefault();
@@ -260,7 +268,8 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
     { class: 'renaming' },
     input,
     h('button', { class: 'btn gcancel', text: t('cancel'), on: { click: stop } }),
-    h('button', { class: 'btn gsave', text: t('popupSave'), on: { click: save } }),
+    h('button', { class: 'btn gsave', text: t('popupSave'), on: { click: () => void save() } }),
+    error,
   );
 
   const cancel = h('button', { class: 'btn', text: t('cancel') });
@@ -381,7 +390,7 @@ export async function render(): Promise<void> {
 
   // A group being made is drawn after the groups, like the stored one will be.
   if (drafting) {
-    const made: Block<Entry> = { id: drafting.id, kind: 'group', name: t('popupGroupDefault'), collapsed: false, items: [] };
+    const made: Block<Entry> = { id: drafting.id, kind: 'group', name: freeName(layout, t('popupGroupDefault')), collapsed: false, items: [] };
     const at = blocks.findIndex((b) => b.kind === 'ungrouped');
     blocks.splice(at < 0 ? blocks.length : at, 0, made);
   }
