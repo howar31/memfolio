@@ -4,7 +4,7 @@ import { sleep } from '../../core/pacing';
 import { adoptPending, findAccountByUsername, getAccount, getDefaultFolderName, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
-import { h, logoMark } from '../../ui/dom';
+import { folderLine, h, logoMark } from '../../ui/dom';
 import { surface, type ToastHandle } from '../../ui/host';
 import { resolveAccountFolder } from './account-folder';
 import { fetchPostMedia, isSoftStop, postsSource, reelsSource, resolveUserId, taggedSource } from './api';
@@ -238,7 +238,7 @@ async function buildCard(): Promise<HTMLElement | null> {
   const body = h('div', { class: 'body' }, h('div', { class: 'who', text: `@${target.username}` }));
 
   if (record) {
-    body.append(h('div', { class: 'path', text: record.relPath ?? record.folderName }));
+    body.append(folderLine(record.relPath ? record.relPath.split('/') : [record.folderName], t('pathAbove')));
     // Counts and the last status describe the previous run; they are left out while one is in progress.
     if (!active) {
       body.append(

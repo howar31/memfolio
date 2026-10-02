@@ -633,7 +633,7 @@ scenario('import registers existing folders and shows their relative path', asyn
   assertEqual('defaultFolder:instagram' in (await ctx.storage()), false, 'the import sets no default location');
   // The profile now downloads into the imported folder without asking for a default location.
   const profile = await ctx.openProfile('/acct/', state);
-  await waitText(profile, 'archive/alice/instagram');
+  await waitText(profile, '… › archive › alice › instagram');
   await click(profile, await ctx.msg('downloadAll'));
   await runFinished(ctx, profile);
   const names = await opfs.names(profile, 'archive/alice/instagram');
@@ -713,7 +713,7 @@ scenario('a new account can be saved outside the default location', async (ctx) 
 
   // An account that has a folder is not offered the link.
   const other = await ctx.openProfile('/acct/', state);
-  await waitText(other, 'place');
+  await waitText(other, '… › place');
   assertEqual(await hasButton(other, elsewhere), false, 'no link for a managed account');
 });
 
@@ -1084,7 +1084,13 @@ scenario('popup lists accounts, opens profiles and removes entries', async (ctx)
   await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
   await waitFor(() => popup.$('.row'), 'a popup row');
   const rowText = await popup.$eval('.row', (r) => r.innerText);
-  for (const part of ['@acct', 'root/acct', await ctx.msg('popupFiles', 3)]) assert(rowText.includes(part), `popup row shows "${part}"`);
+  for (const part of ['@acct', '… › root › acct', await ctx.msg('popupFiles', 3)]) assert(rowText.includes(part), `popup row shows "${part}"`);
+  // The folder is shown as far as the browser tells it; the ellipsis stands for the rest and says so.
+  assertEqual(
+    await popup.$eval('.row .path', (e) => [e.querySelector('.gap').textContent, e.querySelector('.gap').title, e.querySelector('.leaf').textContent]),
+    ['…', await ctx.msg('pathAbove'), 'acct'],
+    'the folder line starts with an explained ellipsis and ends with the account folder',
+  );
   assertEqual(await popup.$eval('#count', (e) => e.textContent), await ctx.msg('popupCount', 1), 'account count');
 
   // Record the tab the popup asks for instead of letting it load the real site.

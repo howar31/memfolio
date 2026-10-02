@@ -22,7 +22,7 @@ import {
   type SortBy,
 } from '../core/layout';
 import { getAccount, getPending, putAccount, putPending, removeAccount, removePending, setLayout, type AccountStatus } from '../core/records';
-import { ICONS, h, icon } from '../ui/dom';
+import { ICONS, folderLine, h, icon } from '../ui/dom';
 import { PROFILE_URL, loadList, type Entry } from './shared';
 
 const STATUS_TEXT: Partial<Record<AccountStatus, MessageKey>> = {
@@ -129,7 +129,7 @@ function row(entry: Entry, block: Block<Entry>, drawn: Drawn): HTMLElement {
     },
     h('div', { class: 'name', text: `@${username}` }),
     account
-      ? h('div', { class: 'path', text: account.relPath ?? account.folderName, title: account.relPath ? t('popupRelative') : undefined })
+      ? folderLine(account.relPath ? account.relPath.split('/') : [account.folderName], t('pathAbove'))
       : h('div', { class: 'path', text: t('popupNeverRun') }),
     account && statusKey ? h('div', { class: `status ${ERROR_STATUS.has(account.lastStatus) ? 'error' : ''}`, text: t(statusKey) }) : null,
   );

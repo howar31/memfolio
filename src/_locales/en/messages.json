@@ -356,8 +356,8 @@
   "popupImport": {
     "message": "Import existing folders"
   },
-  "popupRelative": {
-    "message": "relative path"
+  "pathAbove": {
+    "message": "The browser does not tell an extension where this folder is on the disk. Only the part shown here is known."
   },
   "statusImported": {
     "message": "Imported, not run yet"

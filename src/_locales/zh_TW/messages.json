@@ -356,8 +356,8 @@
   "popupImport": {
     "message": "匯入既有資料夾"
   },
-  "popupRelative": {
-    "message": "相對路徑"
+  "pathAbove": {
+    "message": "瀏覽器不會告訴擴充功能這個資料夾在磁碟上的位置，只知道這裡顯示的部分。"
   },
   "statusImported": {
     "message": "已匯入，尚未執行"

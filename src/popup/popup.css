@@ -320,8 +320,28 @@ h1 {
   overflow-wrap: anywhere;
 }
 .path {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
   font-size: 12px;
   color: var(--ink-2);
+}
+/* The folder as far as the browser tells it: an ellipsis, the known names, the account folder last. */
+.path .fi {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 1.45em;
+}
+.path .gap {
+  cursor: help;
+}
+.path .sep {
+  opacity: 0.6;
+}
+.path .leaf {
+  font-weight: 600;
+  color: var(--ink);
 }
 .status {
   font-size: 12px;

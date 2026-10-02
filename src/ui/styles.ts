@@ -92,7 +92,11 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .ball.busy::before { background: conic-gradient(var(--spark) calc(var(--p, 0) * 1%), var(--rule) 0); }
 .ball.busy.unknown::before { background: var(--spark); animation: pulse 1.4s ease-in-out infinite; }
 .ball.busy .core { box-shadow: 0 0 0 2px var(--sheet); }
-.card .path { font-weight: 600; overflow-wrap: anywhere; }
+.card .path { display: flex; align-items: flex-start; gap: 5px; color: var(--ink-2); overflow-wrap: anywhere; }
+.card .path .fi { flex: none; display: inline-flex; align-items: center; height: 1.45em; }
+.card .path .gap { cursor: help; }
+.card .path .sep { opacity: 0.6; }
+.card .path .leaf { font-weight: 600; color: var(--ink); }
 .card .meta { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
 .card .note { margin-top: 6px; font-size: 12px; color: var(--warn); }
 .card .note.error { color: var(--red); }

@@ -20,6 +20,18 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
   return el;
 }
 
+/**
+ * A folder as far as the browser tells it: an ellipsis for what lies above, then the known names.
+ * `hint` explains the ellipsis under the pointer.
+ */
+export function folderLine(names: string[], hint: string): HTMLDivElement {
+  const trail = h('span', {}, h('span', { class: 'gap', text: '…', title: hint }));
+  names.forEach((name, i) => {
+    trail.append(h('span', { class: 'sep', text: ' › ' }), h(i === names.length - 1 ? 'b' : 'span', { class: i === names.length - 1 ? 'leaf' : 'seg', text: name }));
+  });
+  return h('div', { class: 'path' }, h('span', { class: 'fi' }, icon([...ICONS.folder], 13)), trail);
+}
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** Icons are drawn for this project; `paths` is a list of path data on a 24x24 grid. */
