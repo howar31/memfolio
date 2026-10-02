@@ -62,6 +62,9 @@
   "cardNotManaged": {
     "message": "This account has no folder yet. The first download sets one up."
   },
+  "cardDefaultTarget": {
+    "message": "Will be saved to $1"
+  },
   "cardListing": {
     "message": "Lists: $1"
   },
@@ -161,17 +164,29 @@
   "permGrant": {
     "message": "Allow"
   },
-  "pickRootTitle": {
-    "message": "Choose the download folder"
+  "defaultPickTitle": {
+    "message": "Choose the default location"
   },
-  "pickRootMessage": {
-    "message": "Accounts you download for the first time get a folder named after the account inside this folder."
+  "defaultPickMessage": {
+    "message": "An account you download for the first time gets a folder named after it inside the default location. You choose it once; it can be changed in the settings."
   },
-  "rootMissingTitle": {
-    "message": "Download folder not found"
+  "defaultMissingTitle": {
+    "message": "Default location not found"
   },
-  "rootMissingMessage": {
-    "message": "The download folder “$1” was moved, renamed or deleted. Choose the download folder again."
+  "defaultMissingMessage": {
+    "message": "The default location “$1” was moved, renamed or deleted. Choose a default location again."
+  },
+  "defaultChangeTitle": {
+    "message": "Default location"
+  },
+  "defaultCurrent": {
+    "message": "Current: “$1”."
+  },
+  "defaultChangeNote": {
+    "message": "An account you download for the first time gets a folder named after it inside the default location. Changing it moves no files, and accounts already on your list keep their folders."
+  },
+  "defaultChanged": {
+    "message": "The default location is now “$1”."
   },
   "linkTitle": {
     "message": "Choose the folder of this account"
@@ -512,8 +527,17 @@
   "popupBack": {
     "message": "Back to accounts"
   },
-  "popupImportHint": {
-    "message": "Adds accounts from folders that already hold downloads. Runs on an Instagram tab."
+  "optDefault": {
+    "message": "Default location"
+  },
+  "optDefaultNone": {
+    "message": "Not chosen yet"
+  },
+  "optDefaultChange": {
+    "message": "Change"
+  },
+  "optDefaultChoose": {
+    "message": "Choose"
   },
   "popupImportStart": {
     "message": "Open the import"

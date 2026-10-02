@@ -62,6 +62,9 @@
   "cardNotManaged": {
     "message": "這個帳號還沒有資料夾，第一次下載時會設定。"
   },
+  "cardDefaultTarget": {
+    "message": "將存到：$1"
+  },
   "cardListing": {
     "message": "列表來源：$1"
   },
@@ -161,17 +164,29 @@
   "permGrant": {
     "message": "允許"
   },
-  "pickRootTitle": {
-    "message": "選擇下載資料夾"
+  "defaultPickTitle": {
+    "message": "選擇預設位置"
   },
-  "pickRootMessage": {
-    "message": "第一次下載的帳號，會在這個資料夾裡建立以帳號名稱命名的資料夾。"
+  "defaultPickMessage": {
+    "message": "第一次下載的帳號，會在預設位置裡建立以帳號名稱命名的資料夾。只需要選擇一次，之後可以在設定中更換。"
   },
-  "rootMissingTitle": {
-    "message": "找不到下載資料夾"
+  "defaultMissingTitle": {
+    "message": "找不到預設位置"
   },
-  "rootMissingMessage": {
-    "message": "下載資料夾「$1」已被搬移、改名或刪除。請重新選擇下載資料夾。"
+  "defaultMissingMessage": {
+    "message": "預設位置「$1」已被搬移、改名或刪除。請重新選擇預設位置。"
+  },
+  "defaultChangeTitle": {
+    "message": "預設位置"
+  },
+  "defaultCurrent": {
+    "message": "目前：「$1」。"
+  },
+  "defaultChangeNote": {
+    "message": "第一次下載的帳號，會在預設位置裡建立以帳號名稱命名的資料夾。更換不會搬移任何檔案，已在清單上的帳號維持原本的資料夾。"
+  },
+  "defaultChanged": {
+    "message": "預設位置已改為「$1」。"
   },
   "linkTitle": {
     "message": "選擇這個帳號的資料夾"
@@ -512,8 +527,17 @@
   "popupBack": {
     "message": "返回帳號清單"
   },
-  "popupImportHint": {
-    "message": "從已有下載內容的資料夾加入帳號，在 Instagram 分頁進行。"
+  "optDefault": {
+    "message": "預設位置"
+  },
+  "optDefaultNone": {
+    "message": "尚未選擇"
+  },
+  "optDefaultChange": {
+    "message": "更換"
+  },
+  "optDefaultChoose": {
+    "message": "選擇"
   },
   "popupImportStart": {
     "message": "開啟匯入"

@@ -34,7 +34,7 @@ function isDir(v: unknown): v is FileSystemDirectoryHandle {
   return typeof FileSystemDirectoryHandle !== 'undefined' && v instanceof FileSystemDirectoryHandle;
 }
 
-/** Folder handles of one platform: the download root, known parents, and one folder per account id. */
+/** Folder handles of one platform: the default location, known parents, and one folder per account id. */
 export class HandleStore {
   constructor(private platform: string) {}
 
@@ -42,13 +42,14 @@ export class HandleStore {
     return `dir:${this.platform}:${id}`;
   }
 
-  async getRoot(): Promise<FileSystemDirectoryHandle | null> {
-    const v = await get<unknown>(`root:${this.platform}`);
+  /** The folder new accounts get their own folder in. `root:` is the key it was stored under before. */
+  async getDefault(): Promise<FileSystemDirectoryHandle | null> {
+    const v = (await get<unknown>(`default:${this.platform}`)) ?? (await get<unknown>(`root:${this.platform}`));
     return isDir(v) ? v : null;
   }
 
-  async setRoot(handle: FileSystemDirectoryHandle): Promise<void> {
-    await set(`root:${this.platform}`, handle);
+  async setDefault(handle: FileSystemDirectoryHandle): Promise<void> {
+    await set(`default:${this.platform}`, handle);
   }
 
   /** Folders picked as import parents; used to show an account folder's relative path. */

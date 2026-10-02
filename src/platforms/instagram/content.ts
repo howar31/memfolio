@@ -2,9 +2,10 @@
 // the platform or to the disk runs here; the popup only reads summaries.
 
 import { initI18n, t, uiLanguage } from '../../core/i18n';
-import { IMPORT_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
+import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
 import { allAccounts, getSettings, onStorageChange } from '../../core/records';
 import { surface } from '../../ui/host';
+import { changeDefault, mirrorDefault } from './account-folder';
 import { PLATFORM, handles } from './env';
 import { runFolderCheck } from './folder-check';
 import { runImport } from './import';
@@ -98,12 +99,14 @@ async function openFolderCheck(): Promise<void> {
   if ((await getSettings()).developerMode) await runFolderCheck();
 }
 
-/** The popup opens the import by message, or leaves a request in storage when it had to open the tab first. */
+/** The popup opens the import or the change of the default location by message, or leaves a request in storage when it had to open the tab first. */
 async function openToolIfAsked(): Promise<void> {
   const pending = (await chrome.storage.local.get(PENDING_TOOL_KEY))[PENDING_TOOL_KEY] as PendingTool | undefined;
   if (!pending) return;
   await chrome.storage.local.remove(PENDING_TOOL_KEY);
-  if (pending.tool === 'import' && Date.now() - pending.at < PENDING_TOOL_MAX_AGE_MS) void runImport();
+  if (Date.now() - pending.at >= PENDING_TOOL_MAX_AGE_MS) return;
+  if (pending.tool === 'import') void runImport();
+  else if (pending.tool === 'default') void changeDefault();
 }
 
 /** Settings or accounts changed elsewhere; a language change redraws what is on screen. */
@@ -137,9 +140,11 @@ function main(): void {
   chrome.runtime.onMessage.addListener((message: unknown) => {
     const type = (message as { type?: string } | null)?.type;
     if (type === IMPORT_MESSAGE) void runImport();
+    else if (type === DEFAULT_MESSAGE) void changeDefault();
   });
   onStorageChange(() => void onStoredChange());
   void dropOrphanHandles().catch((e) => console.warn('[memfolio]', e));
+  void mirrorDefault().catch((e) => console.warn('[memfolio]', e));
   watchRoute();
   watchDom();
   watchHover(life.signal);

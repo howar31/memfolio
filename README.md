@@ -14,6 +14,7 @@ Status: in development, not published to any extension store.
 - Single downloads: a post, one picture of a carousel, a thumbnail, a reel, stories and highlights. Hotkey: `Ctrl/Cmd + Shift + D`.
   - They go to the browser's download folder. A setting sends them to the account folder instead when the account is managed; files already there are skipped.
 - One folder per account. The account is identified by its numeric id, so a changed username keeps its folder.
+  - An account you download for the first time gets a folder named after it inside the default location. You choose that location once, and the popup's settings show it and let you change it. Changing it moves no files; accounts already on the list keep their folders.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
 - The toolbar popup lists the managed accounts; a row opens the profile.
   - Accounts can be put into groups of your own, which fold away, and pinned to a block at the top.
@@ -78,6 +79,7 @@ npm run check        # type check, unit tests, production build
 - 單項下載：一則貼文、輪播中的一張、縮圖、Reel、限時動態與精選。快捷鍵：`Ctrl/Cmd + Shift + D`。
   - 檔案存到瀏覽器的下載資料夾。可在設定中改為存到帳號資料夾（限已管理的帳號），已存在的檔案會略過。
 - 每個帳號一個資料夾。帳號以數字 id 識別，改名後仍使用原本的資料夾。
+  - 第一次下載的帳號，會在預設位置裡建立以帳號名稱命名的資料夾。預設位置只需選擇一次，popup 的設定會顯示它並可更換。更換不會搬移檔案，已在清單上的帳號維持原本的資料夾。
 - **匯入既有資料夾** 可以從磁碟上已有的檔案重建帳號清單。
 - 點工具列圖示會列出管理中的帳號，點一列可開啟該個人檔案頁。
   - 帳號可以放進自訂的群組（群組可收合），也可以釘選到最上方的置頂區塊。

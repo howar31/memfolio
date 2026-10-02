@@ -165,7 +165,7 @@ describe('exportCheck', () => {
   const snapshot: CheckSnapshot = {
     report: { name: 'instagram', permission: 'granted', readable: true, files: 3, folders: 0, mediaFiles: 3, owners: [{ id: '42', files: 3 }], error: null },
     parents: [
-      { name: 'downloads', role: 'download-root', location: { kind: 'outside' } },
+      { name: 'downloads', role: 'default-location', location: { kind: 'outside' } },
       { name: 'archive', role: 'import-parent', location: { kind: 'real', path: ['alice', 'instagram'] } },
     ],
     accounts: ['@acct'],

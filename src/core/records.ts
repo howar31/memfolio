@@ -121,6 +121,22 @@ export async function allPending(): Promise<PendingAccount[]> {
     .map(([, v]) => v as PendingAccount);
 }
 
+const DEFAULT_PREFIX = 'defaultFolder:';
+
+/** Name of the folder new accounts are saved into; the folder itself is known to the platform page only. */
+export async function getDefaultFolderName(platform: string): Promise<string | null> {
+  const key = `${DEFAULT_PREFIX}${platform}`;
+  const got = (await chrome.storage.local.get(key))[key] as { name?: string } | undefined;
+  return got?.name ?? null;
+}
+
+export async function setDefaultFolderName(platform: string, name: string | null): Promise<void> {
+  if ((await getDefaultFolderName(platform)) === name) return;
+  const key = `${DEFAULT_PREFIX}${platform}`;
+  if (name === null) await chrome.storage.local.remove(key);
+  else await chrome.storage.local.set({ [key]: { name } });
+}
+
 const LAYOUT_KEY = 'layout';
 
 /** Groups, order and sorting of the account list. */
@@ -157,11 +173,11 @@ export async function setSettings(patch: Partial<Settings>): Promise<void> {
   await chrome.storage.local.set({ [SETTINGS_KEY]: { ...(await getSettings()), ...patch } });
 }
 
-/** Calls back when the account list, its layout or the settings change in any tab or in the popup. */
+/** Calls back when the account list, its layout, the default location or the settings change in any tab or in the popup. */
 export function onStorageChange(cb: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k === LAYOUT_KEY || k.startsWith(ACCOUNT_PREFIX) || k.startsWith(PENDING_PREFIX))) cb();
+    if (Object.keys(changes).some((k) => k === SETTINGS_KEY || k === LAYOUT_KEY || k.startsWith(ACCOUNT_PREFIX) || k.startsWith(PENDING_PREFIX) || k.startsWith(DEFAULT_PREFIX))) cb();
   });
 }
 

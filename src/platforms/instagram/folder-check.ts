@@ -34,8 +34,8 @@ const locate = (parent: FileSystemDirectoryHandle, dir: FileSystemDirectoryHandl
 
 async function inspect(dir: FileSystemDirectoryHandle): Promise<Subject> {
   const parents: Parent[] = [];
-  const root = await handles.getRoot();
-  if (root) parents.push({ name: root.name, role: 'download-root', location: await locate(root, dir) });
+  const fallback = await handles.getDefault();
+  if (fallback) parents.push({ name: fallback.name, role: 'default-location', location: await locate(fallback, dir) });
   for (const p of await handles.getParents()) parents.push({ name: p.name, role: 'import-parent', location: await locate(p, dir) });
 
   const accounts: string[] = [];
@@ -125,7 +125,7 @@ function buttonsFor(s: CheckSnapshot): DialogButton<Action | null>[] {
 }
 
 async function pickReadable(id: string): Promise<FileSystemDirectoryHandle | null> {
-  const dir = await pickDirectory(id, (await handles.getRoot()) ?? 'downloads');
+  const dir = await pickDirectory(id, (await handles.getDefault()) ?? 'downloads');
   return dir && (await ensurePermission(dir)) ? dir : null;
 }
 

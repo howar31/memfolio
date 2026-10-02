@@ -210,7 +210,7 @@ export type MarkerResult = { ok: true; shared: boolean } | { ok: false; error: s
 export interface CheckSnapshot {
   report: FolderReport;
   /** Every folder the picked one was compared against, including those that do not contain it. */
-  parents: Array<{ name: string; role: 'download-root' | 'import-parent' | 'picked'; location: Location }>;
+  parents: Array<{ name: string; role: 'default-location' | 'import-parent' | 'picked'; location: Location }>;
   /** Managed accounts whose stored folder is the picked one. */
   accounts: string[];
   write: StepResult | null;

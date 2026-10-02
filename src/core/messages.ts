@@ -2,6 +2,8 @@
 
 /** Runtime message asking the content script of an open tab to open the folder import. */
 export const IMPORT_MESSAGE = 'memfolio:open-import';
+/** Runtime message asking the content script of an open tab to let the user change the default location. */
+export const DEFAULT_MESSAGE = 'memfolio:open-default';
 
 /**
  * Key in extension storage for a request left by the popup when it had to open
@@ -10,7 +12,7 @@ export const IMPORT_MESSAGE = 'memfolio:open-import';
  */
 export const PENDING_TOOL_KEY = 'pendingTool';
 export interface PendingTool {
-  tool: 'import';
+  tool: 'import' | 'default';
   /** When the request was made; an old request is dropped. */
   at: number;
 }

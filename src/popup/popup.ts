@@ -3,23 +3,25 @@
 // The popup never touches folders or the platform.
 
 import { initI18n, setLanguage, setTimeFormat, t, uiLanguage } from '../core/i18n';
-import { IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
+import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
+import { getDefaultFolderName, getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
 import { ICONS, icon } from '../ui/dom';
 import { initList, render } from './list';
-import { HOME_URL, label, show, text } from './shared';
+import { HOME_URL, PASTE_PLATFORM, label, show, text } from './shared';
 import { initTransfer } from './transfer';
 
-/** Asks a platform tab to open the folder import; folder handles live there, not in the popup. */
-async function openImport(): Promise<void> {
+const TOOL_MESSAGE: Record<PendingTool['tool'], string> = { import: IMPORT_MESSAGE, default: DEFAULT_MESSAGE };
+
+/** Asks a platform tab to open the folder import or the change of the default location; folder handles live there, not in the popup. */
+async function openTool(tool: PendingTool['tool']): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   try {
     if (tab?.id === undefined) throw new Error('no active tab');
     // Succeeds only when the active tab runs the content script.
-    await chrome.tabs.sendMessage(tab.id, { type: IMPORT_MESSAGE });
+    await chrome.tabs.sendMessage(tab.id, { type: TOOL_MESSAGE[tool] });
   } catch {
     // No such tab: leave the request for the content script of a new one.
-    const pending: PendingTool = { tool: 'import', at: Date.now() };
+    const pending: PendingTool = { tool, at: Date.now() };
     await chrome.storage.local.set({ [PENDING_TOOL_KEY]: pending });
     await chrome.tabs.create({ url: HOME_URL });
   }
@@ -53,7 +55,6 @@ function renderText(): void {
   text('add-go', t('popupAddGo'));
   (document.getElementById('addresses') as HTMLTextAreaElement).setAttribute('aria-label', t('popupAddHint'));
   text('import-name', t('popupImport'));
-  text('import-hint', t('popupImportHint'));
   text('import', t('popupImportStart'));
   text('settings-title', t('optionsTitle'));
   text('thanks-name', t('sponsorTitle'));
@@ -64,6 +65,8 @@ function renderText(): void {
   link.replaceChildren(heart, t('sponsorAction'));
   text('group-general', t('optGroupGeneral'));
   text('group-folders', t('optGroupFolders'));
+  text('default-name', t('optDefault'));
+  void renderDefault();
   text('group-advanced', t('optGroupAdvanced'));
   text('developer-mode-name', t('optDevMode'));
   text('developer-mode-hint', t('optDevModeHint'));
@@ -76,6 +79,14 @@ function renderText(): void {
   text('single-save-hint', t('optSingleSaveHint'));
   text('single-save-browser', t('optSingleSaveBrowser'));
   text('single-save-folder', t('optSingleSaveFolder'));
+}
+
+/** The default location is known by its name only; the folder is chosen and changed on a platform tab. */
+async function renderDefault(): Promise<void> {
+  const name = await getDefaultFolderName(PASTE_PLATFORM);
+  text('default-value', name ?? t('optDefaultNone'));
+  document.getElementById('default-value')!.title = name ?? '';
+  text('default-change', name === null ? t('optDefaultChoose') : t('optDefaultChange'));
 }
 
 /** The version comes from the manifest, so the band always names the build that is loaded. */
@@ -141,12 +152,16 @@ async function main(): Promise<void> {
   await initI18n();
   renderText();
   renderVersion();
-  document.getElementById('import')!.addEventListener('click', () => void openImport());
+  document.getElementById('import')!.addEventListener('click', () => void openTool('import'));
+  document.getElementById('default-change')!.addEventListener('click', () => void openTool('default'));
   initList();
   initTransfer();
   await initSettings();
 
-  onStorageChange(() => void render());
+  onStorageChange(() => {
+    void renderDefault();
+    void render();
+  });
   await render();
 }
 

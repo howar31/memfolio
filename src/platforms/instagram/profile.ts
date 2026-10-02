@@ -1,7 +1,7 @@
 import { buildFileIndex } from '../../core/file-index';
 import { n, t, when } from '../../core/i18n';
 import { sleep } from '../../core/pacing';
-import { adoptPending, findAccountByUsername, getAccount, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
+import { adoptPending, findAccountByUsername, getAccount, getDefaultFolderName, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
 import { h, logoMark } from '../../ui/dom';
@@ -243,6 +243,8 @@ async function buildCard(): Promise<HTMLElement | null> {
     }
   } else {
     body.append(h('div', { class: 'meta', text: t('cardNotManaged') }));
+    const parent = await getDefaultFolderName(PLATFORM);
+    if (parent) body.append(h('div', { class: 'meta', text: t('cardDefaultTarget', `${parent}/${target.username}`) }));
   }
   body.append(h('div', { class: 'meta', text: t('cardListing', t(TAB_LABEL[target.tab])) }));
 

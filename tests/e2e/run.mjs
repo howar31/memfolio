@@ -252,11 +252,11 @@ const opfs = {
 const callsNamed = (state, name) => state.calls.filter((c) => c.name === name);
 const POSTS = 'PolarisProfilePostsTabContentQuery_connection';
 
-/** Presses Download All on a profile that has no folder yet and picks the download root. */
+/** Presses Download All on a profile that has no folder yet and picks the default location. */
 async function firstRun(ctx, page, rootName = 'root') {
   await setPick(page, rootName);
   await click(page, await ctx.msg('downloadAll'));
-  await waitText(page, await ctx.msg('pickRootTitle'));
+  await waitText(page, await ctx.msg('defaultPickTitle'));
   await click(page, await ctx.msg('chooseFolder'));
 }
 
@@ -547,7 +547,8 @@ scenario('import registers existing folders and shows their relative path', asyn
   );
   assertEqual(await ctx.account('77'), null, 'minor owners of a folder are not imported');
 
-  // The profile now downloads into the imported folder without asking for a root.
+  assertEqual('defaultFolder:instagram' in (await ctx.storage()), false, 'the import sets no default location');
+  // The profile now downloads into the imported folder without asking for a default location.
   const profile = await ctx.openProfile('/acct/', state);
   await waitText(profile, 'archive/alice/instagram');
   await click(profile, await ctx.msg('downloadAll'));
@@ -555,6 +556,54 @@ scenario('import registers existing folders and shows their relative path', asyn
   const names = await opfs.names(profile, 'archive/alice/instagram');
   assert(all.every((n) => names.includes(n)), 'missing files were added to the imported folder');
   assertEqual(mediaFetched(state).length, all.length - have.length, 'only missing media was requested');
+});
+
+scenario('the default location is chosen once, shown in the settings and can be changed', async (ctx) => {
+  const state = newState({ posts: makeTimeline(2) });
+  const page = await ctx.openProfile('/acct/', state);
+  await waitText(page, await ctx.msg('cardNotManaged'));
+  await firstRun(ctx, page, 'first');
+  await runFinished(ctx, page);
+  assertEqual((await ctx.storage())['defaultFolder:instagram'], { name: 'first' }, 'the name of the default location is kept for the popup');
+  assertEqual(await opfs.names(page, 'first/acct'), expectedFiles(state.posts), 'the first account is saved inside it');
+
+  const popup = await ctx.browser.newPage();
+  await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
+  await waitFor(async () => (await popup.$eval('#options', (e) => e.title)) === (await ctx.msg('popupOptions')), 'the popup');
+  await popup.click('#options');
+  assertEqual(
+    await popup.evaluate(() => ['default-value', 'default-change'].map((id) => document.getElementById(id).textContent)),
+    ['first', await ctx.msg('optDefaultChange')],
+    'the settings name the default location',
+  );
+
+  // What the popup leaves behind when it has to open a new tab for the change.
+  await ctx.ext.evaluate(() => chrome.storage.local.set({ pendingTool: { tool: 'default', at: Date.now() } }));
+  const home = await ctx.open('/', state);
+  await waitText(home, await ctx.msg('defaultCurrent', 'first'));
+  assertEqual('pendingTool' in (await ctx.storage()), false, 'the request is taken');
+  await setPick(home, 'second');
+  await click(home, await ctx.msg('chooseFolder'));
+  await waitText(home, await ctx.msg('defaultChanged', 'second'));
+  await waitFor(async () => (await popup.$eval('#default-value', (e) => e.textContent)) === 'second', 'the settings to follow');
+
+  // An account already on the list keeps its folder.
+  state.posts.unshift(makePost(3));
+  await page.bringToFront();
+  await closeToasts(page);
+  await click(page, await ctx.msg('downloadAll'));
+  await runFinished(ctx, page);
+  assertEqual(await opfs.names(page, 'first/acct'), expectedFiles(state.posts), 'the listed account still saves into its folder');
+  assertEqual(await opfs.names(page, 'second'), [], 'nothing was moved or created in the new location');
+
+  // An account seen for the first time goes to the new location, without a question.
+  const other = newState({ posts: makeTimeline(2, { owner: '43', username: 'other' }), relayUsers: [{ username: 'other', pk: '43' }] });
+  const later = await ctx.openProfile('/other/', other);
+  await waitText(later, await ctx.msg('cardDefaultTarget', 'second/other'));
+  await click(later, await ctx.msg('downloadAll'));
+  await runFinished(ctx, later);
+  assertEqual(await dialogText(later), '', 'no question for the new account');
+  assertEqual(await opfs.names(later, 'second/other'), expectedFiles(other.posts), 'the new account is saved inside the new location');
 });
 
 scenario('reels and tagged tabs list their own content', async (ctx) => {
@@ -799,6 +848,12 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
     [await ctx.msg('optGroupGeneral'), await ctx.msg('optGroupFolders'), await ctx.msg('optGroupAdvanced')],
     'the settings are grouped: general, folders, advanced',
   );
+  assertEqual(
+    await popup.evaluate(() => ['default-name', 'default-value', 'default-change'].map((id) => document.getElementById(id).textContent)),
+    [await ctx.msg('optDefault'), await ctx.msg('optDefaultNone'), await ctx.msg('optDefaultChoose')],
+    'the default location is listed as not chosen',
+  );
+  assertEqual(await popup.$('#import-hint'), null, 'the import entry has no hint line');
   const settingsHeight = await popup.evaluate(() => document.body.scrollHeight);
   assert(settingsHeight <= 600, `the settings fit the height of a popup (${settingsHeight} px)`);
   assertEqual(
@@ -845,6 +900,11 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   await waitFor(async () => (await ctx.storage()).pendingTool?.tool === 'import', 'the import request to be stored');
   await waitFor(async () => (await popup.evaluate(() => window.__opened.length)) === 1, 'a platform tab to be opened');
   assertEqual(await popup.evaluate(() => window.__opened), [`${ORIGIN}/`], 'the new tab is the platform home, without a marker in the address');
+  await ctx.ext.evaluate(() => chrome.storage.local.remove('pendingTool'));
+  // So is a change of the default location.
+  await popup.click('#default-change');
+  await waitFor(async () => (await ctx.storage()).pendingTool?.tool === 'default', 'the request for the default location to be stored');
+  await waitFor(async () => (await popup.evaluate(() => window.__opened.length)) === 2, 'a platform tab to be opened for it');
   await ctx.ext.evaluate(() => chrome.storage.local.remove('pendingTool'));
 
   const manifest = JSON.parse(await readFile(join(EXT_DIR, 'manifest.json'), 'utf8'));

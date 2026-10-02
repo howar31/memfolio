@@ -22,23 +22,23 @@ export async function checkFolder(dir: FileSystemDirectoryHandle): Promise<Folde
   }
 }
 
-export type RootOpenResult =
+export type OpenInsideResult =
   | { state: 'ok'; dir: FileSystemDirectoryHandle; created: boolean }
   /** The name exists as a symlink or junction; the browser neither follows nor replaces it. */
   | { state: 'link' }
-  | { state: 'root-missing' };
+  | { state: 'parent-missing' };
 
-/** Opens `<root>/<name>`, creating it when it does not exist. */
-export async function openUnderRoot(root: FileSystemDirectoryHandle, name: string): Promise<RootOpenResult> {
+/** Opens `<parent>/<name>`, creating it when it does not exist. */
+export async function openInside(parent: FileSystemDirectoryHandle, name: string): Promise<OpenInsideResult> {
   try {
-    return { state: 'ok', dir: await root.getDirectoryHandle(name), created: false };
+    return { state: 'ok', dir: await parent.getDirectoryHandle(name), created: false };
   } catch (e) {
     if (errorName(e) !== 'NotFoundError') throw e;
   }
-  // Tell a missing root apart from a name the browser refuses to touch.
-  if ((await checkFolder(root)) === 'missing') return { state: 'root-missing' };
+  // Tell a missing parent apart from a name the browser refuses to touch.
+  if ((await checkFolder(parent)) === 'missing') return { state: 'parent-missing' };
   try {
-    return { state: 'ok', dir: await root.getDirectoryHandle(name, { create: true }), created: true };
+    return { state: 'ok', dir: await parent.getDirectoryHandle(name, { create: true }), created: true };
   } catch (e) {
     if (errorName(e) === 'NotFoundError') return { state: 'link' };
     throw e;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkFolder, openUnderRoot, relativePath } from '../../src/core/folders';
+import { checkFolder, openInside, relativePath } from '../../src/core/folders';
 import { FakeDir, asDir } from '../helpers/fake-fs';
 
 describe('checkFolder', () => {
@@ -33,17 +33,17 @@ describe('checkFolder', () => {
   });
 });
 
-describe('openUnderRoot', () => {
+describe('openInside', () => {
   it('opens an existing account folder', async () => {
     const root = new FakeDir('root');
     const existing = root.mkdir('acct');
-    const r = await openUnderRoot(asDir(root), 'acct');
+    const r = await openInside(asDir(root), 'acct');
     expect(r).toEqual({ state: 'ok', dir: existing, created: false });
   });
 
   it('creates the account folder when it does not exist', async () => {
     const root = new FakeDir('root');
-    const r = await openUnderRoot(asDir(root), 'acct');
+    const r = await openInside(asDir(root), 'acct');
     expect(r.state).toBe('ok');
     expect(r.state === 'ok' && r.created).toBe(true);
     expect(root.children.has('acct')).toBe(true);
@@ -52,14 +52,14 @@ describe('openUnderRoot', () => {
   it('reports a name that exists as a filesystem link the browser will not follow', async () => {
     const root = new FakeDir('root');
     root.links.add('acct');
-    expect(await openUnderRoot(asDir(root), 'acct')).toEqual({ state: 'link' });
+    expect(await openInside(asDir(root), 'acct')).toEqual({ state: 'link' });
     expect(root.children.has('acct')).toBe(false);
   });
 
   it('reports a root that is gone', async () => {
     const root = new FakeDir('root');
     root.removed = true;
-    expect(await openUnderRoot(asDir(root), 'acct')).toEqual({ state: 'root-missing' });
+    expect(await openInside(asDir(root), 'acct')).toEqual({ state: 'parent-missing' });
   });
 });
 

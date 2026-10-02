@@ -1,8 +1,8 @@
 import { buildFileIndex } from '../../core/file-index';
-import { checkFolder, openUnderRoot, relativePath } from '../../core/folders';
+import { checkFolder, openInside, relativePath } from '../../core/folders';
 import { n, t } from '../../core/i18n';
 import { sanitizeFileName } from '../../core/naming';
-import { getAccount, putAccount, type AccountRecord } from '../../core/records';
+import { getAccount, putAccount, setDefaultFolderName, type AccountRecord } from '../../core/records';
 import { surface } from '../../ui/host';
 import { PLATFORM, ensurePermission, handles, pickDirectory } from './env';
 
@@ -22,8 +22,8 @@ function cancelButton(): { label: string; value: false } {
 /** Path shown for a folder: relative to a folder the user picked when known, else its own name. */
 async function describePath(dir: FileSystemDirectoryHandle): Promise<string | null> {
   const parents = await handles.getParents();
-  const root = await handles.getRoot();
-  return relativePath(root ? [...parents, root] : parents, dir);
+  const fallback = await handles.getDefault();
+  return relativePath(fallback ? [...parents, fallback] : parents, dir);
 }
 
 async function save(id: string, username: string, dir: FileSystemDirectoryHandle, previous: AccountRecord | null): Promise<AccountFolder> {
@@ -55,7 +55,7 @@ async function pickAccountFolder(
   previous: AccountRecord | null,
 ): Promise<{ dir: FileSystemDirectoryHandle; acceptedEmpty: boolean } | null> {
   for (;;) {
-    const picked = await pickDirectory('memfolio-account', (await handles.getRoot()) ?? 'downloads');
+    const picked = await pickDirectory('memfolio-account', (await handles.getDefault()) ?? 'pictures');
     if (!picked) return null;
     if (!previous || previous.fileCount === 0) return { dir: picked, acceptedEmpty: false };
     if ((await buildFileIndex(picked)).countForOwner(id) > 0) return { dir: picked, acceptedEmpty: false };
@@ -87,29 +87,55 @@ async function askThenPick(
   return go ? pickAccountFolder(id, previous) : null;
 }
 
-async function rootFolder(): Promise<FileSystemDirectoryHandle | null> {
-  let root = await handles.getRoot();
-  if (root) {
-    if (!(await ensurePermission(root))) return null;
-    if ((await checkFolder(root)) !== 'missing') return root;
+async function setDefault(dir: FileSystemDirectoryHandle): Promise<void> {
+  await handles.setDefault(dir);
+  await setDefaultFolderName(PLATFORM, dir.name);
+}
+
+/** Keeps the name of the default location where the popup can read it. */
+export async function mirrorDefault(): Promise<void> {
+  await setDefaultFolderName(PLATFORM, (await handles.getDefault())?.name ?? null);
+}
+
+/** The folder new accounts get their own folder in; asked for once, and again when it went missing. */
+async function defaultFolder(): Promise<FileSystemDirectoryHandle | null> {
+  const known = await handles.getDefault();
+  if (known) {
+    if (!(await ensurePermission(known))) return null;
+    if ((await checkFolder(known)) !== 'missing') return known;
   }
   const go = await surface.dialog({
-    title: root ? t('rootMissingTitle') : t('pickRootTitle'),
-    message: root ? t('rootMissingMessage', root.name) : t('pickRootMessage'),
+    title: known ? t('defaultMissingTitle') : t('defaultPickTitle'),
+    message: known ? t('defaultMissingMessage', known.name) : t('defaultPickMessage'),
     buttons: [cancelButton(), { label: t('chooseFolder'), value: true, primary: true }],
   });
   if (!go) return null;
-  root = await pickDirectory('memfolio-root', 'downloads');
-  if (!root) return null;
-  await handles.setRoot(root);
-  return root;
+  const picked = await pickDirectory('memfolio-default', known ? undefined : 'pictures');
+  if (!picked) return null;
+  await setDefault(picked);
+  return picked;
+}
+
+/** Lets the user choose another default location. Nothing is moved and no account changes its folder. */
+export async function changeDefault(): Promise<void> {
+  const known = await handles.getDefault();
+  const go = await surface.dialog({
+    title: t('defaultChangeTitle'),
+    message: `${known ? t('defaultCurrent', known.name) : t('optDefaultNone')}\n${t('defaultChangeNote')}`,
+    buttons: [cancelButton(), { label: t('chooseFolder'), value: true, primary: true }],
+  });
+  if (!go) return;
+  const picked = await pickDirectory('memfolio-default', known ? undefined : 'pictures');
+  if (!picked || !(await ensurePermission(picked))) return;
+  await setDefault(picked);
+  surface.toast(t('defaultChanged', picked.name));
 }
 
 /**
  * The folder an account downloads into, together with its summary record.
  * Returns null when the user backs out. Never creates a replacement for a
  * folder that went missing; an account seen for the first time gets
- * `<root>/<username>`.
+ * `<default location>/<username>`.
  */
 export async function resolveAccountFolder(id: string, username: string): Promise<AccountFolder | null> {
   const previous = await getAccount(PLATFORM, id);
@@ -134,14 +160,14 @@ export async function resolveAccountFolder(id: string, username: string): Promis
     return picked ? { ...(await save(id, username, picked.dir, previous)), acceptedEmpty: picked.acceptedEmpty } : null;
   }
 
-  const root = await rootFolder();
-  if (!root) return null;
-  const opened = await openUnderRoot(root, sanitizeFileName(username));
+  const parent = await defaultFolder();
+  if (!parent) return null;
+  const opened = await openInside(parent, sanitizeFileName(username));
   if (opened.state === 'ok') return save(id, username, opened.dir, null);
-  if (opened.state === 'root-missing') {
-    surface.toast(t('rootMissingMessage', root.name), 'error', null);
+  if (opened.state === 'parent-missing') {
+    surface.toast(t('defaultMissingMessage', parent.name), 'error', null);
     return null;
   }
-  const picked = await askThenPick(id, null, t('linkTitle'), t('linkMessage', username, root.name));
+  const picked = await askThenPick(id, null, t('linkTitle'), t('linkMessage', username, parent.name));
   return picked ? save(id, username, picked.dir, null) : null;
 }

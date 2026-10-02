@@ -542,6 +542,18 @@ label.item {
 .item .hint {
   grid-column: 1 / -1;
 }
+.item.valued {
+  grid-template-columns: auto 1fr auto;
+}
+.item .value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--ink-2);
+  font-size: 12px;
+}
 #settings select,
 #settings .btn {
   max-width: 220px;

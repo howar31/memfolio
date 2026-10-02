@@ -154,7 +154,7 @@ export function describeError(e: unknown): string {
  */
 export async function pickDirectory(
   id: string,
-  startIn?: FileSystemDirectoryHandle | 'downloads',
+  startIn?: FileSystemDirectoryHandle | 'downloads' | 'pictures',
 ): Promise<FileSystemDirectoryHandle | null> {
   E2E: {
     // The test page names the folder the next "pick" returns; it lives in the origin-private file system.
