@@ -152,6 +152,8 @@ let scanning = false;
  * changing server-rendered markup earlier makes the framework rebuild it.
  */
 async function scanPosts(): Promise<void> {
+  // A reel in the feed has a save control too, in a narrow column, and no permalink; the feed has its own button.
+  if (parseRoute(location.href).kind === 'reels-feed') return;
   if (scanning) return;
   scanning = true;
   try {

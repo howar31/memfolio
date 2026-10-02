@@ -851,6 +851,21 @@ scenario('the post button waits until the page has taken over its markup', async
   await waitFor(() => page.$('.memfolio-post-btn'), 'the post button after hydration');
 });
 
+scenario('the reels feed has its own button and no post button beside the save control', async (ctx) => {
+  const reel = makePost(80, { kind: 'video', owner: '555', username: 'stranger' });
+  const state = newState({ extraPosts: [reel] });
+  const page = await ctx.open(`/reels/${reel.code}/`, state);
+  const reelButton = await ctx.msg('btnReel');
+  await waitFor(() => hasButton(page, reelButton), 'the reel button');
+  // The page touches its markup the way the real one does; the scan that follows adds nothing.
+  await page.evaluate(() => document.body.append(document.createElement('span')));
+  await new Promise((r) => setTimeout(r, 1200));
+  assertEqual(await page.$$eval('.memfolio-post-btn', (l) => l.length), 0, 'no post button in the column of a reel');
+  assertEqual(await page.$eval('#column', (e) => e.firstElementChild.getAttribute('style')), null, 'the column is left as the page drew it');
+  await click(page, reelButton);
+  await waitText(page, await ctx.msg('savedBrowser', 1));
+});
+
 scenario('stories are saved through the browser download', async (ctx) => {
   const item = (n, video) => {
     const { user: _user, ...rest } = makePost(n, { kind: video ? 'video' : 'image' });

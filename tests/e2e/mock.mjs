@@ -137,6 +137,13 @@ function postPageBody(state, code) {
 </article></main>`;
 }
 
+/** The reels feed: a column of reels, each with its own narrow column of controls ending in the save-to-collection control. */
+function reelsFeedBody() {
+  return `<main><div id="reel"><video width="300" height="500"></video>
+  <div id="column" style="width:40px"><div><div role="button" id="save">${SAVE_ICON}</div></div></div>
+</div></main>`;
+}
+
 /** A profile page with a grid of thumbnails linking to the newest posts. */
 function profileBody(state) {
   const thumbs = state.posts
@@ -249,6 +256,7 @@ export async function installMock(page, state) {
       if (url.pathname.startsWith('/accounts/login')) return await req.respond(html('<html><body>login</body></html>'));
       const postPage = /^\/(?:p|reel)\/([^/]+)\/?$/.exec(url.pathname);
       if (postPage) return await req.respond(html(pageHtml(state, postPageBody(state, postPage[1]))));
+      if (/^\/reels\//.test(url.pathname)) return await req.respond(html(pageHtml(state, reelsFeedBody())));
       return await req.respond(html(pageHtml(state, profileBody(state))));
     } catch (e) {
       console.error('mock error', req.url(), e);
