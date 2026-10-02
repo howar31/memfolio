@@ -43,13 +43,15 @@ export interface Settings {
   singleSave: SingleSave;
   /** Clock used for times of day. */
   timeFormat: TimeFormat;
+  /** Whether the closed button on profile pages marks that messages are waiting. */
+  messageDot: boolean;
 }
 
 export type SingleSave = 'browser' | 'folder';
 
 export type TimeFormat = '24' | '12';
 
-export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24' };
+export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24', messageDot: true };
 
 const ACCOUNT_PREFIX = 'account:';
 const SETTINGS_KEY = 'settings';

@@ -43,6 +43,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .dock > * { pointer-events: auto; }
 .toasts { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .dock.quiet .toasts { display: none; }
+/* One button for all messages, only beside the open panel. */
+.clear { display: none; width: 100%; justify-content: flex-end; margin-bottom: -2px; }
+.dock.carded:not(.quiet)[data-waiting] .clear { display: flex; }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; font-size: 12px; box-shadow: var(--shadow); }
 
 .toast {
   position: relative; width: 100%; padding: 10px 34px 10px 16px;
@@ -78,12 +82,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   border-radius: 10px; overflow: hidden; background: #4a3528; box-shadow: var(--shadow);
 }
 .ball .core svg { display: block; }
-.dock.quiet[data-waiting] .ball::after {
+.dock.quiet[data-waiting]:not(.nodot) .ball::after {
   content: ""; position: absolute; top: 0; right: 0; width: 14px; height: 14px;
   border: 2px solid var(--sheet); border-radius: 50%; background: var(--accent);
 }
-.dock.quiet[data-waiting="warn"] .ball::after { background: var(--warn); }
-.dock.quiet[data-waiting="error"] .ball::after { background: var(--red); }
+.dock.quiet[data-waiting="warn"]:not(.nodot) .ball::after { background: var(--warn); }
+.dock.quiet[data-waiting="error"]:not(.nodot) .ball::after { background: var(--red); }
 .ball:hover .core { filter: brightness(1.08); }
 .ball.busy::before { background: conic-gradient(var(--spark) calc(var(--p, 0) * 1%), var(--rule) 0); }
 .ball.busy.unknown::before { background: var(--spark); animation: pulse 1.4s ease-in-out infinite; }

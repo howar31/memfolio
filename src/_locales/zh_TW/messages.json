@@ -721,5 +721,11 @@
   },
   "popupTabExport": {
     "message": "匯出"
+  },
+  "clearMessages": {
+    "message": "清除訊息"
+  },
+  "optMessageDot": {
+    "message": "收合時以圓點提示有訊息"
   }
 }

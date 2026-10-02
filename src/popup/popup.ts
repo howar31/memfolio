@@ -79,6 +79,7 @@ function renderText(): void {
   text('single-save-hint', t('optSingleSaveHint'));
   text('single-save-browser', t('optSingleSaveBrowser'));
   text('single-save-folder', t('optSingleSaveFolder'));
+  text('message-dot-name', t('optMessageDot'));
 }
 
 /** The default location is known by its name only; the folder is chosen and changed on a platform tab. */
@@ -138,6 +139,13 @@ async function initSettings(): Promise<void> {
   singleSave.value = settings.singleSave;
   singleSave.addEventListener('change', async () => {
     await setSettings({ singleSave: singleSave.value as SingleSave });
+    showSaved();
+  });
+
+  const messageDot = document.getElementById('message-dot') as HTMLInputElement;
+  messageDot.checked = settings.messageDot;
+  messageDot.addEventListener('change', async () => {
+    await setSettings({ messageDot: messageDot.checked });
     showSaved();
   });
 

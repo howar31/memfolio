@@ -26,6 +26,7 @@ Status: in development, not published to any extension store.
   - **Export** gives the list back as addresses, in the manual order and with a `# name` line before each group, to copy or save as a text file. Pasting that text adds the accounts to the same groups and keeps their order as the manual order.
 - Interface languages: English and Traditional Chinese. The browser's language is used unless you choose one in the popup's settings.
 - Times are shown on a 24-hour clock; the settings can switch to 12-hour.
+- On profile pages the button at the bottom right opens and closes the panel. While it is closed, messages are held back and a dot on the button says that some are waiting; the settings can turn the dot off. Beside the open panel, **Clear messages** removes all of them at once.
 
 It sends no analytics and no error reports, and loads no remote code. It asks for the `storage` permission and runs on `www.instagram.com` only.
 

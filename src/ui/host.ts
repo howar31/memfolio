@@ -41,6 +41,7 @@ class Surface {
   private root!: ShadowRoot;
   private dock!: HTMLElement;
   private toasts!: HTMLElement;
+  private clear!: HTMLElement;
   private cardSlot!: HTMLElement;
   private fabs!: HTMLElement;
   private hover: HTMLButtonElement | null = null;
@@ -54,7 +55,8 @@ class Surface {
     this.toasts = h('div', { class: 'toasts', attrs: { role: 'status', 'aria-live': 'polite' } });
     this.cardSlot = h('div', { class: 'card-slot' });
     this.fabs = h('div', { class: 'fabs' });
-    this.dock = h('div', { class: 'dock' }, this.toasts, this.cardSlot, this.fabs);
+    this.clear = h('div', { class: 'clear' });
+    this.dock = h('div', { class: 'dock' }, this.clear, this.toasts, this.cardSlot, this.fabs);
     this.root.append(style, this.dock);
     document.documentElement.append(this.host);
     this.syncTheme();
@@ -81,6 +83,12 @@ class Surface {
     this.syncWaiting();
     if (timeoutMs !== null) setTimeout(close, timeoutMs);
     return { update: (m) => (text.textContent = m), close };
+  }
+
+  /** Removes every message. Offered above the messages while the panel is open. */
+  private clearToasts(): void {
+    this.toasts.replaceChildren();
+    this.syncWaiting();
   }
 
   /** Tells the closed ball whether messages are on hold, and of which kind at most. */
@@ -159,16 +167,25 @@ class Surface {
     this.ensure();
     this.hideHover();
     this.cardSlot.replaceChildren();
-    this.dock.classList.remove('quiet');
+    this.dock.classList.remove('quiet', 'carded');
     this.fabs.replaceChildren();
     this.root.querySelectorAll('.overlay').forEach((el) => el.remove());
     this.toast(message, 'warn', null);
   }
 
-  /** With `quiet`, the card is the closed ball and the messages stay out of sight until it opens. */
-  setCard(card: HTMLElement | null, quiet = false): void {
+  /**
+   * With `quiet`, the card is the closed ball and the messages stay out of sight until it opens;
+   * `dot` says whether the closed ball marks that messages are waiting.
+   */
+  setCard(card: HTMLElement | null, quiet = false, dot = true): void {
     this.ensure();
     this.dock.classList.toggle('quiet', quiet);
+    this.dock.classList.toggle('carded', card !== null);
+    this.dock.classList.toggle('nodot', !dot);
+    // Drawn here rather than once, so its label follows a change of language.
+    this.clear.replaceChildren(
+      h('button', { class: 'btn chip', on: { click: () => this.clearToasts() } }, icon([...ICONS.clear], 14), h('span', { text: t('clearMessages') })),
+    );
     // The card is rebuilt on every change; the ball keeps the keyboard focus across that.
     const focused = this.root.activeElement?.classList.contains('ball') === true;
     this.cardSlot.replaceChildren(...(card ? [card] : []));

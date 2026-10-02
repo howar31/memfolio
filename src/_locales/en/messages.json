@@ -721,5 +721,11 @@
   },
   "popupTabExport": {
     "message": "Export"
+  },
+  "clearMessages": {
+    "message": "Clear messages"
+  },
+  "optMessageDot": {
+    "message": "Dot on the closed button when messages wait"
   }
 }

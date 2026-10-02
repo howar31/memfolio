@@ -412,6 +412,89 @@ scenario('a closed ball hides the messages and shows that one is waiting', async
   assertEqual(await dock(), { shown: 0, waiting: null, dot: false }, 'no dot without a message');
 });
 
+scenario('the open panel clears every message at once, and the dot can be switched off', async (ctx) => {
+  const state = newState({ posts: makeTimeline(1) });
+  const page = await ctx.openProfile('/acct/', state);
+  const clear = await ctx.msg('clearMessages');
+  const dock = () =>
+    page.evaluate(() => {
+      const root = document.querySelector('memfolio-surface').shadowRoot;
+      const dot = getComputedStyle(root.querySelector('.ball'), '::after');
+      return {
+        shown: [...root.querySelectorAll('.toast')].filter((t) => t.offsetParent !== null).length,
+        held: root.querySelectorAll('.toast').length,
+        waiting: root.querySelector('.dock').dataset.waiting ?? null,
+        dot: dot.content !== 'none' && dot.display !== 'none',
+      };
+    });
+  // The button is always in the surface; what counts is whether it is drawn.
+  const canClear = () =>
+    page.evaluate((l) => {
+      const root = document.querySelector('memfolio-surface').shadowRoot;
+      return [...root.querySelectorAll('button')].some((b) => b.textContent.trim() === l && b.offsetParent !== null);
+    }, clear);
+  await waitText(page, '@acct');
+  assertEqual(await canClear(), false, 'nothing to clear without a message');
+
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+  await clickHover(page, '#grid a:first-child');
+  // The single download has ended, so no message of its own arrives after the clearing.
+  await waitText(page, await ctx.msg('savedBrowser', expectedFiles([state.posts[0]]).length));
+  assertEqual((await dock()).shown, 2, 'two messages beside the open panel');
+  assertEqual(await canClear(), true, 'the button sits with the messages');
+  assertEqual(
+    await page.evaluate(() => {
+      const root = document.querySelector('memfolio-surface').shadowRoot;
+      return root.querySelector('.clear').compareDocumentPosition(root.querySelector('.toasts')) & Node.DOCUMENT_POSITION_FOLLOWING ? 'above' : 'below';
+    }),
+    'above',
+    'it is placed above them',
+  );
+
+  await click(page, clear);
+  assertEqual(await dock(), { shown: 0, held: 0, waiting: null, dot: false }, 'every message is gone');
+  assertEqual(await canClear(), false, 'the button leaves with them');
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the panel to close');
+  assertEqual((await dock()).dot, false, 'no dot after clearing');
+
+  // With the setting off the closed ball still holds the messages back, without the dot.
+  await ctx.ext.evaluate(async () => {
+    const { settings } = await chrome.storage.local.get('settings');
+    await chrome.storage.local.set({ settings: { ...settings, messageDot: false } });
+  });
+  // The stored change redraws the ball; pressing it waits for that.
+  await waitFor(() => page.evaluate(() => document.querySelector('memfolio-surface').shadowRoot.querySelector('.dock').classList.contains('nodot')), 'the page to take the setting');
+  await clickBall(page);
+  await click(page, await ctx.msg('downloadAll'));
+  await runFinished(ctx, page);
+  assertEqual((await dock()).shown, 1, 'a new result beside the open panel');
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the panel to close again');
+  assertEqual(await dock(), { shown: 0, held: 1, waiting: 'info', dot: false }, 'the message is held back and the ball has no dot');
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'true', 'the panel to open');
+  assertEqual((await dock()).shown, 1, 'the message is back with the panel');
+
+  // Switched on again, an open page follows without a reload.
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the panel to close once more');
+  await ctx.ext.evaluate(async () => {
+    const { settings } = await chrome.storage.local.get('settings');
+    await chrome.storage.local.set({ settings: { ...settings, messageDot: true } });
+  });
+  await waitFor(async () => (await dock()).dot === true, 'the dot to return');
+
+  // A page without a ball has no such button; its messages show as before.
+  await clickBall(page);
+  await waitFor(canClear, 'the button beside the open panel');
+  await page.evaluate(() => history.pushState(null, '', '/'));
+  await waitFor(async () => (await ballExpanded(page)) === null, 'the ball to leave on the home page');
+  assertEqual((await dock().catch(() => null)) === null && (await page.evaluate(() => document.querySelector('memfolio-surface').shadowRoot.querySelectorAll('.toast').length)), 1, 'the message stays');
+  assertEqual(await canClear(), false, 'no clear button where there is no ball');
+});
+
 scenario('rate limiting is retried, a login redirect stops the run', async (ctx) => {
   const state = newState({ posts: makeTimeline(14), failStatuses: [429, 503] });
   const page = await ctx.openProfile('/acct/', state);
@@ -920,6 +1003,10 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
   assertEqual(await popup.$eval('#single-save-name', (e) => e.textContent), await ctx.msg('optSingleSave'), 'the single download setting is named');
   assertEqual(await popup.$eval('#time-format', (e) => e.value), '24', 'times use the 24-hour clock by default');
   assertEqual(await popup.$eval('#time-format-name', (e) => e.textContent), await ctx.msg('optTimeFormat'), 'the time format setting is named');
+  assertEqual(await popup.$eval('#message-dot-name', (e) => e.textContent), await ctx.msg('optMessageDot'), 'the dot setting is named');
+  assertEqual(await popup.$eval('#message-dot', (e) => e.checked), true, 'the dot for waiting messages is on by default');
+  await popup.click('#message-dot');
+  await waitFor(async () => (await ctx.storage()).settings?.messageDot === false, 'the dot setting to be stored');
   await popup.select('#time-format', '12');
   await waitFor(async () => (await ctx.storage()).settings?.timeFormat === '12', 'the time format to be stored');
   await popup.select('#single-save', 'folder');
