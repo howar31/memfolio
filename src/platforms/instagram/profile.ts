@@ -277,7 +277,7 @@ async function buildCard(): Promise<HTMLElement | null> {
 async function render(): Promise<void> {
   const seq = ++renderSeq;
   const card = await buildCard();
-  if (seq === renderSeq) surface.setCard(card);
+  if (seq === renderSeq) surface.setCard(card, card !== null && !expanded);
 }
 
 /** The ball and its account panel on profile pages. They stay while a run is in progress. */

@@ -381,6 +381,37 @@ scenario('the account panel starts as a ball and opens on a click', async (ctx) 
   assertEqual(await hasButton(page, downloadAll), false, 'closed again after a reload');
 });
 
+scenario('a closed ball hides the messages and shows that one is waiting', async (ctx) => {
+  const page = await ctx.openProfile('/acct/', newState({ posts: makeTimeline(1) }));
+  const dock = () =>
+    page.evaluate(() => {
+      const root = document.querySelector('memfolio-surface').shadowRoot;
+      const el = root.querySelector('.dock');
+      const dot = getComputedStyle(root.querySelector('.ball'), '::after');
+      return {
+        shown: [...root.querySelectorAll('.toast')].filter((t) => t.offsetParent !== null).length,
+        waiting: el.dataset.waiting ?? null,
+        dot: dot.content !== 'none' && dot.display !== 'none',
+      };
+    });
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+  assertEqual(await dock(), { shown: 1, waiting: 'info', dot: false }, 'the result beside the open panel');
+
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the panel to close');
+  assertEqual(await dock(), { shown: 0, waiting: 'info', dot: true }, 'nothing but the ball and its dot');
+
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'true', 'the panel to open');
+  assertEqual(await dock(), { shown: 1, waiting: 'info', dot: false }, 'the result is back with the panel');
+
+  await closeToasts(page);
+  await clickBall(page);
+  await waitFor(async () => (await ballExpanded(page)) === 'false', 'the panel to close again');
+  assertEqual(await dock(), { shown: 0, waiting: null, dot: false }, 'no dot without a message');
+});
+
 scenario('rate limiting is retried, a login redirect stops the run', async (ctx) => {
   const state = newState({ posts: makeTimeline(14), failStatuses: [429, 503] });
   const page = await ctx.openProfile('/acct/', state);

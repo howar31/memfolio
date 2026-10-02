@@ -39,6 +39,7 @@ export const HOVER_BUTTON_SIZE = 34;
 class Surface {
   private host: HTMLElement | null = null;
   private root!: ShadowRoot;
+  private dock!: HTMLElement;
   private toasts!: HTMLElement;
   private cardSlot!: HTMLElement;
   private fabs!: HTMLElement;
@@ -53,7 +54,8 @@ class Surface {
     this.toasts = h('div', { class: 'toasts', attrs: { role: 'status', 'aria-live': 'polite' } });
     this.cardSlot = h('div', { class: 'card-slot' });
     this.fabs = h('div', { class: 'fabs' });
-    this.root.append(style, h('div', { class: 'dock' }, this.toasts, this.cardSlot, this.fabs));
+    this.dock = h('div', { class: 'dock' }, this.toasts, this.cardSlot, this.fabs);
+    this.root.append(style, this.dock);
     document.documentElement.append(this.host);
     this.syncTheme();
   }
@@ -70,11 +72,22 @@ class Surface {
     this.ensure();
     const text = h('div', { text: message });
     const el = h('div', { class: `toast ${kind === 'info' ? '' : kind}` }, text);
-    const close = (): void => el.remove();
+    const close = (): void => {
+      el.remove();
+      this.syncWaiting();
+    };
     el.append(h('button', { class: 'x', attrs: { 'aria-label': t('close') }, on: { click: close } }, icon([...ICONS.close], 14)));
     this.toasts.append(el);
+    this.syncWaiting();
     if (timeoutMs !== null) setTimeout(close, timeoutMs);
     return { update: (m) => (text.textContent = m), close };
+  }
+
+  /** Tells the closed ball whether messages are on hold, and of which kind at most. */
+  private syncWaiting(): void {
+    const kind = (['error', 'warn'] as const).find((k) => this.toasts.querySelector(`.toast.${k}`));
+    if (this.toasts.childElementCount === 0) delete this.dock.dataset.waiting;
+    else this.dock.dataset.waiting = kind ?? 'info';
   }
 
   /** Modal question. Resolves with the chosen value, or null when dismissed with Escape. */
@@ -146,13 +159,16 @@ class Surface {
     this.ensure();
     this.hideHover();
     this.cardSlot.replaceChildren();
+    this.dock.classList.remove('quiet');
     this.fabs.replaceChildren();
     this.root.querySelectorAll('.overlay').forEach((el) => el.remove());
     this.toast(message, 'warn', null);
   }
 
-  setCard(card: HTMLElement | null): void {
+  /** With `quiet`, the card is the closed ball and the messages stay out of sight until it opens. */
+  setCard(card: HTMLElement | null, quiet = false): void {
     this.ensure();
+    this.dock.classList.toggle('quiet', quiet);
     // The card is rebuilt on every change; the ball keeps the keyboard focus across that.
     const focused = this.root.activeElement?.classList.contains('ball') === true;
     this.cardSlot.replaceChildren(...(card ? [card] : []));
