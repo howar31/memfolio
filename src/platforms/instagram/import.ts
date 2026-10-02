@@ -84,7 +84,7 @@ export async function runImport(): Promise<void> {
   if (!go) return;
 
   try {
-    const parent = await pickDirectory('memfolio-import', 'downloads');
+    const parent = await pickDirectory('memfolio-import', 'pictures');
     if (!parent || !(await ensurePermission(parent))) return;
 
     const controller = new AbortController();

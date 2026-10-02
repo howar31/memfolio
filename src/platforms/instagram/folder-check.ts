@@ -125,7 +125,7 @@ function buttonsFor(s: CheckSnapshot): DialogButton<Action | null>[] {
 }
 
 async function pickReadable(id: string): Promise<FileSystemDirectoryHandle | null> {
-  const dir = await pickDirectory(id, (await handles.getDefault()) ?? 'downloads');
+  const dir = await pickDirectory(id, (await handles.getDefault()) ?? 'pictures');
   return dir && (await ensurePermission(dir)) ? dir : null;
 }
 
