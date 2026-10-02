@@ -870,7 +870,7 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
     ['https://donate.howar31.com/', '_blank', await ctx.msg('sponsorAction')],
     'the block at the top links to the sponsor page in a new tab',
   );
-  assertEqual(await popup.evaluate(() => document.querySelector('#settings .titlebar').nextElementSibling.id), 'thanks', 'that block comes first');
+  assertEqual(await popup.evaluate(() => document.querySelector('#settings-body').firstElementChild.id), 'thanks', 'that block comes first');
   assertEqual(
     await popup.$$eval('#settings h3', (els) => els.map((e) => e.textContent)),
     [await ctx.msg('optGroupGeneral'), await ctx.msg('optGroupFolders'), await ctx.msg('optGroupAdvanced')],
@@ -882,8 +882,24 @@ scenario('developer mode is switched in the popup settings', async (ctx) => {
     'the default location is listed as not chosen',
   );
   assertEqual(await popup.$('#import-hint'), null, 'the import entry has no hint line');
-  const settingsHeight = await popup.evaluate(() => document.body.scrollHeight);
-  assert(settingsHeight <= 600, `the settings fit the height of a popup (${settingsHeight} px)`);
+  // A popup is at most 600 px tall: the title and the version stay, the settings scroll between them.
+  const fit = await popup.evaluate(() => {
+    const body = document.getElementById('settings-body');
+    const last = document.getElementById('developer-mode');
+    last.scrollIntoView({ block: 'nearest' });
+    const seen = last.getBoundingClientRect().bottom <= body.getBoundingClientRect().bottom + 1;
+    const out = {
+      height: document.documentElement.scrollHeight,
+      title: document.getElementById('settings-title').getBoundingClientRect().top >= 0,
+      version: Math.round(document.querySelector('footer').getBoundingClientRect().bottom),
+      scrolls: getComputedStyle(body).overflowY,
+      seen,
+    };
+    body.scrollTop = 0;
+    return out;
+  });
+  assert(fit.height <= 600 && fit.version <= 600, `the popup is no taller than a popup can be (${fit.height} px, version line ends at ${fit.version} px)`);
+  assertEqual([fit.title, fit.scrolls, fit.seen], [true, 'auto', true], 'the title stays, and the last setting is reached by scrolling the settings');
   assertEqual(
     await popup.evaluate(() => {
       const inputs = [...document.querySelectorAll('#settings input, #settings select, #settings button')];

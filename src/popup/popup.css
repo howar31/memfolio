@@ -28,7 +28,11 @@
 * {
   box-sizing: border-box;
 }
+/* A browser popup is at most 600 px tall; what does not fit scrolls inside its own view. */
 body {
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
   width: 440px;
   margin: 0;
   background: var(--sheet);
@@ -258,12 +262,14 @@ h1 {
 }
 /* A slim thumb without a track or arrows, in place of the system scrollbar. */
 #list::-webkit-scrollbar,
+#settings-body::-webkit-scrollbar,
 #addresses::-webkit-scrollbar,
 #exported::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 #list::-webkit-scrollbar-track,
+#settings-body::-webkit-scrollbar-track,
 #addresses::-webkit-scrollbar-track,
 #exported::-webkit-scrollbar-track,
 #addresses::-webkit-scrollbar-corner,
@@ -271,6 +277,7 @@ h1 {
   background: transparent;
 }
 #list::-webkit-scrollbar-thumb,
+#settings-body::-webkit-scrollbar-thumb,
 #addresses::-webkit-scrollbar-thumb,
 #exported::-webkit-scrollbar-thumb {
   background: var(--rule);
@@ -279,6 +286,7 @@ h1 {
   border-radius: 5px;
 }
 #list::-webkit-scrollbar-thumb:hover,
+#settings-body::-webkit-scrollbar-thumb:hover,
 #addresses::-webkit-scrollbar-thumb:hover,
 #exported::-webkit-scrollbar-thumb:hover {
   background-color: var(--ink-2);
@@ -511,6 +519,18 @@ h1 {
 }
 #settings {
   gap: 8px;
+  min-height: 0;
+}
+/* The settings scroll between the title and the version; the scrollbar sits in the view's side padding. */
+#settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin-right: -12px;
+  padding-right: 2px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 #settings h3 {
   margin: 0 0 4px 2px;
