@@ -91,7 +91,7 @@ async function launch() {
   session.on('Browser.downloadWillBegin', (e) => begun.push(e.suggestedFilename));
   const ext = await browser.newPage();
   await ext.goto(`chrome-extension://${extensionId}/popup.html`);
-  for (const key of ['downloadAll', 'fullScan']) RUN_LABELS.add(await ext.evaluate((k) => chrome.i18n.getMessage(k), key));
+  for (const key of ['downloadAll', 'fullScan', 'cardElsewhere']) RUN_LABELS.add(await ext.evaluate((k) => chrome.i18n.getMessage(k), key));
 
   const ctx = {
     browser,
@@ -604,6 +604,34 @@ scenario('the default location is chosen once, shown in the settings and can be 
   await runFinished(ctx, later);
   assertEqual(await dialogText(later), '', 'no question for the new account');
   assertEqual(await opfs.names(later, 'second/other'), expectedFiles(other.posts), 'the new account is saved inside the new location');
+});
+
+scenario('a new account can be saved outside the default location', async (ctx) => {
+  const state = newState({ posts: makeTimeline(2) });
+  const page = await ctx.openProfile('/acct/', state);
+  const elsewhere = await ctx.msg('cardElsewhere');
+  await waitFor(() => hasButton(page, elsewhere), 'the link for another folder');
+
+  // Backing out leaves the account as it was.
+  await click(page, elsewhere);
+  await waitText(page, await ctx.msg('elsewhereMessage', 'acct'));
+  await click(page, await ctx.msg('cancel'));
+  await runFinished(ctx, page);
+  assertEqual([await ctx.account('42'), state.calls.filter((c) => c.name === POSTS).length], [null, 0], 'no account and no listing after backing out');
+
+  await setPick(page, 'custom/place');
+  await click(page, elsewhere);
+  await click(page, await ctx.msg('chooseFolder'));
+  await runFinished(ctx, page);
+  assertEqual(await opfs.names(page, 'custom/place'), expectedFiles(state.posts), 'the files are in the chosen folder');
+  assertEqual((await ctx.account('42')).folderName, 'place', 'the account uses that folder');
+  assertEqual('defaultFolder:instagram' in (await ctx.storage()), false, 'no default location was set');
+  assertEqual(await hasButton(page, elsewhere), false, 'the link is gone once the account has a folder');
+
+  // An account that has a folder is not offered the link.
+  const other = await ctx.openProfile('/acct/', state);
+  await waitText(other, 'place');
+  assertEqual(await hasButton(other, elsewhere), false, 'no link for a managed account');
 });
 
 scenario('reels and tagged tabs list their own content', async (ctx) => {

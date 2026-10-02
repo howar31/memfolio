@@ -65,6 +65,9 @@
   "cardDefaultTarget": {
     "message": "Will be saved to $1"
   },
+  "cardElsewhere": {
+    "message": "Download to another folder…"
+  },
   "cardListing": {
     "message": "Lists: $1"
   },
@@ -193,6 +196,9 @@
   },
   "linkMessage": {
     "message": "“$1” inside “$2” is a link to another folder. The browser does not open links from inside a folder. Choose this account's folder directly: the real folder, or a symbolic link to it (a Windows junction does not work)."
+  },
+  "elsewhereMessage": {
+    "message": "Choose the folder for @$1. It is used in place of the default location, and the download starts once it is chosen."
   },
   "folderMissingTitle": {
     "message": "Folder not found"

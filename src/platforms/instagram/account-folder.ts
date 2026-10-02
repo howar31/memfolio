@@ -135,9 +135,9 @@ export async function changeDefault(): Promise<void> {
  * The folder an account downloads into, together with its summary record.
  * Returns null when the user backs out. Never creates a replacement for a
  * folder that went missing; an account seen for the first time gets
- * `<default location>/<username>`.
+ * `<default location>/<username>`, or with `elsewhere` a folder the user picks.
  */
-export async function resolveAccountFolder(id: string, username: string): Promise<AccountFolder | null> {
+export async function resolveAccountFolder(id: string, username: string, elsewhere = false): Promise<AccountFolder | null> {
   const previous = await getAccount(PLATFORM, id);
   const stored = await handles.getAccount(id);
 
@@ -158,6 +158,11 @@ export async function resolveAccountFolder(id: string, username: string): Promis
     // The summary survived but the handle did not (site data was cleared).
     const picked = await askThenPick(id, previous, t('relinkTitle'), t('relinkMessage', username, previous.relPath ?? previous.folderName));
     return picked ? { ...(await save(id, username, picked.dir, previous)), acceptedEmpty: picked.acceptedEmpty } : null;
+  }
+
+  if (elsewhere) {
+    const chosen = await askThenPick(id, null, t('linkTitle'), t('elsewhereMessage', username));
+    return chosen ? save(id, username, chosen.dir, null) : null;
   }
 
   const parent = await defaultFolder();

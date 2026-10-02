@@ -72,7 +72,13 @@ function summarize(result: RunResult, tab: ProfileTab, where: string, folderFile
   return { text: lines.join('\n'), warn: result.failed.length > 0 || result.stop !== undefined };
 }
 
-async function run(target: Target, requested: RunMode, signal: AbortSignal, setStatus: (s: string, ratio?: number | null) => void): Promise<void> {
+async function run(
+  target: Target,
+  requested: RunMode,
+  signal: AbortSignal,
+  setStatus: (s: string, ratio?: number | null) => void,
+  elsewhere: boolean,
+): Promise<void> {
   const { username, tab } = target;
   setStatus(t('statusResolving'));
 
@@ -98,7 +104,7 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   console.info(`[memfolio] ${username}: account id ${userId} (${resolved?.source ?? 'listing'})`);
 
   // 2. Where do its files go? Checked before any listing request.
-  const folder = await resolveAccountFolder(userId, username);
+  const folder = await resolveAccountFolder(userId, username, elsewhere);
   if (!folder) return;
   // The account now has a record under its id; an entry made from its address alone is done.
   const pasted = await adoptPending(PLATFORM, username, userId);
@@ -172,7 +178,8 @@ async function run(target: Target, requested: RunMode, signal: AbortSignal, setS
   lastResult = surface.toast(summary.text, summary.warn ? 'warn' : 'info', null);
 }
 
-async function start(target: Target, mode: RunMode): Promise<void> {
+/** `elsewhere`: an account without a folder gets one the user picks, not one in the default location. */
+async function start(target: Target, mode: RunMode, elsewhere = false): Promise<void> {
   if (active) return;
   // One result at a time: it stays until closed or until the next run starts.
   lastResult?.close();
@@ -186,7 +193,7 @@ async function start(target: Target, mode: RunMode): Promise<void> {
     void render();
   };
   try {
-    await run(target, mode, controller.signal, setStatus);
+    await run(target, mode, controller.signal, setStatus, elsewhere);
   } catch (e) {
     if (isAbortError(e) || controller.signal.aborted) {
       surface.toast(t('resultCancelled'));
@@ -268,6 +275,7 @@ async function buildCard(): Promise<HTMLElement | null> {
       h(
         'div',
         { class: 'more' },
+        record ? null : h('button', { class: 'link', text: t('cardElsewhere'), on: { click: () => void start(target, 'incremental', true) } }),
         h('button', { class: 'link', text: t('importOpen'), on: { click: () => tools.import() } }),
         developerMode ? h('button', { class: 'link', text: t('checkOpen'), on: { click: () => tools.check() } }) : null,
       ),

@@ -65,6 +65,9 @@
   "cardDefaultTarget": {
     "message": "將存到：$1"
   },
+  "cardElsewhere": {
+    "message": "下載到其他資料夾…"
+  },
   "cardListing": {
     "message": "列表來源：$1"
   },
@@ -193,6 +196,9 @@
   },
   "linkMessage": {
     "message": "「$2」裡的「$1」是指向其他資料夾的連結，瀏覽器無法從資料夾內部開啟連結。請直接選擇這個帳號的資料夾：實體資料夾，或指向它的符號連結（Windows 的 junction 不行）。"
+  },
+  "elsewhereMessage": {
+    "message": "選擇 @$1 的資料夾。這個帳號會使用它而不是預設位置，選定後立即開始下載。"
   },
   "folderMissingTitle": {
     "message": "找不到資料夾"
