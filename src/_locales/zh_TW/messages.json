@@ -727,5 +727,32 @@
   },
   "optMessageDot": {
     "message": "收合時以圓點提示有訊息"
+  },
+  "pathDownloads": {
+    "message": "這個資料夾位於瀏覽器的下載資料夾內。"
+  },
+  "optSubfolder": {
+    "message": "新帳號的資料夾，位於瀏覽器的下載資料夾內"
+  },
+  "optSubfolderHint": {
+    "message": "第一次下載的帳號會在這裡取得一個以帳號命名的資料夾。資料夾名稱之間以「/」分隔；留空則直接使用下載資料夾。變更不會搬移任何檔案，清單上既有的帳號維持原本的資料夾。"
+  },
+  "seeFolderMessage": {
+    "message": "這個瀏覽器不讓擴充功能看到你的資料夾。\n\n選擇資料夾：選取瀏覽器下載資料夾內的「$1」。瀏覽器會稱之為「上傳」，實際提供的是資料夾內的檔案清單，只用來判斷哪些檔案已經存在；已存在的不會再次下載。檔案仍留在你的電腦上。\n\n全部下載：不檢查檔案是否已存在，全部下載，同名檔案直接覆寫。"
+  },
+  "seeFolderSkip": {
+    "message": "全部下載"
+  },
+  "seeFolderOther": {
+    "message": "你選的是「$1」，而 @$2 的檔案會存到「$3」。是否已存在是依你選的資料夾判斷。"
+  },
+  "resultUncheckedComplete": {
+    "message": "已列出每一頁：$1 則貼文、$2 個檔案。"
+  },
+  "resultUncheckedPartial": {
+    "message": "執行結束前列出了 $1 則貼文、$2 個檔案。"
+  },
+  "resultUnchecked": {
+    "message": "已存到「$1」，沒有檢查原本的內容；同名檔案已覆寫。"
   }
 }

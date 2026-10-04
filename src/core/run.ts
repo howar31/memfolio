@@ -1,4 +1,4 @@
-import { downloadToFile, type MediaFetcher } from './download';
+import type { SaveFile } from './download';
 import type { FileIndex } from './file-index';
 import { fileNameFor } from './naming';
 import { StopError, isAbortError, type ListingSource, type MediaItem, type MediaKind } from './types';
@@ -20,14 +20,13 @@ export interface RunProgress {
 
 export interface RunDeps {
   source: ListingSource;
-  dir: FileSystemDirectoryHandle;
   index: FileIndex;
   mode: RunMode;
   signal: AbortSignal;
   pageDelayMs(): number;
   mediaDelayMs(kind: MediaKind): number;
   sleep(ms: number, signal: AbortSignal): Promise<void>;
-  fetchMedia: MediaFetcher;
+  save: SaveFile;
   /** Fills in the URL of an item the listing returned without one. */
   resolve?: (item: MediaItem, signal: AbortSignal) => Promise<MediaItem | null>;
   onProgress(progress: RunProgress): void;
@@ -160,7 +159,7 @@ export async function runAccountDownload(deps: RunDeps): Promise<RunResult> {
       if (!item?.url) throw new Error('no downloadable URL');
       const existing = index.nameOf(item.id);
       const name = existing ?? fileNameFor(item);
-      await downloadToFile(deps.dir, name, item.url, deps.fetchMedia, signal, existing !== null);
+      await deps.save(name, item.url, signal, existing !== null);
       index.markDownloaded(item.id, name);
       result.downloaded += 1;
       done += 1;

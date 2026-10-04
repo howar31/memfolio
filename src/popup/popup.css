@@ -694,3 +694,14 @@ label.item {
 [hidden] {
   display: none !important;
 }
+
+/* Browsers without the scrollbar pseudo-elements above. */
+@supports (-moz-appearance: none) {
+  #list,
+  #settings-body,
+  #addresses,
+  #exported {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+}

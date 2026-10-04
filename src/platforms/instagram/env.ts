@@ -7,6 +7,7 @@ import { StopError, type MediaKind, type StopReason } from '../../core/types';
 import { surface } from '../../ui/host';
 import { ORIGIN, createGraphql, type SessionInfo } from './api';
 import { bridge } from './bridge-client';
+import { pageFetch } from './net';
 
 export const PLATFORM = 'instagram';
 
@@ -92,7 +93,7 @@ export const gql = createGraphql({
   session,
   csrf,
   docId,
-  fetch: (input, init) => fetch(input, init),
+  fetch: pageFetch,
   policy: CONFIG.retry,
   hooks: requestHooks,
 });
@@ -112,7 +113,7 @@ export async function mediaInfo(pk: string, signal: AbortSignal): Promise<unknow
   await gate.pass(signal);
   try {
     const body = (await requestJson(
-      (sig) => fetch(`${ORIGIN}/api/v1/media/${pk}/info/`, { credentials: 'include', headers, signal: sig }),
+      (sig) => pageFetch(`${ORIGIN}/api/v1/media/${pk}/info/`, { credentials: 'include', headers, signal: sig }),
       CONFIG.retry,
       requestHooks,
       signal,

@@ -3,10 +3,9 @@
 
 import { initI18n, t, uiLanguage } from '../../core/i18n';
 import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
-import { allAccounts, getSettings, onStorageChange } from '../../core/records';
+import { getSettings, onStorageChange } from '../../core/records';
 import { surface } from '../../ui/host';
-import { changeDefault, mirrorDefault } from './account-folder';
-import { PLATFORM, handles } from './env';
+import { changeDefault, startFolders } from './account-folder';
 import { runFolderCheck } from './folder-check';
 import { runImport } from './import';
 import { downloadPost, scanPage, watchHover } from './page-buttons';
@@ -88,12 +87,6 @@ function watchHotkey(): void {
   }, { signal: life.signal });
 }
 
-/** Drops folder handles whose account was removed from the list in the popup. */
-async function dropOrphanHandles(): Promise<void> {
-  const known = new Set((await allAccounts()).filter((a) => a.platform === PLATFORM).map((a) => a.id));
-  for (const id of await handles.accountIds()) if (!known.has(id)) await handles.deleteAccount(id);
-}
-
 /** The folder check is a developer tool: it opens only while developer mode is on. */
 async function openFolderCheck(): Promise<void> {
   if ((await getSettings()).developerMode) await runFolderCheck();
@@ -143,8 +136,7 @@ function main(): void {
     else if (type === DEFAULT_MESSAGE) void changeDefault();
   });
   onStorageChange(() => void onStoredChange());
-  void dropOrphanHandles().catch((e) => console.warn('[memfolio]', e));
-  void mirrorDefault().catch((e) => console.warn('[memfolio]', e));
+  startFolders();
   watchRoute();
   watchDom();
   watchHover(life.signal);

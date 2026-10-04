@@ -40,27 +40,40 @@ A file counts as downloaded when a file with the same `<media id>_<account id>` 
 
 ## Requirements
 
-Chrome, Edge or another Chromium browser, version 111 or later. The folder features use the File System Access API, which Firefox and Safari do not provide.
+Chrome, Edge or another Chromium browser, version 111 or later. The folder features use the File System Access API, which Firefox and Safari do not provide. Firefox 128 or later runs a separate build with fewer folder features; see [Firefox](#firefox).
 
 Folder links on Windows: a directory symbolic link (`mklink /D`) can be picked in the folder dialog and behaves like the folder it points to. A junction (`mklink /J`) cannot: the browser shows it as empty. The browser does not list links that sit inside a picked folder; when an account's folder cannot be opened or created there, the extension asks you to pick it, and you can pick the symbolic link or the real folder.
 
 Developer mode (popup settings, off by default) adds "Check a folder": it shows what the browser reports for a folder you pick and can export the result as JSON.
 
+## Firefox
+
+Firefox gives an extension no access to folders on the disk. This is a limit of the browser, and the Firefox build works within it: single items and whole accounts can be downloaded, and managing the files is left to you.
+
+- Files are saved inside the browser's download folder, as `<download folder>/Memfolio/<username>/`. The name `Memfolio` can be changed in the popup's settings, or left empty.
+- The extension cannot see what a folder holds. Before each **Download All** it asks you to choose the account's folder. The browser calls this an upload; what it hands over is the list of files in the folder, which is used only to tell which files are already there. The files stay on your computer.
+- **Download everything** in the same dialog checks nothing: every file is downloaded, and a file of the same name is written over.
+- A single download is not compared with the folder; a file of the same name is written over.
+- Not available: importing existing folders, choosing another folder for an account, and the folder check.
+
+The Firefox build asks for the `downloads` permission in addition to `storage`.
+
 ## Build
 
 ```
 npm install
-npm run build        # unpacked extension in dist/
+npm run build            # unpacked extension in dist/
+npm run build:firefox    # unpacked extension for Firefox in dist-firefox/
 ```
 
-Load it: open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the `dist` folder.
+Load it: open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the `dist` folder. In Firefox: open `about:debugging`, choose "This Firefox", then "Load Temporary Add-on" and select `dist-firefox/manifest.json`.
 
 ## Development
 
 ```
 npm test             # unit tests
 npm run test:e2e     # built extension in Chrome against a mocked platform
-npm run check        # type check, unit tests, production build
+npm run check        # type check, unit tests, production builds
 ```
 
 `npm run test:e2e` needs the test browser once: `npx puppeteer browsers install chrome`.

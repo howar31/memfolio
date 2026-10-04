@@ -1,16 +1,30 @@
-import { buildFileIndex } from '../../core/file-index';
+import { saveInto, type SaveFile } from '../../core/download';
+import { buildFileIndex, type FileIndex } from '../../core/file-index';
 import { checkFolder, openInside, relativePath } from '../../core/folders';
 import { n, t } from '../../core/i18n';
 import { sanitizeFileName } from '../../core/naming';
-import { getAccount, putAccount, setDefaultFolderName, type AccountRecord } from '../../core/records';
+import { allAccounts, getAccount, getDefaultFolderName, putAccount, setDefaultFolderName, type AccountRecord } from '../../core/records';
 import { surface } from '../../ui/host';
-import { PLATFORM, ensurePermission, handles, pickDirectory } from './env';
+import { PLATFORM, ensurePermission, fetchMedia, handles, pickDirectory } from './env';
 
+/** Where an account's files go, and what is there already. */
 export interface AccountFolder {
-  dir: FileSystemDirectoryHandle;
   record: AccountRecord;
+  /** Name of the place, for messages. */
+  label: string;
   /** The user was already told this folder holds none of the account's files and chose to use it. */
   acceptedEmpty?: boolean;
+  /** The run was started without looking at what the folder holds. */
+  unchecked?: boolean;
+  /** The files that are there now. */
+  openIndex(): Promise<FileIndex>;
+  save: SaveFile;
+}
+
+/** A link in the account panel that changes something about the account's folder. */
+export interface FolderLink {
+  label: string;
+  run(): Promise<void>;
 }
 
 const CANCEL = { label: '', value: false } as const;
@@ -26,7 +40,13 @@ async function describePath(dir: FileSystemDirectoryHandle): Promise<string | nu
   return relativePath(fallback ? [...parents, fallback] : parents, dir);
 }
 
-async function save(id: string, username: string, dir: FileSystemDirectoryHandle, previous: AccountRecord | null): Promise<AccountFolder> {
+async function save(
+  id: string,
+  username: string,
+  dir: FileSystemDirectoryHandle,
+  previous: AccountRecord | null,
+  acceptedEmpty = false,
+): Promise<AccountFolder> {
   await handles.setAccount(id, dir);
   const record: AccountRecord = {
     platform: PLATFORM,
@@ -43,7 +63,7 @@ async function save(id: string, username: string, dir: FileSystemDirectoryHandle
     ...(previous?.pinned ? { pinned: true } : {}),
   };
   await putAccount(record);
-  return { dir, record };
+  return { record, label: dir.name, acceptedEmpty, openIndex: () => buildFileIndex(dir), save: saveInto(dir, fetchMedia) };
 }
 
 /**
@@ -93,8 +113,36 @@ async function setDefault(dir: FileSystemDirectoryHandle): Promise<void> {
 }
 
 /** Keeps the name of the default location where the popup can read it. */
-export async function mirrorDefault(): Promise<void> {
+async function mirrorDefault(): Promise<void> {
   await setDefaultFolderName(PLATFORM, (await handles.getDefault())?.name ?? null);
+}
+
+/** Drops folder handles whose account was removed from the list in the popup. */
+async function dropOrphanHandles(): Promise<void> {
+  const known = new Set((await allAccounts()).filter((a) => a.platform === PLATFORM).map((a) => a.id));
+  for (const id of await handles.accountIds()) if (!known.has(id)) await handles.deleteAccount(id);
+}
+
+/** Brings what is stored about folders in line with the account list; runs once when the page starts. */
+export function startFolders(): void {
+  void dropOrphanHandles().catch((e) => console.warn('[memfolio]', e));
+  void mirrorDefault().catch((e) => console.warn('[memfolio]', e));
+}
+
+/** Where the first download of an account without a folder goes, as far as it can be named. */
+export async function defaultTarget(username: string): Promise<string | null> {
+  const parent = await getDefaultFolderName(PLATFORM);
+  return parent ? `${parent}/${username}` : null;
+}
+
+/** The names of a folder line, outermost first. */
+export function folderNames(record: AccountRecord): string[] {
+  return record.relPath ? record.relPath.split('/') : [record.folderName];
+}
+
+/** Links offered for an account that has a folder. */
+export function folderLinks(_record: AccountRecord): FolderLink[] {
+  return [];
 }
 
 /** The folder new accounts get their own folder in; asked for once, and again when it went missing. */
@@ -151,13 +199,13 @@ export async function resolveAccountFolder(id: string, username: string, elsewhe
       t('folderMissingTitle'),
       t('folderMissingMessage', username, previous?.relPath ?? previous?.folderName ?? stored.name),
     );
-    return picked ? { ...(await save(id, username, picked.dir, previous)), acceptedEmpty: picked.acceptedEmpty } : null;
+    return picked ? save(id, username, picked.dir, previous, picked.acceptedEmpty) : null;
   }
 
   if (previous) {
     // The summary survived but the handle did not (site data was cleared).
     const picked = await askThenPick(id, previous, t('relinkTitle'), t('relinkMessage', username, previous.relPath ?? previous.folderName));
-    return picked ? { ...(await save(id, username, picked.dir, previous)), acceptedEmpty: picked.acceptedEmpty } : null;
+    return picked ? save(id, username, picked.dir, previous, picked.acceptedEmpty) : null;
   }
 
   if (elsewhere) {

@@ -22,6 +22,7 @@ import {
   type SortBy,
 } from '../core/layout';
 import { getAccount, getPending, putAccount, putPending, removeAccount, removePending, setLayout, type AccountStatus } from '../core/records';
+import { PATH_HINT } from '../core/target';
 import { ICONS, folderLine, h, icon } from '../ui/dom';
 import { PROFILE_URL, loadList, type Entry } from './shared';
 
@@ -129,7 +130,7 @@ function row(entry: Entry, block: Block<Entry>, drawn: Drawn): HTMLElement {
     },
     h('div', { class: 'name', text: `@${username}` }),
     account
-      ? folderLine(account.relPath ? account.relPath.split('/') : [account.folderName], t('pathAbove'))
+      ? folderLine(account.relPath ? account.relPath.split('/') : [account.folderName], t(PATH_HINT))
       : h('div', { class: 'path', text: t('popupNeverRun') }),
     account && statusKey ? h('div', { class: `status ${ERROR_STATUS.has(account.lastStatus) ? 'error' : ''}`, text: t(statusKey) }) : null,
   );

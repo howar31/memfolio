@@ -4,10 +4,11 @@
 
 import { initI18n, setLanguage, setTimeFormat, t, uiLanguage } from '../core/i18n';
 import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { getDefaultFolderName, getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
+import { getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
 import { ICONS, icon } from '../ui/dom';
+import { initFolders, renderFolders } from './folders';
 import { initList, render } from './list';
-import { HOME_URL, PASTE_PLATFORM, label, show, text } from './shared';
+import { HOME_URL, label, show, text } from './shared';
 import { initTransfer } from './transfer';
 
 const TOOL_MESSAGE: Record<PendingTool['tool'], string> = { import: IMPORT_MESSAGE, default: DEFAULT_MESSAGE };
@@ -65,8 +66,7 @@ function renderText(): void {
   link.replaceChildren(heart, t('sponsorAction'));
   text('group-general', t('optGroupGeneral'));
   text('group-folders', t('optGroupFolders'));
-  text('default-name', t('optDefault'));
-  void renderDefault();
+  void renderFolders();
   text('group-advanced', t('optGroupAdvanced'));
   text('developer-mode-name', t('optDevMode'));
   text('developer-mode-hint', t('optDevModeHint'));
@@ -80,14 +80,6 @@ function renderText(): void {
   text('single-save-browser', t('optSingleSaveBrowser'));
   text('single-save-folder', t('optSingleSaveFolder'));
   text('message-dot-name', t('optMessageDot'));
-}
-
-/** The default location is known by its name only; the folder is chosen and changed on a platform tab. */
-async function renderDefault(): Promise<void> {
-  const name = await getDefaultFolderName(PASTE_PLATFORM);
-  text('default-value', name ?? t('optDefaultNone'));
-  document.getElementById('default-value')!.title = name ?? '';
-  text('default-change', name === null ? t('optDefaultChoose') : t('optDefaultChange'));
 }
 
 /** The version comes from the manifest, so the band always names the build that is loaded. */
@@ -149,6 +141,8 @@ async function initSettings(): Promise<void> {
     showSaved();
   });
 
+  initFolders({ openDefault: () => void openTool('default'), saved: showSaved });
+
   document.getElementById('options')!.addEventListener('click', () => {
     saved.textContent = '';
     show('settings');
@@ -161,13 +155,12 @@ async function main(): Promise<void> {
   renderText();
   renderVersion();
   document.getElementById('import')!.addEventListener('click', () => void openTool('import'));
-  document.getElementById('default-change')!.addEventListener('click', () => void openTool('default'));
   initList();
   initTransfer();
   await initSettings();
 
   onStorageChange(() => {
-    void renderDefault();
+    void renderFolders();
     void render();
   });
   await render();

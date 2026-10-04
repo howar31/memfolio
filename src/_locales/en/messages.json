@@ -727,5 +727,32 @@
   },
   "optMessageDot": {
     "message": "Dot on the closed button when messages wait"
+  },
+  "pathDownloads": {
+    "message": "This folder is inside the browser's download folder."
+  },
+  "optSubfolder": {
+    "message": "Folder for new accounts, inside the browser's download folder"
+  },
+  "optSubfolderHint": {
+    "message": "An account you download for the first time gets a folder named after it in here. Separate folder names with “/”; leave it empty to use the download folder itself. Changing it moves no files, and accounts already on your list keep their folders."
+  },
+  "seeFolderMessage": {
+    "message": "This browser gives an extension no view of your folders.\n\nChoose folder: pick “$1” inside the browser's download folder. The browser calls this an upload; what it hands over is the list of files in the folder, which is used only to tell which files are already there. Those are not downloaded again. The files stay on your computer.\n\nDownload everything: nothing is checked. Every file is downloaded, and a file of the same name is written over."
+  },
+  "seeFolderSkip": {
+    "message": "Download everything"
+  },
+  "seeFolderOther": {
+    "message": "You chose “$1”, while files of @$2 are saved to “$3”. What is already there is judged by the folder you chose."
+  },
+  "resultUncheckedComplete": {
+    "message": "Every page was listed: $1 posts, $2 files."
+  },
+  "resultUncheckedPartial": {
+    "message": "Listed before the run ended: $1 posts, $2 files."
+  },
+  "resultUnchecked": {
+    "message": "Saved to “$1” without checking what was already there; files of the same name were written over."
   }
 }

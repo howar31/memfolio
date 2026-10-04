@@ -45,13 +45,18 @@ export interface Settings {
   timeFormat: TimeFormat;
   /** Whether the closed button on profile pages marks that messages are waiting. */
   messageDot: boolean;
+  /**
+   * Where a browser that saves through its download handling puts new accounts:
+   * a path inside its download folder. Empty: the download folder itself.
+   */
+  subfolder: string;
 }
 
 export type SingleSave = 'browser' | 'folder';
 
 export type TimeFormat = '24' | '12';
 
-export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24', messageDot: true };
+export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24', messageDot: true, subfolder: 'Memfolio' };
 
 const ACCOUNT_PREFIX = 'account:';
 const SETTINGS_KEY = 'settings';

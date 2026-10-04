@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildFileIndex } from '../../src/core/file-index';
+import { saveInto, type MediaFetcher } from '../../src/core/download';
 import { needsFullScan, runAccountDownload, type RunDeps, type RunProgress } from '../../src/core/run';
 import { StopError, type ListingPage, type ListingSource, type MediaItem } from '../../src/core/types';
 import { FakeDir, asDir } from '../helpers/fake-fs';
@@ -54,7 +55,7 @@ async function setup(opts: {
   pages: ListingPage[];
   mode?: 'incremental' | 'full';
   failAt?: { page: number; error: Error };
-  fetchMedia?: RunDeps['fetchMedia'];
+  fetchMedia?: MediaFetcher;
   resolve?: RunDeps['resolve'];
   controller?: AbortController;
   onProgress?: (p: RunProgress) => void;
@@ -64,19 +65,20 @@ async function setup(opts: {
   const order: string[] = [];
   const deps: RunDeps = {
     source,
-    dir: asDir(dir),
     index: await buildFileIndex(asDir(dir)),
     mode: opts.mode ?? 'incremental',
     signal: (opts.controller ?? new AbortController()).signal,
     pageDelayMs: () => 0,
     mediaDelayMs: () => 0,
     sleep: async () => {},
-    fetchMedia:
+    save: saveInto(
+      asDir(dir),
       opts.fetchMedia ??
-      (async (url) => {
-        order.push(url);
-        return new Response(new Uint8Array([1, 2, 3, 4]));
-      }),
+        (async (url) => {
+          order.push(url);
+          return new Response(new Uint8Array([1, 2, 3, 4]));
+        }),
+    ),
     resolve: opts.resolve,
     onProgress: opts.onProgress ?? (() => {}),
   };

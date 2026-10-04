@@ -1,15 +1,15 @@
-import { buildFileIndex } from '../../core/file-index';
 import { n, t, when } from '../../core/i18n';
 import { sleep } from '../../core/pacing';
-import { adoptPending, findAccountByUsername, getAccount, getDefaultFolderName, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
+import { adoptPending, findAccountByUsername, getAccount, getSettings, putAccount, type AccountRecord, type AccountStatus } from '../../core/records';
 import { needsFullScan, runAccountDownload, type RunMode, type RunProgress, type RunResult } from '../../core/run';
+import { FOLDER_TOOLS, PATH_HINT } from '../../core/target';
 import { isAbortError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
 import { folderLine, h, logoMark } from '../../ui/dom';
 import { surface, type ToastHandle } from '../../ui/host';
-import { resolveAccountFolder } from './account-folder';
+import { defaultTarget, folderLinks, folderNames, resolveAccountFolder } from './account-folder';
 import { fetchPostMedia, isSoftStop, postsSource, reelsSource, resolveUserId, taggedSource } from './api';
 import { bridge } from './bridge-client';
-import { PLATFORM, describeError, describeStop, fetchMedia, gql, mediaDelay, mediaInfo, pageDelay } from './env';
+import { PLATFORM, describeError, describeStop, gql, mediaDelay, mediaInfo, pageDelay } from './env';
 import type { ProfileTab } from './routes';
 
 interface Target {
@@ -56,16 +56,22 @@ function statusOf(result: RunResult): AccountStatus {
  * counts of a run that stopped early are not read as the size of the account
  * or of the folder.
  */
-function summarize(result: RunResult, tab: ProfileTab, where: string, folderFiles: number): { text: string; warn: boolean } {
+function summarize(result: RunResult, tab: ProfileTab, where: string, folderFiles: number, unchecked: boolean): { text: string; warn: boolean } {
   const lines: string[] = [];
   if (result.cancelled) lines.push(t('resultCancelled'));
   const label = t(TAB_LABEL[tab]);
   lines.push(result.downloaded > 0 ? t('resultNew', label, n(result.downloaded)) : t('resultNone', label));
   const ended = result.cancelled || result.stop !== undefined ? 'partial' : result.listing;
-  if (ended === 'complete') lines.push(t('resultScopeComplete', n(result.posts), n(result.media), n(result.skipped)));
-  else if (ended === 'early-stop') lines.push(t('resultScopeEarly', n(result.posts), n(result.media)));
-  else lines.push(t('resultScopePartial', n(result.posts), n(result.media), n(result.skipped)));
-  lines.push(t('resultFolder', where, n(folderFiles)));
+  if (unchecked) {
+    // Nothing was compared with the folder, so nothing is said about what it held or holds.
+    lines.push(t(ended === 'complete' ? 'resultUncheckedComplete' : 'resultUncheckedPartial', n(result.posts), n(result.media)));
+    lines.push(t('resultUnchecked', where));
+  } else {
+    if (ended === 'complete') lines.push(t('resultScopeComplete', n(result.posts), n(result.media), n(result.skipped)));
+    else if (ended === 'early-stop') lines.push(t('resultScopeEarly', n(result.posts), n(result.media)));
+    else lines.push(t('resultScopePartial', n(result.posts), n(result.media), n(result.skipped)));
+    lines.push(t('resultFolder', where, n(folderFiles)));
+  }
   if (result.failed.length > 0) lines.push(t('resultFailed', n(result.failed.length)));
   if (result.stop) lines.push(describeStop(result.stop));
   if (needsFullScan(result)) lines.push(t('resultWillFullScan'));
@@ -109,11 +115,11 @@ async function run(
   // The account now has a record under its id; an entry made from its address alone is done.
   const pasted = await adoptPending(PLATFORM, username, userId);
   if (pasted?.pinned && !folder.record.pinned) await putAccount({ ...folder.record, pinned: true });
-  const index = await buildFileIndex(folder.dir);
+  const index = await folder.openIndex();
   if (folder.record.fileCount > 0 && index.matchedCount === 0 && !folder.acceptedEmpty) {
     const go = await surface.dialog({
       title: t('emptyFolderTitle'),
-      message: t('emptyFolderMessage', folder.record.relPath ?? folder.dir.name, n(folder.record.fileCount)),
+      message: t('emptyFolderMessage', folder.record.relPath ?? folder.label, n(folder.record.fileCount)),
       buttons: [
         { label: t('cancel'), value: false },
         { label: t('downloadAnyway'), value: true, primary: true },
@@ -132,18 +138,17 @@ async function run(
   const forced = requested !== 'full' && (flagged || (tab !== 'posts' && !listedBefore));
   const mode: RunMode = requested === 'full' || forced ? 'full' : 'incremental';
   if (forced && flagged) surface.toast(t('forcedFullScan'));
-  console.info(`[memfolio] ${username}/${tab}: ${mode} run, ${index.matchedCount} files in "${folder.dir.name}"`);
+  console.info(`[memfolio] ${username}/${tab}: ${mode} run, ${index.matchedCount} files in "${folder.label}"`);
 
   const result = await runAccountDownload({
     source: firstPage ? withFirstPage(base, firstPage) : base,
-    dir: folder.dir,
     index,
     mode,
     signal,
     pageDelayMs: pageDelay,
     mediaDelayMs: mediaDelay,
     sleep,
-    fetchMedia,
+    save: folder.save,
     // Reel listings come without a video URL; each new reel is looked up once.
     resolve: async (item: MediaItem, s: AbortSignal) => {
       if (!item.shortcode) return null;
@@ -174,7 +179,7 @@ async function run(
   await putAccount(record);
   if (result.failed.length > 0) console.warn('[memfolio] failed media:', result.failed);
 
-  const summary = summarize(result, tab, record.relPath ?? record.folderName, index.matchedCount);
+  const summary = summarize(result, tab, record.relPath ?? record.folderName, index.matchedCount, folder.unchecked === true);
   lastResult = surface.toast(summary.text, summary.warn ? 'warn' : 'info', null);
 }
 
@@ -238,7 +243,7 @@ async function buildCard(): Promise<HTMLElement | null> {
   const body = h('div', { class: 'body' }, h('div', { class: 'who', text: `@${target.username}` }));
 
   if (record) {
-    body.append(folderLine(record.relPath ? record.relPath.split('/') : [record.folderName], t('pathAbove')));
+    body.append(folderLine(folderNames(record), t(PATH_HINT)));
     // Counts and the last status describe the previous run; they are left out while one is in progress.
     if (!active) {
       body.append(
@@ -250,8 +255,8 @@ async function buildCard(): Promise<HTMLElement | null> {
     }
   } else {
     body.append(h('div', { class: 'meta', text: t('cardNotManaged') }));
-    const parent = await getDefaultFolderName(PLATFORM);
-    if (parent) body.append(h('div', { class: 'meta', text: t('cardDefaultTarget', `${parent}/${target.username}`) }));
+    const dest = await defaultTarget(target.username);
+    if (dest) body.append(h('div', { class: 'meta', text: t('cardDefaultTarget', dest) }));
   }
   body.append(h('div', { class: 'meta', text: t('cardListing', t(TAB_LABEL[target.tab])) }));
 
@@ -275,8 +280,9 @@ async function buildCard(): Promise<HTMLElement | null> {
       h(
         'div',
         { class: 'more' },
-        record ? null : h('button', { class: 'link', text: t('cardElsewhere'), on: { click: () => void start(target, 'incremental', true) } }),
-        h('button', { class: 'link', text: t('importOpen'), on: { click: () => tools.import() } }),
+        record || !FOLDER_TOOLS ? null : h('button', { class: 'link', text: t('cardElsewhere'), on: { click: () => void start(target, 'incremental', true) } }),
+        ...(record ? folderLinks(record) : []).map((link) => h('button', { class: 'link', text: link.label, on: { click: () => void link.run().then(render) } })),
+        FOLDER_TOOLS ? h('button', { class: 'link', text: t('importOpen'), on: { click: () => tools.import() } }) : null,
         developerMode ? h('button', { class: 'link', text: t('checkOpen'), on: { click: () => tools.check() } }) : null,
       ),
     );

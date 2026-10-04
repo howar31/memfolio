@@ -3,6 +3,17 @@ import { isAbortError } from './types';
 export type MediaFetcher = (url: string, signal: AbortSignal) => Promise<Response>;
 
 /**
+ * Stores one media file under `name` in the place an account's files go.
+ * `existed`: a file of that name is already there (an empty leftover) and is written over.
+ */
+export type SaveFile = (name: string, url: string, signal: AbortSignal, existed: boolean) => Promise<void>;
+
+/** Saving into a folder the page holds a handle of. */
+export function saveInto(dir: FileSystemDirectoryHandle, fetchMedia: MediaFetcher): SaveFile {
+  return (name, url, signal, existed) => downloadToFile(dir, name, url, fetchMedia, signal, existed);
+}
+
+/**
  * Streams one media file into `dir/name`. The response is requested before the
  * file is created, so an HTTP failure leaves nothing behind; a file created by
  * this call is removed again if writing fails or is cancelled.
