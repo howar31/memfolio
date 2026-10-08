@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/github/license/howar31/memfolio?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/howar31/memfolio?style=flat-square)](https://github.com/howar31/memfolio/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/howar31/memfolio/ci.yml?style=flat-square&label=CI)](https://github.com/howar31/memfolio/actions/workflows/ci.yml)
 [![Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge%20%7C%20Firefox-blue?style=flat-square)](https://memfolio.howar31.com)
 [![Downloads](https://img.shields.io/github/downloads/howar31/memfolio/total?style=flat-square)](https://github.com/howar31/memfolio/releases)
 [![Sponsor](https://img.shields.io/badge/%E8%B4%8A%E5%8A%A9-donate.howar31.com-b4532c?style=flat-square&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIwLjg0IDQuNjFhNS41IDUuNSAwIDAgMC03Ljc4IDBMMTIgNS42N2wtMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAtNy43OCA3Ljc4bDEuMDYgMS4wNkwxMiAyMS4yM2w3Ljc4LTcuNzggMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAgMC03Ljc4eiIvPjwvc3ZnPg==)](https://donate.howar31.com/)
@@ -87,6 +88,8 @@ npm run check        # 型別檢查、單元測試、正式建置（兩個）
 ```
 
 `npm run test:e2e` 需要先安裝一次測試用瀏覽器：`npx puppeteer browsers install chrome`。
+
+每次推送與 pull request 都會執行檢查與瀏覽器測試。推送與 `package.json` 版本相同的 tag `vX.Y.Z`，會建置套件、建立 GitHub release 並把該版本送交各商店。
 
 ## 支援
 

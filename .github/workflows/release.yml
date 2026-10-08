@@ -1,0 +1,174 @@
+name: Release
+
+# A pushed tag vX.Y.Z builds both packages, runs the checks, publishes the
+# GitHub release and sends the new version to each store that has credentials
+# in the repository secrets. Each store still checks the version on its side.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        name: Tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG package=$PKG"
+          test "$TAG" = "$PKG"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npx puppeteer browsers install chrome
+      - run: npm run test:e2e
+      - name: Pack
+        run: |
+          V="${{ steps.meta.outputs.version }}"
+          mkdir -p out
+          (cd dist && zip -qrX "../out/memfolio-chromium-$V.zip" .)
+          (cd dist-firefox && zip -qrX "../out/memfolio-firefox-$V.zip" .)
+          git archive --format=zip --prefix="memfolio-$V/" -o "out/memfolio-source-$V.zip" "$GITHUB_REF_NAME" -- . ':(exclude)docs'
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: out
+          retention-days: 14
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.meta.outputs.version }}"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" --clobber "out/memfolio-chromium-$V.zip" "out/memfolio-firefox-$V.zip"
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes "out/memfolio-chromium-$V.zip" "out/memfolio-firefox-$V.zip"
+          fi
+
+  chrome:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      ITEM_ID: ${{ secrets.CWS_ITEM_ID }}
+    steps:
+      - id: configured
+        run: |
+          if [ -n "$REFRESH_TOKEN" ] && [ -n "$ITEM_ID" ] && [ -n "$PUBLISHER_ID" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "Chrome Web Store credentials are not set; skipping."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.configured.outputs.ok == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: out
+      - if: steps.configured.outputs.ok == 'true'
+        name: Upload and publish
+        run: |
+          V="${{ needs.build.outputs.version }}"
+          TOKEN="$(curl -sS "https://oauth2.googleapis.com/token" \
+            -d "client_id=$CLIENT_ID" -d "client_secret=$CLIENT_SECRET" \
+            -d "refresh_token=$REFRESH_TOKEN" -d "grant_type=refresh_token" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).access_token")"
+          test -n "$TOKEN"
+          BASE="https://chromewebstore.googleapis.com"
+          ITEM="publishers/$PUBLISHER_ID/items/$ITEM_ID"
+          echo "upload"
+          curl -sS -f -H "Authorization: Bearer $TOKEN" -X POST -T "out/memfolio-chromium-$V.zip" "$BASE/upload/v2/$ITEM:upload"
+          echo
+          # The upload is processed asynchronously; publish once it has settled.
+          for i in $(seq 1 30); do
+            S="$(curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/v2/$ITEM:fetchStatus")"
+            STATE="$(echo "$S" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).lastAsyncUploadState || ''")"
+            echo "upload state: $STATE"
+            case "$STATE" in *PROGRESS*|*PENDING*|"") sleep 10 ;; *) break ;; esac
+          done
+          echo "publish"
+          curl -sS -f -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -X POST -d '{"publishType":"DEFAULT_PUBLISH"}' "$BASE/v2/$ITEM:publish"
+          echo
+
+  edge:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+      API_KEY: ${{ secrets.EDGE_API_KEY }}
+      PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: configured
+        run: |
+          if [ -n "$API_KEY" ] && [ -n "$CLIENT_ID" ] && [ -n "$PRODUCT_ID" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "Edge Add-ons credentials are not set; skipping."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.configured.outputs.ok == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: out
+      - if: steps.configured.outputs.ok == 'true'
+        name: Upload and publish
+        run: |
+          V="${{ needs.build.outputs.version }}"
+          BASE="https://api.addons.microsoftedge.microsoft.com/v1/products/$PRODUCT_ID"
+          H1="Authorization: ApiKey $API_KEY"
+          H2="X-ClientID: $CLIENT_ID"
+          op_of() { grep -i '^location:' | tr -d '\r' | awk '{print $2}'; }
+          wait_op() { # $1 = status url
+            for i in $(seq 1 60); do
+              R="$(curl -sS -H "$H1" -H "$H2" "$1")"
+              ST="$(echo "$R" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).status")"
+              echo "$ST"
+              case "$ST" in InProgress) sleep 10 ;; Succeeded) return 0 ;; *) echo "$R"; return 1 ;; esac
+            done
+            return 1
+          }
+          echo "upload"
+          OP="$(curl -sS -D - -o /dev/null -H "$H1" -H "$H2" -H "Content-Type: application/zip" -X POST -T "out/memfolio-chromium-$V.zip" "$BASE/submissions/draft/package" | op_of)"
+          test -n "$OP"
+          wait_op "$BASE/submissions/draft/package/operations/$OP"
+          echo "publish"
+          OP="$(curl -sS -D - -o /dev/null -H "$H1" -H "$H2" -H "Content-Type: text/plain" -X POST --data-binary @.github/release/edge-certification-notes.txt "$BASE/submissions" | op_of)"
+          test -n "$OP"
+          wait_op "$BASE/submissions/operations/$OP"
+
+  firefox:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+      WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+    steps:
+      - id: configured
+        run: |
+          if [ -n "$WEB_EXT_API_KEY" ] && [ -n "$WEB_EXT_API_SECRET" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "AMO credentials are not set; skipping."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.configured.outputs.ok == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: out
+      - if: steps.configured.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - if: steps.configured.outputs.ok == 'true'
+        name: Submit the listed version
+        run: |
+          V="${{ needs.build.outputs.version }}"
+          mkdir -p ff && (cd ff && unzip -q "../out/memfolio-firefox-$V.zip")
+          npx --yes web-ext@10 sign --source-dir ff --channel listed --upload-source-code "out/memfolio-source-$V.zip" --approval-timeout 0

@@ -1,0 +1,5 @@
+Testing requires being logged in to www.instagram.com with any account; the site shows visitors almost nothing and then asks to log in, and the extension then stops with a message saying a login is needed. No test account is provided: the platform's terms forbid sharing account credentials, and any ordinary account works.
+
+Steps: 1. Log in on www.instagram.com and open a public profile. 2. The round button at the bottom right opens the panel; choose Download All; pick a folder when asked. 3. Files appear in the chosen folder named <username>_<time>_<media id>_<account id>.<ext>. 4. Run Download All again: files already in the folder are skipped. 5. The toolbar icon opens the list of managed accounts. Single downloads: hover a post thumbnail or open a post and use the button that appears, or press Ctrl/Cmd + Shift + D.
+
+Source code: https://github.com/howar31/memfolio (Apache-2.0).
