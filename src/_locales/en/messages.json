@@ -3,7 +3,7 @@
     "message": "Memfolio"
   },
   "extDescription": {
-    "message": "Save photos and videos from social platforms into folders on your computer. Files you already have are not downloaded again."
+    "message": "Saves an account's photos and videos into one folder per account on your computer. Files the folder already has are skipped."
   },
   "cancel": {
     "message": "Cancel"

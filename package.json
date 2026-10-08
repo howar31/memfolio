@@ -1,6 +1,6 @@
 {
   "name": "memfolio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Browser extension that saves media from social platforms into local folders, incrementally.",
   "type": "module",

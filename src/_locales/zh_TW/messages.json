@@ -3,7 +3,7 @@
     "message": "Memfolio"
   },
   "extDescription": {
-    "message": "把社群平台上的相片與影片存進電腦裡的資料夾，已經有的檔案不會重複下載。"
+    "message": "把帳號的相片與影片存進電腦裡的資料夾，每個帳號一個資料夾，已經有的檔案不會重複下載。"
   },
   "cancel": {
     "message": "取消"
