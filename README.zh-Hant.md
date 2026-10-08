@@ -1,10 +1,14 @@
 # Memfolio
 
+[![License](https://img.shields.io/github/license/howar31/memfolio?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/howar31/memfolio?style=flat-square)](https://github.com/howar31/memfolio/releases/latest)
+[![Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge%20%7C%20Firefox-blue?style=flat-square)](https://memfolio.howar31.com)
+[![Downloads](https://img.shields.io/github/downloads/howar31/memfolio/total?style=flat-square)](https://github.com/howar31/memfolio/releases)
+[![Sponsor](https://img.shields.io/badge/%E8%B4%8A%E5%8A%A9-donate.howar31.com-b4532c?style=flat-square&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIwLjg0IDQuNjFhNS41IDUuNSAwIDAgMC03Ljc4IDBMMTIgNS42N2wtMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAtNy43OCA3Ljc4bDEuMDYgMS4wNkwxMiAyMS4yM2w3Ljc4LTcuNzggMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAgMC03Ljc4eiIvPjwvc3ZnPg==)](https://donate.howar31.com/)
+
 [English](README.md) | 正體中文
 
-把社群平台上的相片與影片存進電腦資料夾的瀏覽器擴充功能，資料夾裡已經有的檔案不會重複下載。第一個支援的平台是 Instagram。
-
-狀態：開發中，尚未上架。
+把社群平台上的相片與影片存進電腦資料夾的瀏覽器擴充功能，資料夾裡已經有的檔案不會重複下載。適用於 Instagram。官方網站：[memfolio.howar31.com](https://memfolio.howar31.com)
 
 ## 功能
 
@@ -58,6 +62,12 @@ Firefox 不讓擴充功能存取磁碟上的資料夾。這是瀏覽器的限制
 
 Firefox 版除了 `storage` 之外，還要求 `downloads` 權限。
 
+## 安裝
+
+Chromium 瀏覽器與 Firefox 的封裝建置在 [Releases](https://github.com/howar31/memfolio/releases) 頁面；[官方網站](https://memfolio.howar31.com)上有安裝按鈕。
+
+載入封裝建置：解壓縮 zip，開啟 `chrome://extensions`（或 `edge://extensions`），啟用開發人員模式，選「載入未封裝項目」並選擇解壓後的資料夾。Firefox：開啟 `about:debugging`，選「此 Firefox」，再選「載入暫用附加元件」並選擇解壓後資料夾內的 `manifest.json`。
+
 ## 建置
 
 ```
@@ -77,3 +87,13 @@ npm run check        # 型別檢查、單元測試、正式建置（兩個）
 ```
 
 `npm run test:e2e` 需要先安裝一次測試用瀏覽器：`npx puppeteer browsers install chrome`。
+
+## 支援
+
+問題回報與功能建議請到 [GitHub Issues](https://github.com/howar31/memfolio/issues/new/choose)。
+
+如果 Memfolio 對你有幫助，歡迎贊助開發：[贊助](https://donate.howar31.com/) · [Ko-fi](https://ko-fi.com/howar31)
+
+## 授權
+
+[Apache-2.0](LICENSE) © 2026 Howar31

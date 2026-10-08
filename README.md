@@ -1,10 +1,14 @@
 # Memfolio
 
+[![License](https://img.shields.io/github/license/howar31/memfolio?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/howar31/memfolio?style=flat-square)](https://github.com/howar31/memfolio/releases/latest)
+[![Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Edge%20%7C%20Firefox-blue?style=flat-square)](https://memfolio.howar31.com)
+[![Downloads](https://img.shields.io/github/downloads/howar31/memfolio/total?style=flat-square)](https://github.com/howar31/memfolio/releases)
+[![Sponsor](https://img.shields.io/badge/Sponsor-donate.howar31.com-b4532c?style=flat-square&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTIwLjg0IDQuNjFhNS41IDUuNSAwIDAgMC03Ljc4IDBMMTIgNS42N2wtMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAtNy43OCA3Ljc4bDEuMDYgMS4wNkwxMiAyMS4yM2w3Ljc4LTcuNzggMS4wNi0xLjA2YTUuNSA1LjUgMCAwIDAgMC03Ljc4eiIvPjwvc3ZnPg==)](https://donate.howar31.com/)
+
 English | [正體中文](README.zh-Hant.md)
 
-A browser extension that saves photos and videos from social platforms into folders on your computer. Files that are already in the folder are not downloaded again. The first supported platform is Instagram.
-
-Status: in development, not published to any extension store.
+A browser extension that saves photos and videos from social platforms into folders on your computer. Files that are already in the folder are not downloaded again. Works on Instagram. Website: [memfolio.howar31.com](https://memfolio.howar31.com)
 
 ## What it does
 
@@ -58,6 +62,12 @@ Firefox gives an extension no access to folders on the disk. This is a limit of 
 
 The Firefox build asks for the `downloads` permission in addition to `storage`.
 
+## Install
+
+Packaged builds for Chromium browsers and for Firefox are on the [Releases](https://github.com/howar31/memfolio/releases) page; the [website](https://memfolio.howar31.com) has the install buttons.
+
+To load a packaged build: unpack the zip, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the unpacked folder. In Firefox: open `about:debugging`, choose "This Firefox", then "Load Temporary Add-on" and select the `manifest.json` inside the unpacked folder.
+
 ## Build
 
 ```
@@ -77,3 +87,13 @@ npm run check        # type check, unit tests, production builds
 ```
 
 `npm run test:e2e` needs the test browser once: `npx puppeteer browsers install chrome`.
+
+## Support
+
+Bug reports and feature requests go to [GitHub Issues](https://github.com/howar31/memfolio/issues/new/choose).
+
+If Memfolio is useful to you, you can sponsor development: [Sponsor](https://donate.howar31.com/) · [Ko-fi](https://ko-fi.com/howar31)
+
+## License
+
+[Apache-2.0](LICENSE) © 2026 Howar31
