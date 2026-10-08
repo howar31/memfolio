@@ -66,7 +66,7 @@ Firefox 版除了 `storage` 之外，還要求 `downloads` 權限。
 
 Chromium 瀏覽器與 Firefox 的封裝建置在 [Releases](https://github.com/howar31/memfolio/releases) 頁面；[官方網站](https://memfolio.howar31.com)上有安裝按鈕。
 
-載入封裝建置：解壓縮 zip，開啟 `chrome://extensions`（或 `edge://extensions`），啟用開發人員模式，選「載入未封裝項目」並選擇解壓後的資料夾。Firefox：開啟 `about:debugging`，選「此 Firefox」，再選「載入暫用附加元件」並選擇解壓後資料夾內的 `manifest.json`。
+Chrome 或 Edge：解壓縮 zip，開啟 `chrome://extensions`（或 `edge://extensions`），啟用開發人員模式，選「載入未封裝項目」並選擇解壓後的資料夾。Firefox：下載 `.xpi` 檔，在 Firefox 中開啟它（拖進 Firefox 視窗，或用「檔案 > 開啟檔案」）並確認安裝；檔案已由 Mozilla 簽署。
 
 ## 建置
 

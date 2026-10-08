@@ -66,7 +66,7 @@ The Firefox build asks for the `downloads` permission in addition to `storage`.
 
 Packaged builds for Chromium browsers and for Firefox are on the [Releases](https://github.com/howar31/memfolio/releases) page; the [website](https://memfolio.howar31.com) has the install buttons.
 
-To load a packaged build: unpack the zip, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the unpacked folder. In Firefox: open `about:debugging`, choose "This Firefox", then "Load Temporary Add-on" and select the `manifest.json` inside the unpacked folder.
+Chrome or Edge: unpack the zip, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the unpacked folder. Firefox: download the `.xpi` file, open it in Firefox (drag it onto a Firefox window or use File > Open File) and confirm the installation; the file is signed by Mozilla.
 
 ## Build
 
