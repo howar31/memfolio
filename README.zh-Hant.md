@@ -65,7 +65,9 @@ Firefox 版除了 `storage` 之外，還要求 `downloads` 權限。
 
 ## 安裝
 
-Chrome、Edge 與 Firefox 的擴充功能檔案都在 [Releases](https://github.com/howar31/memfolio/releases) 頁面；[官方網站](https://memfolio.howar31.com)上也有依瀏覽器分列的下載連結。
+Chrome：從 [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb) 安裝。
+
+Chrome、Edge 與 Firefox 的擴充功能檔案也都在 [Releases](https://github.com/howar31/memfolio/releases) 頁面；[官方網站](https://memfolio.howar31.com)上也有依瀏覽器分列的下載連結。
 
 Chrome 或 Edge：解壓縮 zip，開啟 `chrome://extensions`（或 `edge://extensions`），啟用開發人員模式，選「載入未封裝項目」並選擇解壓後的資料夾。Firefox：下載 `.xpi` 檔，在 Firefox 中開啟它（拖進 Firefox 視窗，或用「檔案 > 開啟檔案」）並確認安裝；檔案已由 Mozilla 簽署。
 

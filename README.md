@@ -65,7 +65,9 @@ The Firefox build asks for the `downloads` permission in addition to `storage`.
 
 ## Install
 
-The extension files for Chrome, Edge and Firefox are on the [Releases](https://github.com/howar31/memfolio/releases) page; the [website](https://memfolio.howar31.com) also offers them with one download link per browser.
+Chrome: install from the [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb).
+
+The extension files for Chrome, Edge and Firefox are also on the [Releases](https://github.com/howar31/memfolio/releases) page; the [website](https://memfolio.howar31.com) offers them with one download link per browser.
 
 Chrome or Edge: unpack the zip, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose "Load unpacked" and select the unpacked folder. Firefox: download the `.xpi` file, open it in Firefox (drag it onto a Firefox window or use File > Open File) and confirm the installation; the file is signed by Mozilla.
 
