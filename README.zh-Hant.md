@@ -65,7 +65,7 @@ Firefox 版除了 `storage` 之外，還要求 `downloads` 權限。
 
 ## 安裝
 
-Chrome：從 [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb) 安裝。
+Chrome：從 [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb) 安裝。Firefox：從 [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/memfolio/) 安裝。
 
 Chrome、Edge 與 Firefox 的擴充功能檔案也都在 [Releases](https://github.com/howar31/memfolio/releases) 頁面；[官方網站](https://memfolio.howar31.com)上也有依瀏覽器分列的下載連結。
 

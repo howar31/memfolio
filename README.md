@@ -65,7 +65,7 @@ The Firefox build asks for the `downloads` permission in addition to `storage`.
 
 ## Install
 
-Chrome: install from the [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb).
+Chrome: install from the [Chrome Web Store](https://chromewebstore.google.com/detail/memfolio/dbjamlkplacakhhbonmcgedahejbaieb). Firefox: install from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/memfolio/).
 
 The extension files for Chrome, Edge and Firefox are also on the [Releases](https://github.com/howar31/memfolio/releases) page; the [website](https://memfolio.howar31.com) offers them with one download link per browser.
 
