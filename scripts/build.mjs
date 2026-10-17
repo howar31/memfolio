@@ -2,6 +2,7 @@
 // swaps the folder picker for the origin-private file system and shortens delays).
 // With --firefox the build goes to dist-firefox/: a module `x.ts` is replaced by
 // `x.firefox.ts` where that file exists, and a background script is added.
+// With --dev the extension is named "Memfolio dev" and shows a dev version name.
 import { build } from 'esbuild';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -11,6 +12,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const e2e = process.argv.includes('--e2e');
 const firefox = process.argv.includes('--firefox');
+// Local test builds only: marks the unpacked extension so it is not mistaken for a release.
+const dev = process.argv.includes('--dev');
 const out = join(root, firefox ? 'dist-firefox' : e2e ? 'dist-e2e' : 'dist');
 const src = join(root, 'src');
 
@@ -50,6 +53,12 @@ await build({
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const manifest = JSON.parse(await readFile(join(src, 'manifest.json'), 'utf8'));
 manifest.version = pkg.version;
+if (dev) {
+  const d = new Date();
+  const two = (n) => String(n).padStart(2, '0');
+  manifest.version_name = `${pkg.version}-dev ${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}`;
+  manifest.name = 'Memfolio dev';
+}
 if (firefox) {
   delete manifest.minimum_chrome_version;
   manifest.permissions.push('downloads');
@@ -66,4 +75,4 @@ await cp(join(src, 'popup/popup.html'), join(out, 'popup.html'));
 await cp(join(src, 'popup/popup.css'), join(out, 'popup.css'));
 await cp(join(src, 'platforms/instagram/content.css'), join(out, 'content.css'));
 
-console.log(`built ${firefox ? 'firefox ' : e2e ? 'e2e ' : ''}extension ${manifest.version} in ${out}`);
+console.log(`built ${firefox ? 'firefox ' : e2e ? 'e2e ' : ''}extension ${manifest.version_name ?? manifest.version} in ${out}`);

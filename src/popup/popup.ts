@@ -2,7 +2,7 @@
 // views. The account list is in `list.ts`, the two text views in `transfer.ts`.
 // The popup never touches folders or the platform.
 
-import { initI18n, setLanguage, setTimeFormat, t, uiLanguage } from '../core/i18n';
+import { initI18n, setLanguage, setTimeFormat, t, uiLanguage, type MessageKey } from '../core/i18n';
 import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
 import { getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
 import { ICONS, icon } from '../ui/dom';
@@ -82,9 +82,15 @@ function renderText(): void {
   text('message-dot-name', t('optMessageDot'));
 }
 
-/** The version comes from the manifest, so the band always names the build that is loaded. */
+/** Name and version come from the manifest, so the popup always names the build that is loaded. */
 function renderVersion(): void {
-  text('version', `v${chrome.runtime.getManifest().version}`);
+  const manifest = chrome.runtime.getManifest();
+  // The manifest names the extension either literally or by a catalog entry (`__MSG_<key>__`).
+  const ref = /^__MSG_(\w+)__$/.exec(manifest.name)?.[1];
+  const name = ref ? t(ref as MessageKey) : manifest.name;
+  text('product-name', name);
+  document.title = name;
+  text('version', `v${manifest.version_name ?? manifest.version}`);
 }
 
 /** Settings are stored the moment they change: a popup closes as soon as it loses focus. */

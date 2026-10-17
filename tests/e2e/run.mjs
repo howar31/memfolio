@@ -653,6 +653,11 @@ scenario('the default location is chosen once, shown in the settings and can be 
   const popup = await ctx.browser.newPage();
   await popup.goto(`chrome-extension://${ctx.extensionId}/popup.html`);
   await waitFor(async () => (await popup.$eval('#options', (e) => e.title)) === (await ctx.msg('popupOptions')), 'the popup');
+  assertEqual(
+    await popup.evaluate(() => [document.getElementById('product-name').textContent, document.title]),
+    [await ctx.msg('extName'), await ctx.msg('extName')],
+    'the popup names the extension as its manifest does',
+  );
   await popup.click('#options');
   assertEqual(
     await popup.evaluate(() => ['default-value', 'default-change'].map((id) => document.getElementById(id).textContent)),
