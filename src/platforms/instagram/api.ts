@@ -21,10 +21,10 @@ interface QueryDef {
 }
 
 const QUERIES = {
-  PolarisProfilePostsTabContentQuery_connection: { fallbackId: '28844755988451916', sessionParams: false },
+  PolarisProfilePostsTabContentQuery_connection: { fallbackId: '28858033960505345', sessionParams: false },
   PolarisProfileReelsTabContentQuery_connection: { fallbackId: null, sessionParams: true },
   PolarisProfileTaggedTabContentQuery_connection: { fallbackId: null, sessionParams: true },
-  PolarisPostRootQuery: { fallbackId: '27830990013244856', sessionParams: true },
+  PolarisPostRootQuery: { fallbackId: '28188170744199537', sessionParams: true },
   PolarisStoriesV3ReelPageGalleryQuery: { fallbackId: '28262315486766731', sessionParams: true },
   PolarisStoriesV3HighlightsPageQuery: { fallbackId: '28325328583775973', sessionParams: true },
   PolarisSearchBoxRefetchableQuery: { fallbackId: '27706427925724183', sessionParams: true },
@@ -171,6 +171,7 @@ export function postsSource(gql: GraphqlFn, username: string): ListingSource {
           username,
           __relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider: true,
           __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+          __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false,
           __relay_internal__pv__PolarisReelsRecoDebugOverlayEnabledrelayprovider: false,
         },
         signal,
@@ -293,6 +294,7 @@ export async function fetchPostMedia(shortcode: string, deps: PostDeps): Promise
         {
           shortcode,
           __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+          __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false,
           __relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider: false,
         },
         deps.signal,

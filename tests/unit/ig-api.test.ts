@@ -50,6 +50,7 @@ describe('postsSource', () => {
     const page = await postsSource(r.gql, 'acct').fetchPage(null, signal);
     expect(r.calls[0]!.name).toBe('PolarisProfilePostsTabContentQuery_connection');
     expect(r.calls[0]!.variables).toMatchObject({ username: 'acct', after: null, first: 12, data: { count: 12 } });
+    expect(r.calls[0]!.variables).toMatchObject({ __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false });
     expect(page.postCount).toBe(2);
     expect(page.items.map((i) => i.shortcode)).toEqual(['C2', 'C1']);
     expect(page.nextCursor).toBe('CUR');
@@ -238,7 +239,7 @@ describe('fetchPostMedia', () => {
       signal,
     });
     expect(r.calls[0]!.name).toBe('PolarisPostRootQuery');
-    expect(r.calls[0]!.variables).toMatchObject({ shortcode: 'C5' });
+    expect(r.calls[0]!.variables).toMatchObject({ shortcode: 'C5', __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false });
     expect(items).toHaveLength(1);
   });
 
@@ -408,7 +409,7 @@ describe('createGraphql', () => {
   it('uses the recorded query id when the page does not provide one', async () => {
     const t = transport({ data: {} });
     await t.gql('PolarisProfilePostsTabContentQuery_connection', {}, signal);
-    expect(params(t.sent[0]!.init).get('doc_id')).toBe('28844755988451916');
+    expect(params(t.sent[0]!.init).get('doc_id')).toBe('28858033960505345');
   });
 
   it('does not send a query under the id of another query', async () => {
