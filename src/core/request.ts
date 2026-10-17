@@ -110,6 +110,8 @@ export interface GateHooks {
   sleep(ms: number, signal: AbortSignal): Promise<void>;
   rng: Rng;
   now(): number;
+  /** Factor applied to the gap, read before every request; 1 when absent. */
+  scale?(): number;
 }
 
 const HOUR_MS = 3_600_000;
@@ -142,7 +144,7 @@ export class RequestGate {
     }
     if (this.lastAt > 0) {
       const [min, max] = this.cfg.minGapMs;
-      const gap = Math.round(min + (max - min) * this.hooks.rng());
+      const gap = Math.round((min + (max - min) * this.hooks.rng()) * (this.hooks.scale?.() ?? 1));
       const wait = this.lastAt + gap - this.hooks.now();
       if (wait > 0) await this.hooks.sleep(wait, signal);
     }

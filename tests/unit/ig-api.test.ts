@@ -49,7 +49,7 @@ describe('postsSource', () => {
     const r = recorder([connection([node(2), node(1)], 'CUR', true)]);
     const page = await postsSource(r.gql, 'acct').fetchPage(null, signal);
     expect(r.calls[0]!.name).toBe('PolarisProfilePostsTabContentQuery_connection');
-    expect(r.calls[0]!.variables).toMatchObject({ username: 'acct', after: null, first: 12, data: { count: 12 } });
+    expect(r.calls[0]!.variables).toMatchObject({ username: 'acct', after: null, first: 33, data: { count: 33 } });
     expect(r.calls[0]!.variables).toMatchObject({ __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false });
     expect(page.postCount).toBe(2);
     expect(page.items.map((i) => i.shortcode)).toEqual(['C2', 'C1']);
@@ -61,6 +61,32 @@ describe('postsSource', () => {
     const page = await postsSource(r.gql, 'acct').fetchPage('CUR', signal);
     expect(r.calls[0]!.variables).toMatchObject({ after: 'CUR' });
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('falls back to the size of the site when the larger page is refused, for the rest of the listing', async () => {
+    const asked: number[] = [];
+    const gql: GraphqlFn = async (_name, variables) => {
+      asked.push(variables.first as number);
+      if (variables.first !== 12) throw new StopError('graphql', 'execution error');
+      return connection([node(1)], 'NEXT', true);
+    };
+    const told: Array<[number, number]> = [];
+    const source = postsSource(gql, 'acct', (from, to) => told.push([from, to]));
+    const page = await source.fetchPage(null, signal);
+    await source.fetchPage('NEXT', signal);
+    expect(page.items).toHaveLength(1);
+    expect(asked).toEqual([33, 12, 12]);
+    expect(told).toEqual([[33, 12]]);
+  });
+
+  it('does not fall back when the platform asks to slow down', async () => {
+    const asked: number[] = [];
+    const gql: GraphqlFn = async (_name, variables) => {
+      asked.push(variables.first as number);
+      throw new StopError('rate-limited', 'HTTP 429');
+    };
+    await expect(postsSource(gql, 'acct').fetchPage(null, signal)).rejects.toMatchObject({ reason: 'rate-limited' });
+    expect(asked).toEqual([33]);
   });
 
   it('skips a malformed post and keeps the rest of the page', async () => {
@@ -97,7 +123,7 @@ describe('reelsSource', () => {
     expect(r.calls[0]!.variables).toEqual({
       after: null,
       data: { include_feed_video: true, page_size: 12, target_user_id: '42' },
-      first: 3,
+      first: 12,
       id: '42',
       __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
     });
@@ -135,7 +161,7 @@ describe('reelsSource', () => {
     expect(r.calls[0]!.variables).toEqual({
       after: 'R',
       data: { include_feed_video: true, page_size: 12, target_user_id: '42' },
-      first: 3,
+      first: 12,
       id: '42',
       __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
     });
@@ -152,8 +178,8 @@ describe('taggedSource', () => {
     expect(r.calls[0]!.variables).toEqual({
       after: null,
       before: null,
-      count: 12,
-      first: 12,
+      count: 21,
+      first: 21,
       last: null,
       user_id: '42',
       __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
@@ -167,8 +193,8 @@ describe('taggedSource', () => {
     expect(r.calls[0]!.variables).toEqual({
       after: 'T',
       before: null,
-      count: 12,
-      first: 12,
+      count: 21,
+      first: 21,
       last: null,
       user_id: '42',
       __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,

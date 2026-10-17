@@ -205,6 +205,8 @@ export function newState(overrides = {}) {
     story: null,
     relayUsers: [{ username: 'acct', pk: '42' }],
     searchUsers: [],
+    /** Answer a listing request for more than 12 entries with an error, as a platform with a lower limit would. */
+    refuseLargePages: false,
     /** Query definitions on the page: friendly name -> flags the query declares and requires, with their values. */
     queryFlags: {},
     /** Calls the extension made, in order: { name, vars, params }. */
@@ -250,6 +252,7 @@ export async function installMock(page, state) {
         const fail = state.failStatuses.shift();
         if (fail) return await req.respond({ status: fail, contentType: 'text/html', body: '<html>limited</html>' });
         // The site answers a request that lacks a flag its query declares this way.
+        if (state.refuseLargePages && (vars.first ?? 0) > 12) return await req.respond(json({ errors: [{ message: 'execution error', severity: 'CRITICAL' }] }));
         if (Object.keys(state.queryFlags[name] ?? {}).some((k) => !(k in vars))) return await req.respond(json({ errors: [{ message: 'execution error', severity: 'CRITICAL' }] }));
         const data = graphql(state, name, vars);
         return await req.respond(data ? json({ data, status: 'ok' }) : json({ errors: [{ message: 'unknown query' }], data: null }));

@@ -17,9 +17,12 @@ export const PLATFORM = 'instagram';
  */
 export const CONFIG = {
   /** Wait between two listing pages. */
-  pageDelayMs: [1500, 3200] as [number, number],
+  pageDelayMs: [1000, 2200] as [number, number],
   /** Minimum spacing between any two API requests. */
-  apiGapMs: [1200, 2600] as [number, number],
+  apiGapMs: [900, 1800] as [number, number],
+  /** After the platform answered 429 or 5xx in this tab, both waits above are multiplied by this for `slowdownMs`. */
+  slowdownFactor: 3,
+  slowdownMs: 3_600_000,
   /** Wait after a media file, by kind. */
   mediaDelayMs: { image: [150, 500], video: [400, 1100] } as Record<MediaKind, [number, number]>,
   /** API requests per rolling hour, across tabs. */
@@ -46,19 +49,27 @@ E2E: {
 
 export const handles = new HandleStore(PLATFORM);
 
-export const pageDelay = (): number => jitter(...CONFIG.pageDelayMs);
+let throttledAt = 0;
+/** Pacing factor: higher for a while after the platform pushed back in this tab. */
+const pace = (): number => (throttledAt && Date.now() - throttledAt < CONFIG.slowdownMs ? CONFIG.slowdownFactor : 1);
+
+export const pageDelay = (): number => jitter(...CONFIG.pageDelayMs) * pace();
+/** True while requests in this tab are slowed down after the platform pushed back. */
+export const slowedDown = (): boolean => pace() > 1;
 export const mediaDelay = (kind: MediaKind): number => jitter(...CONFIG.mediaDelayMs[kind]);
 
 const gate = new RequestGate({ minGapMs: CONFIG.apiGapMs, hourlyBudget: CONFIG.hourlyBudget }, budgetStore(PLATFORM), {
   sleep,
   rng: Math.random,
   now: Date.now,
+  scale: pace,
 });
 
 const requestHooks = {
   sleep,
   rng: Math.random,
   onRetry(info: { status: number; attempt: number; max: number; delayMs: number }): void {
+    throttledAt = Date.now();
     const seconds = Math.round(info.delayMs / 1000);
     console.warn(`[memfolio] HTTP ${info.status}, retry ${info.attempt}/${info.max} in ${seconds}s`);
     surface.toast(t('retryNotice', info.status, seconds, info.attempt, info.max), 'warn', info.delayMs);

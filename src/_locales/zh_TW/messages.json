@@ -92,6 +92,12 @@
   "statusDownloading": {
     "message": "下載中：第 $1 個，共 $2 個"
   },
+  "pageSizeFallback": {
+    "message": "平台不接受較大的頁面，列表改用較小的頁面繼續，所需時間會比較長。"
+  },
+  "slowdownNotice": {
+    "message": "平台在一小時內限制過這個分頁的請求，目前會拉長請求間隔。"
+  },
   "forcedFullScan": {
     "message": "上次執行沒有完成，這次會列出每一頁。"
   },
@@ -129,7 +135,7 @@
     "message": "下載失敗：$1"
   },
   "retryNotice": {
-    "message": "平台回應 HTTP $1，$2 秒後重試（第 $3 次，共 $4 次）。"
+    "message": "平台回應 HTTP $1，$2 秒後重試（第 $3 次，共 $4 次）。接下來一小時，這個分頁的請求間隔會拉長。"
   },
   "stopLogin": {
     "message": "平台要求登入，已停止發送請求。（$1）"

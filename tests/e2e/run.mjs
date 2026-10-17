@@ -368,6 +368,19 @@ scenario('a flag the page declares for a query is sent with the value on the pag
   assertEqual([first.vars[NEW_FLAG], first.vars[OWN_FLAG], first.vars.username], [false, true, 'acct'], 'new flag added, page value wins, own variables kept');
 });
 
+scenario('a refused large page is asked again at the size of the site', async (ctx) => {
+  const state = newState({ posts: makeTimeline(30), refuseLargePages: true });
+  const page = await ctx.openProfile('/acct/', state);
+  await waitText(page, '@acct');
+  await firstRun(ctx, page);
+  await waitText(page, await ctx.msg('pageSizeFallback'));
+  await runFinished(ctx, page);
+
+  assertEqual(await opfs.names(page, 'root/acct'), expectedFiles(state.posts), 'every file is saved');
+  assertEqual(callsNamed(state, POSTS).map((c) => c.vars.first), [33, 12, 12, 12], 'one refused page, then the size of the site');
+  assertEqual((await ctx.account('42')).needsFullScan.posts, false, 'the refusal does not count as a failed run');
+});
+
 scenario('the account panel starts as a ball and opens on a click', async (ctx) => {
   const page = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
   const downloadAll = await ctx.msg('downloadAll');
@@ -522,6 +535,7 @@ scenario('rate limiting is retried, a login redirect stops the run', async (ctx)
   state.loginRedirect = true;
   state.calls.length = 0;
   await click(page, await ctx.msg('downloadAll'));
+  await waitText(page, await ctx.msg('slowdownNotice'));
   await runFinished(ctx, page);
   assertEqual(callsNamed(state, POSTS).length, 1, 'no retry after a login redirect');
   assert((await surfaceText(page)).includes((await ctx.msg('stopLogin', '')).split('(')[0].trim()), 'login stop is explained');

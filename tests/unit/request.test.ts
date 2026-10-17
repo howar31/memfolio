@@ -143,7 +143,7 @@ describe('requestJson', () => {
 });
 
 describe('RequestGate', () => {
-  function gate(budget: number, stored: number[] = []) {
+  function gate(budget: number, stored: number[] = [], scale?: () => number) {
     let now = 1_000_000;
     const slept: number[] = [];
     const store: BudgetStore = {
@@ -159,6 +159,7 @@ describe('RequestGate', () => {
       },
       rng: () => 0,
       now: () => now,
+      scale,
     });
     return { g, slept, stored: () => stored, advance: (ms: number) => (now += ms) };
   }
@@ -168,6 +169,16 @@ describe('RequestGate', () => {
     await t.g.pass(new AbortController().signal);
     expect(t.slept).toEqual([]);
     expect(t.stored()).toHaveLength(1);
+  });
+
+  it('stretches the gap by the current scale', async () => {
+    let factor = 1;
+    const t = gate(10, [], () => factor);
+    const s = new AbortController().signal;
+    await t.g.pass(s);
+    factor = 3;
+    await t.g.pass(s);
+    expect(t.slept).toEqual([4500]);
   });
 
   it('spaces consecutive requests by the configured gap', async () => {

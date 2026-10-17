@@ -6,7 +6,15 @@ import { shortcodeToId } from './shortcode';
 type Json = Record<string, unknown>;
 
 export const ORIGIN = 'https://www.instagram.com';
-const PAGE_SIZE = 12;
+/**
+ * Entries asked per listing page: the most each query answered, and what the
+ * site's own page asks (used when the larger size is refused).
+ */
+const PAGE_SIZES = {
+  posts: { max: 33, site: 12 },
+  reels: { max: 12, site: 3 },
+  tagged: { max: 21, site: 12 },
+};
 
 /**
  * Persisted queries of the web client, by their "friendly name". The id of a
@@ -154,78 +162,102 @@ function toPage(conn: Connection, read: (node: unknown) => MediaItem[] = mediaFr
   return { items, postCount: conn.edges.length, nextCursor: next };
 }
 
-/** Main grid of a profile. */
-export function postsSource(gql: GraphqlFn, username: string): ListingSource {
+/** Told once per listing when it falls back to smaller pages. */
+export type SmallerPages = (from: number, to: number) => void;
+
+/**
+ * A listing that asks for `sizes.max` entries per page. When the platform
+ * refuses that page, it is asked again with the site's own size, which is then
+ * kept for the rest of the listing. A request to slow down is not a refusal.
+ */
+function sized(
+  sizes: { max: number; site: number },
+  fetchPage: (cursor: string | null, signal: AbortSignal, size: number) => Promise<ListingPage>,
+  onSmaller?: SmallerPages,
+): ListingSource {
+  let size = sizes.max;
   return {
     async fetchPage(cursor, signal) {
-      const data = await gql(
-        'PolarisProfilePostsTabContentQuery_connection',
-        {
-          after: cursor,
-          before: null,
-          data: {
-            count: PAGE_SIZE,
-            include_reel_media_seen_timestamp: true,
-            include_relationship_info: true,
-            latest_besties_reel_media: true,
-            latest_reel_media: true,
-          },
-          first: PAGE_SIZE,
-          include_multi_captions: true,
-          last: null,
-          username,
-          __relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider: true,
-          __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
-          __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false,
-          __relay_internal__pv__PolarisReelsRecoDebugOverlayEnabledrelayprovider: false,
-        },
-        signal,
-      );
-      return toPage(connectionFrom(data, 'xdt_api__v1__feed__user_timeline_graphql_connection'));
+      try {
+        return await fetchPage(cursor, signal, size);
+      } catch (e) {
+        if (size === sizes.site || !isSoftStop(e) || signal.aborted) throw e;
+        console.warn(`[memfolio] a page of ${size} was refused, asking for ${sizes.site}:`, e instanceof Error ? e.message : e);
+        onSmaller?.(size, sizes.site);
+        size = sizes.site;
+        return fetchPage(cursor, signal, size);
+      }
     },
   };
+}
+
+/** Main grid of a profile. */
+export function postsSource(gql: GraphqlFn, username: string, onSmaller?: SmallerPages): ListingSource {
+  return sized(PAGE_SIZES.posts, async (cursor, signal, size) => {
+    const data = await gql(
+      'PolarisProfilePostsTabContentQuery_connection',
+      {
+        after: cursor,
+        before: null,
+        data: {
+          count: size,
+          include_reel_media_seen_timestamp: true,
+          include_relationship_info: true,
+          latest_besties_reel_media: true,
+          latest_reel_media: true,
+        },
+        first: size,
+        include_multi_captions: true,
+        last: null,
+        username,
+        __relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider: true,
+        __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+        __relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider: false,
+        __relay_internal__pv__PolarisReelsRecoDebugOverlayEnabledrelayprovider: false,
+      },
+      signal,
+    );
+    return toPage(connectionFrom(data, 'xdt_api__v1__feed__user_timeline_graphql_connection'));
+  }, onSmaller);
 }
 
 /** Reels tab of a profile. Items come without a video URL and are resolved per reel before download. */
-export function reelsSource(gql: GraphqlFn, userId: string, username: string): ListingSource {
-  return {
-    async fetchPage(cursor, signal) {
-      const res = await gql(
-        'PolarisProfileReelsTabContentQuery_connection',
-        {
-          after: cursor,
-          data: { include_feed_video: true, page_size: PAGE_SIZE, target_user_id: userId },
-          first: 3,
-          id: userId,
-          __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
-        },
-        signal,
-      );
-      return toPage(connectionFrom(res, 'xdt_api__v1__clips__user__connection_v2'), (node) => [reelFromListingNode(node, username)]);
-    },
-  };
+export function reelsSource(gql: GraphqlFn, userId: string, username: string, onSmaller?: SmallerPages): ListingSource {
+  // `first` sets the size of the first page; `page_size` that of the following ones.
+  return sized(PAGE_SIZES.reels, async (cursor, signal, size) => {
+    const res = await gql(
+      'PolarisProfileReelsTabContentQuery_connection',
+      {
+        after: cursor,
+        data: { include_feed_video: true, page_size: PAGE_SIZES.reels.max, target_user_id: userId },
+        first: size,
+        id: userId,
+        __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+      },
+      signal,
+    );
+    return toPage(connectionFrom(res, 'xdt_api__v1__clips__user__connection_v2'), (node) => [reelFromListingNode(node, username)]);
+  }, onSmaller);
 }
 
 /** Tagged tab of a profile: posts by other accounts in which this account is tagged. */
-export function taggedSource(gql: GraphqlFn, userId: string): ListingSource {
-  return {
-    async fetchPage(cursor, signal) {
-      const res = await gql(
-        'PolarisProfileTaggedTabContentQuery_connection',
-        {
-          after: cursor,
-          before: null,
-          count: PAGE_SIZE,
-          first: PAGE_SIZE,
-          last: null,
-          user_id: userId,
-          __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
-        },
-        signal,
-      );
-      return toPage(connectionFrom(res, 'xdt_api__v1__usertags__user_id__feed_connection'));
-    },
-  };
+export function taggedSource(gql: GraphqlFn, userId: string, onSmaller?: SmallerPages): ListingSource {
+  return sized(PAGE_SIZES.tagged, async (cursor, signal, size) => {
+    const res = await gql(
+      'PolarisProfileTaggedTabContentQuery_connection',
+      {
+        after: cursor,
+        before: null,
+        count: size,
+        first: size,
+        last: null,
+        user_id: userId,
+        __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+      },
+      signal,
+    );
+    return toPage(connectionFrom(res, 'xdt_api__v1__usertags__user_id__feed_connection'));
+  }, onSmaller);
 }
 
 // ---- account id -------------------------------------------------------------

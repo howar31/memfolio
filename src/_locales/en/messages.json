@@ -92,6 +92,12 @@
   "statusDownloading": {
     "message": "Downloading $1 of $2"
   },
+  "pageSizeFallback": {
+    "message": "The platform did not accept larger pages; the listing continues with smaller ones, which takes longer."
+  },
+  "slowdownNotice": {
+    "message": "The platform limited requests from this tab within the last hour, so requests are spaced out more for now."
+  },
   "forcedFullScan": {
     "message": "The last run did not finish, so this run lists every page."
   },
@@ -129,7 +135,7 @@
     "message": "Download failed: $1"
   },
   "retryNotice": {
-    "message": "The platform answered HTTP $1. Retrying in $2 s (attempt $3 of $4)."
+    "message": "The platform answered HTTP $1. Retrying in $2 s (attempt $3 of $4). For the next hour, requests from this tab are spaced out more."
   },
   "stopLogin": {
     "message": "The platform asks you to log in. Requests stopped. ($1)"

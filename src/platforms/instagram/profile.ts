@@ -9,7 +9,7 @@ import { surface, type ToastHandle } from '../../ui/host';
 import { defaultTarget, folderLinks, folderNames, resolveAccountFolder } from './account-folder';
 import { fetchPostMedia, isSoftStop, postsSource, reelsSource, resolveUserId, taggedSource } from './api';
 import { bridge } from './bridge-client';
-import { PLATFORM, describeError, describeStop, gql, mediaDelay, mediaInfo, pageDelay } from './env';
+import { PLATFORM, describeError, describeStop, gql, mediaDelay, mediaInfo, pageDelay, slowedDown } from './env';
 import type { ProfileTab } from './routes';
 
 interface Target {
@@ -98,7 +98,8 @@ async function run(
   }
   let userId = resolved?.id ?? null;
 
-  const posts = postsSource(gql, username);
+  const smaller = (): void => void surface.toast(t('pageSizeFallback'), 'warn');
+  const posts = postsSource(gql, username, smaller);
   let firstPage: ListingPage | null = null;
   if (tab === 'posts' && (!userId || resolved?.source === 'registry')) {
     // The listing itself names the owner; it also catches a username that now belongs to another account.
@@ -129,7 +130,7 @@ async function run(
   }
 
   // 3. List and download.
-  const base = tab === 'posts' ? posts : tab === 'reels' ? reelsSource(gql, userId, username) : taggedSource(gql, userId);
+  const base = tab === 'posts' ? posts : tab === 'reels' ? reelsSource(gql, userId, username, smaller) : taggedSource(gql, userId, smaller);
   // Stopping at the first page that is already on disk is only valid for a tab
   // that has been listed to its end before. Files of the main grid may predate
   // this record (import); the other tabs start with one complete listing.
@@ -138,6 +139,7 @@ async function run(
   const forced = requested !== 'full' && (flagged || (tab !== 'posts' && !listedBefore));
   const mode: RunMode = requested === 'full' || forced ? 'full' : 'incremental';
   if (forced && flagged) surface.toast(t('forcedFullScan'));
+  if (slowedDown()) surface.toast(t('slowdownNotice'), 'warn');
   console.info(`[memfolio] ${username}/${tab}: ${mode} run, ${index.matchedCount} files in "${folder.label}"`);
 
   const result = await runAccountDownload({
