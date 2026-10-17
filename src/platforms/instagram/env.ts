@@ -88,11 +88,24 @@ async function docId(name: string): Promise<string | null> {
   return id;
 }
 
+const flagCache = new Map<string, Record<string, unknown>>();
+
+async function providedVariables(name: string): Promise<Record<string, unknown> | null> {
+  const cached = flagCache.get(name);
+  if (cached) return cached;
+  // Like query ids, definitions load with the page sections that use them; misses are not cached.
+  const flags = (await bridge.providedVariables([name]))[name] ?? null;
+  if (flags) flagCache.set(name, flags);
+  console.info(`[memfolio] query ${name}: flags ${flags ? 'from page' : 'not on page'}`);
+  return flags;
+}
+
 export const gql = createGraphql({
   gate,
   session,
   csrf,
   docId,
+  providedVariables,
   fetch: pageFetch,
   policy: CONFIG.retry,
   hooks: requestHooks,

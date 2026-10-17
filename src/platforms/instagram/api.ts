@@ -49,6 +49,8 @@ export interface GraphqlDeps {
   csrf(): string | null;
   /** Query id from the page's module registry for this friendly name, or null. */
   docId(name: string): Promise<string | null>;
+  /** Flags the page's definition of this query declares, with their current values; null when the page has none. */
+  providedVariables(name: string): Promise<Json | null>;
   fetch: typeof fetch;
   policy: RetryPolicy;
   hooks: RequestHooks;
@@ -83,8 +85,11 @@ export function createGraphql(deps: GraphqlDeps): GraphqlFn {
       form.set('server_timestamps', 'true');
       headers['x-fb-friendly-name'] = name;
     }
+    // The site sends every flag its query definition declares and rejects a
+    // request that lacks one, so the page's flags and values win over ours.
+    const provided = await deps.providedVariables(name);
     form.set('doc_id', docId);
-    form.set('variables', JSON.stringify(variables));
+    form.set('variables', JSON.stringify({ ...variables, ...provided }));
 
     await deps.gate.pass(signal);
     const body = await requestJson(

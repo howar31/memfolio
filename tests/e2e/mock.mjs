@@ -82,6 +82,7 @@ export function expectedFiles(posts) {
 function pageHtml(state, body) {
   const registry = {
     docIds: DOC_IDS,
+    queryFlags: state.queryFlags,
     relayUsers: state.relayUsers,
     appId: '936619743392459',
   };
@@ -98,6 +99,11 @@ function pageHtml(state, body) {
     PolarisRelayEnvironment: { getStore: () => ({ getSource: () => ({ getRecordIDs: () => Object.keys(records), get: (id) => records[id] }) }) },
   };
   for (const [name, id] of Object.entries(reg.docIds)) modules[name + '_instagramRelayOperation'] = id;
+  // Query definitions with their flag providers, in the shape the site's modules have.
+  for (const [name, flags] of Object.entries(reg.queryFlags)) {
+    const providedVariables = Object.fromEntries(Object.entries(flags).map(([k, v]) => [k, { get: () => v }]));
+    modules[name + '.graphql'] = { default: { params: { id: reg.docIds[name], providedVariables } } };
+  }
   // The direct form reports an unknown name to the page's error handling, so
   // the suite counts every use of it; the deferred form calls back only for
   // names that are defined.
@@ -199,6 +205,8 @@ export function newState(overrides = {}) {
     story: null,
     relayUsers: [{ username: 'acct', pk: '42' }],
     searchUsers: [],
+    /** Query definitions on the page: friendly name -> flags the query declares and requires, with their values. */
+    queryFlags: {},
     /** Calls the extension made, in order: { name, vars, params }. */
     calls: [],
     mediaRequests: [],
@@ -241,6 +249,8 @@ export async function installMock(page, state) {
         if (state.loginRedirect) return await req.respond({ status: 302, headers: { location: `${ORIGIN}/accounts/login/?next=%2F` } });
         const fail = state.failStatuses.shift();
         if (fail) return await req.respond({ status: fail, contentType: 'text/html', body: '<html>limited</html>' });
+        // The site answers a request that lacks a flag its query declares this way.
+        if (Object.keys(state.queryFlags[name] ?? {}).some((k) => !(k in vars))) return await req.respond(json({ errors: [{ message: 'execution error', severity: 'CRITICAL' }] }));
         const data = graphql(state, name, vars);
         return await req.respond(data ? json({ data, status: 'ok' }) : json({ errors: [{ message: 'unknown query' }], data: null }));
       }

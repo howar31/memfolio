@@ -353,7 +353,7 @@ describe('fetchReelMedia', () => {
 describe('createGraphql', () => {
   const session: SessionInfo = { appId: '936619743392459', dtsg: 'DTSG', lsd: 'LSD', wwwClaim: 'hmac.x' };
 
-  function transport(body: unknown, docIds: Record<string, string | null> = {}) {
+  function transport(body: unknown, docIds: Record<string, string | null> = {}, provided: Record<string, Record<string, unknown>> = {}) {
     const sent: Array<{ url: string; init: RequestInit }> = [];
     const gate = new RequestGate(
       { minGapMs: [0, 0], hourlyBudget: 100 },
@@ -365,6 +365,7 @@ describe('createGraphql', () => {
       session: async () => session,
       csrf: () => 'CSRF',
       docId: async (name) => docIds[name] ?? null,
+      providedVariables: async (name) => provided[name] ?? null,
       fetch: async (url, init) => {
         sent.push({ url: String(url), init: init ?? {} });
         return new Response(JSON.stringify(body), { status: 200 });
@@ -404,6 +405,24 @@ describe('createGraphql', () => {
     expect(params(init).get('fb_api_caller_class')).toBe('RelayModern');
     expect(headers(init).get('x-fb-friendly-name')).toBe('PolarisPostRootQuery');
     expect(headers(init).get('x-fb-lsd')).toBe('LSD');
+  });
+
+  it('sends the flags of the query definition on the page with their values there', async () => {
+    const t = transport({ data: {} }, { PolarisProfilePostsTabContentQuery_connection: '111' }, {
+      PolarisProfilePostsTabContentQuery_connection: { __relay_internal__pv__NewFlagrelayprovider: false, __relay_internal__pv__OldFlagrelayprovider: true },
+    });
+    await t.gql('PolarisProfilePostsTabContentQuery_connection', { username: 'acct', __relay_internal__pv__OldFlagrelayprovider: false }, signal);
+    expect(JSON.parse(params(t.sent[0]!.init).get('variables')!)).toEqual({
+      username: 'acct',
+      __relay_internal__pv__OldFlagrelayprovider: true,
+      __relay_internal__pv__NewFlagrelayprovider: false,
+    });
+  });
+
+  it('keeps its own flags when the page has no definition of the query', async () => {
+    const t = transport({ data: {} }, { PolarisPostRootQuery: '222' }, { PolarisProfilePostsTabContentQuery_connection: { __relay_internal__pv__NewFlagrelayprovider: false } });
+    await t.gql('PolarisPostRootQuery', { shortcode: 'C5', __relay_internal__pv__OldFlagrelayprovider: false }, signal);
+    expect(JSON.parse(params(t.sent[0]!.init).get('variables')!)).toEqual({ shortcode: 'C5', __relay_internal__pv__OldFlagrelayprovider: false });
   });
 
   it('uses the recorded query id when the page does not provide one', async () => {

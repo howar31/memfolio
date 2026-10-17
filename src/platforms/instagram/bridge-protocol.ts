@@ -15,6 +15,8 @@ export interface BridgeMethods {
   session(): Promise<BridgeSession>;
   /** Ids of persisted queries by friendly name; null for names the page does not know. */
   docIds(names: string[]): Promise<Record<string, string | null>>;
+  /** Flags the page's query definitions declare, with their current values; null for definitions the page has not loaded. */
+  providedVariables(names: string[]): Promise<Record<string, Record<string, unknown> | null>>;
   /** Numeric id of a user found in data the page has already loaded. */
   findUserId(username: string): Promise<string | null>;
   /** The page's own post loader (older response shape). */

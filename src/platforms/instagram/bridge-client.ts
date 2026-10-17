@@ -34,6 +34,10 @@ export const bridge = {
     return rpc('docIds', [names]).catch(() => ({}));
   },
 
+  async providedVariables(names: string[]): Promise<Record<string, Record<string, unknown> | null>> {
+    return rpc('providedVariables', [names]).catch(() => ({}));
+  },
+
   findUserId: (username: string): Promise<string | null> => rpc('findUserId', [username]).catch(() => null),
 
   relayPost: (shortcode: string): Promise<unknown | null> => rpc('relayPost', [shortcode], 15_000).catch(() => null),

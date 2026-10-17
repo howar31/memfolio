@@ -61,6 +61,26 @@ function text(v: unknown): string | null {
 
 const NUMERIC = /^\d+$/;
 
+/** `params.providedVariables` of a query definition, each provider asked for its current value. */
+function flagsOf(def: AnyRecord | null): Record<string, unknown> | null {
+  const node = (def?.default ?? def) as AnyRecord | null | undefined;
+  const params = node?.params as AnyRecord | undefined;
+  const providers = params?.providedVariables;
+  if (typeof providers !== 'object' || providers === null) return null;
+  const flags: Record<string, unknown> = {};
+  for (const [key, provider] of Object.entries(providers as AnyRecord)) {
+    let value: unknown = provider;
+    try {
+      const get = (provider as AnyRecord | null)?.get;
+      if (typeof get === 'function') value = (get as () => unknown).call(provider);
+    } catch {
+      continue;
+    }
+    if (value === null || ['boolean', 'number', 'string'].includes(typeof value)) flags[key] = value;
+  }
+  return flags;
+}
+
 async function relayEnvironment(): Promise<AnyRecord | null> {
   const m = await objMod('PolarisRelayEnvironment');
   if (!m) return null;
@@ -112,6 +132,11 @@ const methods: BridgeMethods = {
   async docIds(names) {
     const ids = await Promise.all(names.map((name) => mod(`${name}_instagramRelayOperation`)));
     return Object.fromEntries(names.map((name, i) => [name, text(ids[i])]));
+  },
+
+  async providedVariables(names) {
+    const defs = await Promise.all(names.map((name) => objMod(`${name}.graphql`)));
+    return Object.fromEntries(names.map((name, i) => [name, flagsOf(defs[i] ?? null)]));
   },
 
   async findUserId(username) {

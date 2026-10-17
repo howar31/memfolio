@@ -354,6 +354,20 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   assertEqual(record.fileCount, expected.length + 2, 'file count in the summary');
 });
 
+scenario('a flag the page declares for a query is sent with the value on the page', async (ctx) => {
+  const NEW_FLAG = '__relay_internal__pv__MockNewFlagrelayprovider';
+  const OWN_FLAG = '__relay_internal__pv__PolarisShortDramaEnabledrelayprovider';
+  const state = newState({ posts: makeTimeline(5), queryFlags: { [POSTS]: { [NEW_FLAG]: false, [OWN_FLAG]: true } } });
+  const page = await ctx.openProfile('/acct/', state);
+  await waitText(page, '@acct');
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+
+  assertEqual(await opfs.names(page, 'root/acct'), expectedFiles(state.posts), 'the run completes');
+  const first = callsNamed(state, POSTS)[0];
+  assertEqual([first.vars[NEW_FLAG], first.vars[OWN_FLAG], first.vars.username], [false, true, 'acct'], 'new flag added, page value wins, own variables kept');
+});
+
 scenario('the account panel starts as a ball and opens on a click', async (ctx) => {
   const page = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
   const downloadAll = await ctx.msg('downloadAll');
