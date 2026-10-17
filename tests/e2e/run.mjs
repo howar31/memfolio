@@ -381,6 +381,40 @@ scenario('a refused large page is asked again at the size of the site', async (c
   assertEqual((await ctx.account('42')).needsFullScan.posts, false, 'the refusal does not count as a failed run');
 });
 
+scenario('a page with nothing to download says so when the popup asks', async (ctx) => {
+  // The extension may not read tab addresses, so the question goes to every tab; only the one platform page answers.
+  const ask = () =>
+    ctx.ext.evaluate(async () => {
+      const answers = await Promise.all((await chrome.tabs.query({})).map((tab) => chrome.tabs.sendMessage(tab.id, { type: 'memfolio:page' }).catch(() => undefined)));
+      return answers.filter(Boolean);
+    });
+  // Badge texts of every tab; only the platform pages ever get one.
+  const badges = () => ctx.ext.evaluate(async () => Promise.all((await chrome.tabs.query({})).map((tab) => chrome.action.getBadgeText({ tabId: tab.id }))));
+  const state = newState({ posts: makeTimeline(3) });
+  const reposts = await ctx.open('/acct/reposts/', state);
+  assertEqual(await waitFor(async () => ((await ask()).length ? ask() : null), 'the content script to answer'), [{ supported: false }], 'an unsupported profile tab');
+  await waitFor(async () => (await badges()).includes('!'), 'the toolbar badge of the unsupported page');
+  const colours = await ctx.ext.evaluate(async () => {
+    for (const tab of await chrome.tabs.query({})) {
+      if ((await chrome.action.getBadgeText({ tabId: tab.id })) !== '!') continue;
+      return [await chrome.action.getBadgeBackgroundColor({ tabId: tab.id }), await chrome.action.getBadgeTextColor({ tabId: tab.id })];
+    }
+  });
+  assertEqual(colours, [[240, 180, 41, 255], [42, 27, 18, 255]], 'amber badge with dark text');
+  // The site changes pages without loading them.
+  await reposts.evaluate(() => history.pushState(null, '', '/acct/'));
+  await waitFor(async () => !(await badges()).includes('!'), 'the badge to go on an in-site move to a profile');
+  // A page load clears the badge by itself; the new page reports only when it is unsupported.
+  await reposts.goto(`${ORIGIN}/acct/reposts/`, { waitUntil: 'load' });
+  await waitFor(async () => (await badges()).includes('!'), 'the badge on a loaded unsupported page');
+  await reposts.goto('about:blank');
+  await waitFor(async () => !(await badges()).includes('!'), 'the badge to go when the tab leaves the site');
+  await reposts.close();
+  await ctx.open('/acct/', state);
+  assertEqual(await waitFor(async () => ((await ask()).length ? ask() : null), 'the content script to answer'), [{ supported: true }], 'a profile');
+  assert(!(await badges()).includes('!'), 'no badge on a profile');
+});
+
 scenario('the account panel starts as a ball and opens on a click', async (ctx) => {
   const page = await ctx.open('/acct/', newState({ posts: makeTimeline(1) }));
   const downloadAll = await ctx.msg('downloadAll');

@@ -4,6 +4,10 @@
 export const IMPORT_MESSAGE = 'memfolio:open-import';
 /** Runtime message asking the content script of an open tab to let the user change the default location. */
 export const DEFAULT_MESSAGE = 'memfolio:open-default';
+/** Runtime message asking the content script of the active tab whether its page has anything to download; the answer is `{ supported: boolean }`. */
+export const PAGE_MESSAGE = 'memfolio:page';
+/** Runtime message from a content script to the background script on every page change: `{ supported: boolean }`, for the toolbar badge. */
+export const PAGE_STATE_MESSAGE = 'memfolio:page-state';
 
 /**
  * Key in extension storage for a request left by the popup when it had to open

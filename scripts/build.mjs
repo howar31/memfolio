@@ -1,7 +1,7 @@
 // Builds the unpacked extension into dist/ (or dist-e2e/ with --e2e, which
 // swaps the folder picker for the origin-private file system and shortens delays).
 // With --firefox the build goes to dist-firefox/: a module `x.ts` is replaced by
-// `x.firefox.ts` where that file exists, and a background script is added.
+// `x.firefox.ts` where that file exists, and the background script also saves files.
 // With --dev the extension is named "Memfolio dev" and shows a dev version name.
 import { build } from 'esbuild';
 import { existsSync } from 'node:fs';
@@ -35,7 +35,7 @@ await build({
     content: join(src, 'platforms/instagram/content.ts'),
     bridge: join(src, 'platforms/instagram/bridge.main.ts'),
     popup: join(src, 'popup/popup.ts'),
-    ...(firefox ? { background: join(src, 'background/saver.ts') } : {}),
+    background: join(src, firefox ? 'background/saver.ts' : 'background/badge.ts'),
   },
   outdir: out,
   bundle: true,
@@ -53,6 +53,7 @@ await build({
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const manifest = JSON.parse(await readFile(join(src, 'manifest.json'), 'utf8'));
 manifest.version = pkg.version;
+manifest.background = { service_worker: 'background.js' };
 if (dev) {
   const d = new Date();
   const two = (n) => String(n).padStart(2, '0');

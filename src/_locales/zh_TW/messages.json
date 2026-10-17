@@ -557,6 +557,12 @@
   "popupOptions": {
     "message": "設定"
   },
+  "popupPageUnsupported": {
+    "message": "本頁不支援下載"
+  },
+  "popupPageWhere": {
+    "message": "可下載的頁面：個人檔案（貼文、Reels、被標註）、貼文、Reels、限時動態與精選。"
+  },
   "checkBtnExport": {
     "message": "匯出 JSON"
   },

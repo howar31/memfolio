@@ -1,6 +1,7 @@
 // Background script of the build for browsers without folder access from a
 // page: files are saved through the downloads API, below the download folder.
 
+import './badge';
 import { saveByDownload, type DownloadsApi } from '../core/browser-download';
 import { cleanRelPath, cleanSegment } from '../core/paths';
 import { SAVER_PREFIX, type SaverReply, type SaverRequest } from '../core/saver-protocol';

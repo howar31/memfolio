@@ -557,6 +557,12 @@
   "popupOptions": {
     "message": "Settings"
   },
+  "popupPageUnsupported": {
+    "message": "This page is not supported"
+  },
+  "popupPageWhere": {
+    "message": "Downloads work on profiles (posts, Reels, tagged), posts, reels, stories and highlights."
+  },
   "checkBtnExport": {
     "message": "Export JSON"
   },

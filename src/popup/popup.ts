@@ -3,7 +3,7 @@
 // The popup never touches folders or the platform.
 
 import { initI18n, setLanguage, setTimeFormat, t, uiLanguage, type MessageKey } from '../core/i18n';
-import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
+import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PAGE_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
 import { getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
 import { ICONS, icon } from '../ui/dom';
 import { initFolders, renderFolders } from './folders';
@@ -156,10 +156,27 @@ async function initSettings(): Promise<void> {
   document.getElementById('back')!.addEventListener('click', () => show('accounts'));
 }
 
+/** A note when the active tab is a platform page with nothing to download. Other tabs have no content script to answer. */
+async function renderPageHint(): Promise<void> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id === undefined) return;
+  try {
+    const answer = (await chrome.tabs.sendMessage(tab.id, { type: PAGE_MESSAGE })) as { supported?: boolean } | undefined;
+    if (answer?.supported !== false) return;
+  } catch {
+    return;
+  }
+  text('page-hint-title', t('popupPageUnsupported'));
+  text('page-hint-text', t('popupPageWhere'));
+  document.getElementById('page-hint-icon')!.replaceChildren(icon([...ICONS.warn], 16));
+  document.getElementById('page-hint')!.hidden = false;
+}
+
 async function main(): Promise<void> {
   await initI18n();
   renderText();
   renderVersion();
+  void renderPageHint();
   document.getElementById('import')!.addEventListener('click', () => void openTool('import'));
   initList();
   initTransfer();

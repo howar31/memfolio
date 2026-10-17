@@ -2,7 +2,7 @@
 // the platform or to the disk runs here; the popup only reads summaries.
 
 import { initI18n, t, uiLanguage } from '../../core/i18n';
-import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
+import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PAGE_MESSAGE, PAGE_STATE_MESSAGE, PENDING_TOOL_KEY, PENDING_TOOL_MAX_AGE_MS, type PendingTool } from '../../core/messages';
 import { getSettings, onStorageChange } from '../../core/records';
 import { surface } from '../../ui/host';
 import { changeDefault, startFolders } from './account-folder';
@@ -42,12 +42,23 @@ function retire(): void {
   surface.retire(staleNotice);
 }
 
+// A page load starts without a badge, so only an unsupported page and later changes are reported.
+let reportedSupported = true;
+
+/** Pages of kind "other" get neither the panel nor buttons; the toolbar button says so. */
+function reportPageState(supported: boolean): void {
+  if (supported === reportedSupported) return;
+  reportedSupported = supported;
+  void chrome.runtime.sendMessage({ type: PAGE_STATE_MESSAGE, supported }).catch(() => undefined);
+}
+
 function applyRoute(): void {
   if (life.signal.aborted) return;
   if (!alive()) return retire();
   if (location.href === lastHref) return;
   lastHref = location.href;
   route = parseRoute(location.href);
+  reportPageState(route.kind !== 'other');
   if (route.kind === 'profile') profileCard.show({ username: route.username, tab: route.tab });
   else profileCard.hide();
   surface.setFloatingButtons(floatingButtonsFor(route));
@@ -130,10 +141,11 @@ function main(): void {
   staleNotice = t('pageStale');
   watchInvalidation();
   profileCard.onTools({ import: () => void runImport(), check: () => void openFolderCheck() });
-  chrome.runtime.onMessage.addListener((message: unknown) => {
+  chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
     const type = (message as { type?: string } | null)?.type;
     if (type === IMPORT_MESSAGE) void runImport();
     else if (type === DEFAULT_MESSAGE) void changeDefault();
+    else if (type === PAGE_MESSAGE) reply({ supported: parseRoute(location.href).kind !== 'other' });
   });
   onStorageChange(() => void onStoredChange());
   startFolders();

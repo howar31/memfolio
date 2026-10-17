@@ -81,6 +81,8 @@ export function logoMark(size: number): SVGSVGElement {
 }
 
 export const ICONS = {
+  /** Triangle with an exclamation mark. */
+  warn: ['M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z', 'M12 9.5v4.5', 'M12 17.2v.1'],
   /** Arrow into a tray: save one file. */
   download: ['M12 4v11', 'M7.5 10.5 12 15l4.5-4.5', 'M5 19h14'],
   /** Arrow into a stack of trays: save every file of a post. */
