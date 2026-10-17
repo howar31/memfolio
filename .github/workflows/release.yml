@@ -90,15 +90,18 @@ jobs:
           BASE="https://chromewebstore.googleapis.com"
           ITEM="publishers/$PUBLISHER_ID/items/$ITEM_ID"
           echo "upload"
-          curl -sS -f -H "Authorization: Bearer $TOKEN" -X POST -T "out/memfolio-chromium-$V.zip" "$BASE/upload/v2/$ITEM:upload"
-          echo
-          # The upload is processed asynchronously; publish once it has settled.
+          UP="$(curl -sS -f -H "Authorization: Bearer $TOKEN" -X POST -T "out/memfolio-chromium-$V.zip" "$BASE/upload/v2/$ITEM:upload")"
+          echo "$UP"
+          STATE="$(echo "$UP" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).uploadState || ''")"
+          # The upload answer usually reports SUCCEEDED; only an upload still in
+          # progress is polled (fetchStatus leaves the field out until it settles).
           for i in $(seq 1 30); do
-            S="$(curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/v2/$ITEM:fetchStatus")"
-            STATE="$(echo "$S" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).lastAsyncUploadState || ''")"
+            [ "$STATE" = IN_PROGRESS ] || break
+            sleep 10
+            STATE="$(curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/v2/$ITEM:fetchStatus" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).lastAsyncUploadState || 'IN_PROGRESS'")"
             echo "upload state: $STATE"
-            case "$STATE" in *PROGRESS*|*PENDING*|"") sleep 10 ;; *) break ;; esac
           done
+          test "$STATE" = SUCCEEDED
           echo "publish"
           curl -sS -f -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -X POST -d '{"publishType":"DEFAULT_PUBLISH"}' "$BASE/v2/$ITEM:publish"
           echo
