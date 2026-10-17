@@ -1,0 +1,51 @@
+name: Firefox signed file
+
+# Started by the release run after the Firefox submission. Waits for
+# addons.mozilla.org to approve the version, then attaches the signed file to
+# the GitHub release. A run that is still waiting near the 6-hour job limit
+# starts the next one, up to 10 runs; after that it opens an issue and fails.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the leading v
+        required: true
+      attempt:
+        description: Run number in the chain
+        default: '1'
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - name: Attach once approved
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ inputs.version }}
+          ATTEMPT: ${{ inputs.attempt }}
+        run: |
+          rc=0
+          .github/release/attach-firefox-xpi.sh "$V" 300 || rc=$?
+          if [ "$rc" = 2 ]; then
+            if [ "$ATTEMPT" -lt 10 ]; then
+              gh workflow run firefox-xpi.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f version="$V" -f attempt=$((ATTEMPT + 1))
+              echo "started run $((ATTEMPT + 1))"
+            else
+              TITLE="Signed Firefox file for v$V is not attached"
+              if [ -z "$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$TITLE\" in:title" --json number --jq '.[].number')" ]; then
+                gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "addons.mozilla.org had not approved $V after 10 runs of this workflow (about 50 hours). Once the version is public there, start the \"Firefox signed file\" workflow from the Actions tab with version $V, or attach memfolio-firefox-$V.xpi to the v$V release by hand. Last run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              fi
+              echo "::error::$V is still not approved after 10 runs"
+              exit 1
+            fi
+          elif [ "$rc" != 0 ]; then
+            exit "$rc"
+          fi

@@ -91,7 +91,7 @@ npm run check        # 型別檢查、單元測試、正式建置（兩個）
 
 `npm run test:e2e` 需要先安裝一次測試用瀏覽器：`npx puppeteer browsers install chrome`。
 
-每次推送與 pull request 都會執行檢查與瀏覽器測試。推送與 `package.json` 版本相同的 tag `vX.Y.Z`，會建置套件、建立 GitHub release 並把該版本送交各商店。
+每次推送與 pull request 都會執行檢查與瀏覽器測試。推送與 `package.json` 版本相同的 tag `vX.Y.Z`，會建置套件、建立 GitHub release 並把該版本送交各商店。Mozilla 簽署 Firefox 版本後，簽署檔會加到該 release。
 
 ## 支援
 

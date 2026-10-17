@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -172,3 +173,8 @@ jobs:
           V="${{ needs.build.outputs.version }}"
           mkdir -p ff && (cd ff && unzip -q "../out/memfolio-firefox-$V.zip")
           npx --yes web-ext@10 sign --source-dir ff --channel listed --upload-source-code "out/memfolio-source-$V.zip" --approval-timeout 0
+      - if: steps.configured.outputs.ok == 'true'
+        name: Hand over to the signed-file workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run firefox-xpi.yml --repo "$GITHUB_REPOSITORY" -f version="${{ needs.build.outputs.version }}" -f attempt=1

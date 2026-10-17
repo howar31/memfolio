@@ -91,7 +91,7 @@ npm run check        # type check, unit tests, production builds
 
 `npm run test:e2e` needs the test browser once: `npx puppeteer browsers install chrome`.
 
-Every push and pull request runs the checks and the browser suite. A pushed tag `vX.Y.Z`, equal to the version in `package.json`, builds the packages, creates the GitHub release and submits the version to the stores.
+Every push and pull request runs the checks and the browser suite. A pushed tag `vX.Y.Z`, equal to the version in `package.json`, builds the packages, creates the GitHub release and submits the version to the stores. Once Mozilla has signed the Firefox version, the signed file is added to the release.
 
 ## Support
 
