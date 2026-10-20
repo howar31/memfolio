@@ -249,6 +249,8 @@ export async function installMock(page, state) {
         const vars = JSON.parse(form.get('variables') ?? '{}');
         state.calls.push({ name, vars, params: Object.fromEntries(form), headers: req.headers() });
         if (state.loginRedirect) return await req.respond({ status: 302, headers: { location: `${ORIGIN}/accounts/login/?next=%2F` } });
+        // The site sends a query without the web client's session fields to its home page.
+        if (!form.get('fb_dtsg') || !form.get('lsd')) return await req.respond({ status: 302, headers: { location: `${ORIGIN}/` } });
         const fail = state.failStatuses.shift();
         if (fail) return await req.respond({ status: fail, contentType: 'text/html', body: '<html>limited</html>' });
         // The site answers a request that lacks a flag its query declares this way.

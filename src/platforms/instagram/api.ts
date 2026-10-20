@@ -20,22 +20,21 @@ const PAGE_SIZES = {
  * Persisted queries of the web client, by their "friendly name". The id of a
  * query is read from the page at run time (the site rotates ids); `fallbackId`
  * is the last observed value and is used only when the page has none.
- * `sessionParams` adds the form fields the web client sends with the request.
- * The posts query is sent without them.
+ * Every query is sent with the form fields the web client sends; the site
+ * answers one without them with its home page.
  */
 interface QueryDef {
   fallbackId: string | null;
-  sessionParams: boolean;
 }
 
 const QUERIES = {
-  PolarisProfilePostsTabContentQuery_connection: { fallbackId: '28858033960505345', sessionParams: false },
-  PolarisProfileReelsTabContentQuery_connection: { fallbackId: null, sessionParams: true },
-  PolarisProfileTaggedTabContentQuery_connection: { fallbackId: null, sessionParams: true },
-  PolarisPostRootQuery: { fallbackId: '28188170744199537', sessionParams: true },
-  PolarisStoriesV3ReelPageGalleryQuery: { fallbackId: '28262315486766731', sessionParams: true },
-  PolarisStoriesV3HighlightsPageQuery: { fallbackId: '28325328583775973', sessionParams: true },
-  PolarisSearchBoxRefetchableQuery: { fallbackId: '27706427925724183', sessionParams: true },
+  PolarisProfilePostsTabContentQuery_connection: { fallbackId: '29298961806354817' },
+  PolarisProfileReelsTabContentQuery_connection: { fallbackId: null },
+  PolarisProfileTaggedTabContentQuery_connection: { fallbackId: null },
+  PolarisPostRootQuery: { fallbackId: '28188170744199537' },
+  PolarisStoriesV3ReelPageGalleryQuery: { fallbackId: '28262315486766731' },
+  PolarisStoriesV3HighlightsPageQuery: { fallbackId: '28325328583775973' },
+  PolarisSearchBoxRefetchableQuery: { fallbackId: '27706427925724183' },
 } as const satisfies Record<string, QueryDef>;
 
 export type QueryName = keyof typeof QUERIES;
@@ -82,17 +81,15 @@ export function createGraphql(deps: GraphqlDeps): GraphqlFn {
     };
     const csrf = deps.csrf();
     if (csrf) headers['x-csrftoken'] = csrf;
-    if (def.sessionParams) {
-      if (session.dtsg) form.set('fb_dtsg', session.dtsg);
-      if (session.lsd) {
-        form.set('lsd', session.lsd);
-        headers['x-fb-lsd'] = session.lsd;
-      }
-      form.set('fb_api_caller_class', 'RelayModern');
-      form.set('fb_api_req_friendly_name', name);
-      form.set('server_timestamps', 'true');
-      headers['x-fb-friendly-name'] = name;
+    if (session.dtsg) form.set('fb_dtsg', session.dtsg);
+    if (session.lsd) {
+      form.set('lsd', session.lsd);
+      headers['x-fb-lsd'] = session.lsd;
     }
+    form.set('fb_api_caller_class', 'RelayModern');
+    form.set('fb_api_req_friendly_name', name);
+    form.set('server_timestamps', 'true');
+    headers['x-fb-friendly-name'] = name;
     // The site sends every flag its query definition declares and rejects a
     // request that lacks one, so the page's flags and values win over ours.
     const provided = await deps.providedVariables(name);

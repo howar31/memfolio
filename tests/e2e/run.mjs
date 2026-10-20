@@ -290,7 +290,7 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   assertEqual(callsNamed(state, POSTS).length, 3, 'listing requests for 30 posts');
   assertEqual(callsNamed(state, 'PolarisSearchBoxRefetchableQuery').length, 0, 'no search when the page knows the account id');
   const first = callsNamed(state, POSTS)[0];
-  assertEqual(Object.keys(first.params).sort(), ['doc_id', 'variables'], 'posts query is sent with the minimal parameter set');
+  assertEqual([first.params.fb_dtsg, first.params.lsd, first.params.fb_api_req_friendly_name], ['DTSGTOKEN', 'LSDTOKEN', POSTS], 'posts query carries the session parameters');
   assertEqual(first.params.doc_id, DOC_IDS[POSTS], 'query id comes from the page');
   assertEqual(first.headers['x-csrftoken'], 'CSRFTOKEN', 'csrf header');
   assertEqual(first.vars.username, 'acct', 'listing by username');

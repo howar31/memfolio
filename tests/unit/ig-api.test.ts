@@ -405,7 +405,7 @@ describe('createGraphql', () => {
   const params = (init: RequestInit) => new URLSearchParams(String(init.body));
   const headers = (init: RequestInit) => new Headers(init.headers);
 
-  it('sends the posts query with the minimal parameter set', async () => {
+  it('sends a query with the session parameters of the web client', async () => {
     const t = transport({ data: { ok: 1 } }, { PolarisProfilePostsTabContentQuery_connection: '111' });
     const data = await t.gql('PolarisProfilePostsTabContentQuery_connection', { username: 'acct' }, signal);
     expect(data).toEqual({ ok: 1 });
@@ -413,24 +413,17 @@ describe('createGraphql', () => {
     expect(url).toBe('https://www.instagram.com/graphql/query');
     expect(init.method).toBe('POST');
     expect(init.credentials).toBe('include');
-    expect([...params(init).keys()].sort()).toEqual(['doc_id', 'variables']);
     expect(params(init).get('doc_id')).toBe('111');
     expect(JSON.parse(params(init).get('variables')!)).toEqual({ username: 'acct' });
+    expect(params(init).get('fb_dtsg')).toBe('DTSG');
+    expect(params(init).get('lsd')).toBe('LSD');
+    expect(params(init).get('fb_api_req_friendly_name')).toBe('PolarisProfilePostsTabContentQuery_connection');
+    expect(params(init).get('fb_api_caller_class')).toBe('RelayModern');
+    expect(headers(init).get('x-fb-friendly-name')).toBe('PolarisProfilePostsTabContentQuery_connection');
+    expect(headers(init).get('x-fb-lsd')).toBe('LSD');
     expect(headers(init).get('x-csrftoken')).toBe('CSRF');
     expect(headers(init).get('x-ig-app-id')).toBe('936619743392459');
     expect(headers(init).get('content-type')).toBe('application/x-www-form-urlencoded');
-  });
-
-  it('adds the session parameters for the other queries', async () => {
-    const t = transport({ data: {} }, { PolarisPostRootQuery: '222' });
-    await t.gql('PolarisPostRootQuery', { shortcode: 'C5' }, signal);
-    const { init } = t.sent[0]!;
-    expect(params(init).get('fb_dtsg')).toBe('DTSG');
-    expect(params(init).get('lsd')).toBe('LSD');
-    expect(params(init).get('fb_api_req_friendly_name')).toBe('PolarisPostRootQuery');
-    expect(params(init).get('fb_api_caller_class')).toBe('RelayModern');
-    expect(headers(init).get('x-fb-friendly-name')).toBe('PolarisPostRootQuery');
-    expect(headers(init).get('x-fb-lsd')).toBe('LSD');
   });
 
   it('sends the flags of the query definition on the page with their values there', async () => {
@@ -454,7 +447,7 @@ describe('createGraphql', () => {
   it('uses the recorded query id when the page does not provide one', async () => {
     const t = transport({ data: {} });
     await t.gql('PolarisProfilePostsTabContentQuery_connection', {}, signal);
-    expect(params(t.sent[0]!.init).get('doc_id')).toBe('28858033960505345');
+    expect(params(t.sent[0]!.init).get('doc_id')).toBe('29298961806354817');
   });
 
   it('does not send a query under the id of another query', async () => {
