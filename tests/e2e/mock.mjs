@@ -84,6 +84,7 @@ function pageHtml(state, body) {
     docIds: DOC_IDS,
     queryFlags: state.queryFlags,
     relayUsers: state.relayUsers,
+    pageNetwork: state.pageNetwork,
     appId: '936619743392459',
   };
   return `<!doctype html><html><head><meta charset="utf-8"><title>mock</title>
@@ -91,12 +92,42 @@ function pageHtml(state, body) {
 (() => {
   const reg = ${JSON.stringify(registry)};
   const records = Object.fromEntries(reg.relayUsers.map((u, i) => ['user' + i, u]));
+  // The site's network layer: sends a persisted query with the fields the web
+  // client adds and streams the parsed response.
+  const network = {
+    execute: (params, variables) => ({
+      subscribe(sink) {
+        const form = new URLSearchParams({
+          __a: '1',
+          fb_dtsg: 'DTSGTOKEN',
+          lsd: 'LSDTOKEN',
+          fb_api_caller_class: 'RelayModern',
+          fb_api_req_friendly_name: params.name,
+          server_timestamps: 'true',
+          variables: JSON.stringify(variables),
+          doc_id: params.id,
+        });
+        fetch('/api/graphql', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', 'x-fb-friendly-name': params.name }, body: form })
+          .then((r) => r.text())
+          .then((text) => {
+            const body = JSON.parse(text);
+            if (body.errors && !body.data) throw Object.assign(new Error('GraphQL operation responded with error'), { name: 'GraphQLError', source: body.errors[0] });
+            sink.next(body);
+            sink.complete();
+          })
+          .catch((e) => sink.error(e));
+      },
+    }),
+  };
   const modules = {
     PolarisConfig: { getIGAppID: () => reg.appId },
     DTSGInitialData: { token: 'DTSGTOKEN' },
     LSD: { token: 'LSDTOKEN' },
     PolarisWWWClaim: { getWWWClaim: () => 'hmac.claim' },
-    PolarisRelayEnvironment: { getStore: () => ({ getSource: () => ({ getRecordIDs: () => Object.keys(records), get: (id) => records[id] }) }) },
+    PolarisRelayEnvironment: {
+      getStore: () => ({ getSource: () => ({ getRecordIDs: () => Object.keys(records), get: (id) => records[id] }) }),
+      ...(reg.pageNetwork ? { getNetwork: () => network } : {}),
+    },
   };
   for (const [name, id] of Object.entries(reg.docIds)) modules[name + '_instagramRelayOperation'] = id;
   // Query definitions with their flag providers, in the shape the site's modules have.
@@ -209,7 +240,9 @@ export function newState(overrides = {}) {
     refuseLargePages: false,
     /** Query definitions on the page: friendly name -> flags the query declares and requires, with their values. */
     queryFlags: {},
-    /** Calls the extension made, in order: { name, vars, params }. */
+    /** Whether the page offers its network layer, through which the extension sends queries. */
+    pageNetwork: true,
+    /** Calls the extension made, in order: { name, vars, via: 'page' | 'direct', params, headers }. */
     calls: [],
     mediaRequests: [],
     /** HTTP statuses to answer the next GraphQL requests with, before normal service resumes. */
@@ -243,11 +276,13 @@ export async function installMock(page, state) {
       }
       if (url.origin !== ORIGIN) return await req.continue();
 
-      if (url.pathname === '/graphql/query' && req.method() === 'POST') {
+      // `/api/graphql` is the path the page's network layer uses.
+      if ((url.pathname === '/graphql/query' || url.pathname === '/api/graphql') && req.method() === 'POST') {
         const form = new URLSearchParams(req.postData() ?? '');
         const name = NAME_OF_DOC[form.get('doc_id')] ?? `unknown:${form.get('doc_id')}`;
         const vars = JSON.parse(form.get('variables') ?? '{}');
-        state.calls.push({ name, vars, params: Object.fromEntries(form), headers: req.headers() });
+        const via = url.pathname === '/api/graphql' ? 'page' : 'direct';
+        state.calls.push({ name, vars, via, params: Object.fromEntries(form), headers: req.headers() });
         if (state.loginRedirect) return await req.respond({ status: 302, headers: { location: `${ORIGIN}/accounts/login/?next=%2F` } });
         // The site sends a query without the web client's session fields to its home page.
         if (!form.get('fb_dtsg') || !form.get('lsd')) return await req.respond({ status: 302, headers: { location: `${ORIGIN}/` } });

@@ -1,5 +1,6 @@
 import { requestJson, type RequestGate, type RequestHooks, type RetryPolicy } from '../../core/request';
 import { StopError, type ListingPage, type ListingSource, type MediaItem } from '../../core/types';
+import type { PageQueryResult } from './bridge-protocol';
 import { legacyMediaFromShortcodeMedia, mediaFromNode, reelFromListingNode } from './parse';
 import { shortcodeToId } from './shortcode';
 
@@ -20,8 +21,10 @@ const PAGE_SIZES = {
  * Persisted queries of the web client, by their "friendly name". The id of a
  * query is read from the page at run time (the site rotates ids); `fallbackId`
  * is the last observed value and is used only when the page has none.
- * Every query is sent with the form fields the web client sends; the site
- * answers one without them with its home page.
+ * A query is sent through the page's own network layer, which adds whatever
+ * fields and headers the site currently expects. When the page cannot send
+ * it, the request is built here with the web client's session fields; the
+ * site answers one without them with its home page.
  */
 interface QueryDef {
   fallbackId: string | null;
@@ -58,6 +61,8 @@ export interface GraphqlDeps {
   docId(name: string): Promise<string | null>;
   /** Flags the page's definition of this query declares, with their current values; null when the page has none. */
   providedVariables(name: string): Promise<Json | null>;
+  /** Runs the query through the page's own network layer. */
+  pageQuery(name: string, docId: string, variables: Json, signal: AbortSignal): Promise<PageQueryResult>;
   fetch: typeof fetch;
   policy: RetryPolicy;
   hooks: RequestHooks;
@@ -72,37 +77,23 @@ export function createGraphql(deps: GraphqlDeps): GraphqlFn {
     const def: QueryDef = QUERIES[name];
     const docId = (await deps.docId(name)) ?? def.fallbackId;
     if (!docId) throw new StopError('bad-response', `query id for ${name} is not available on this page`);
-    const session = await deps.session();
-
-    const form = new URLSearchParams();
-    const headers: Record<string, string> = {
-      'content-type': 'application/x-www-form-urlencoded',
-      'x-ig-app-id': session.appId,
-    };
-    const csrf = deps.csrf();
-    if (csrf) headers['x-csrftoken'] = csrf;
-    if (session.dtsg) form.set('fb_dtsg', session.dtsg);
-    if (session.lsd) {
-      form.set('lsd', session.lsd);
-      headers['x-fb-lsd'] = session.lsd;
-    }
-    form.set('fb_api_caller_class', 'RelayModern');
-    form.set('fb_api_req_friendly_name', name);
-    form.set('server_timestamps', 'true');
-    headers['x-fb-friendly-name'] = name;
     // The site sends every flag its query definition declares and rejects a
     // request that lacks one, so the page's flags and values win over ours.
-    const provided = await deps.providedVariables(name);
-    form.set('doc_id', docId);
-    form.set('variables', JSON.stringify({ ...variables, ...provided }));
+    const vars = { ...variables, ...(await deps.providedVariables(name)) };
 
     await deps.gate.pass(signal);
-    const body = await requestJson(
-      (s) => deps.fetch(`${ORIGIN}/graphql/query`, { method: 'POST', credentials: 'include', headers, body: form.toString(), signal: s }),
-      deps.policy,
-      deps.hooks,
-      signal,
-    );
+    const viaPage = await deps.pageQuery(name, docId, vars, signal);
+    let body: unknown;
+    if (viaPage.status === 'ok') body = viaPage.body;
+    else if (viaPage.status === 'graphql') throw new StopError('graphql', viaPage.message);
+    else {
+      if (viaPage.status === 'failed') {
+        // The direct request tells a login page, a challenge and throttling apart.
+        console.warn(`[memfolio] the page could not send ${name}, sending it directly:`, viaPage.message);
+        await deps.gate.pass(signal);
+      }
+      body = await sendDirect(deps, name, docId, vars, signal);
+    }
     if (!isObject(body)) throw new StopError('bad-response', 'unexpected response');
     if (!isObject(body.data)) {
       const first = Array.isArray(body.errors) && isObject(body.errors[0]) ? body.errors[0].message : null;
@@ -110,6 +101,37 @@ export function createGraphql(deps: GraphqlDeps): GraphqlFn {
     }
     return body.data;
   };
+}
+
+/** The query as a request built here, with the web client's session fields. */
+async function sendDirect(deps: GraphqlDeps, name: QueryName, docId: string, variables: Json, signal: AbortSignal): Promise<unknown> {
+  const session = await deps.session();
+
+  const form = new URLSearchParams();
+  const headers: Record<string, string> = {
+    'content-type': 'application/x-www-form-urlencoded',
+    'x-ig-app-id': session.appId,
+  };
+  const csrf = deps.csrf();
+  if (csrf) headers['x-csrftoken'] = csrf;
+  if (session.dtsg) form.set('fb_dtsg', session.dtsg);
+  if (session.lsd) {
+    form.set('lsd', session.lsd);
+    headers['x-fb-lsd'] = session.lsd;
+  }
+  form.set('fb_api_caller_class', 'RelayModern');
+  form.set('fb_api_req_friendly_name', name);
+  form.set('server_timestamps', 'true');
+  headers['x-fb-friendly-name'] = name;
+  form.set('doc_id', docId);
+  form.set('variables', JSON.stringify(variables));
+
+  return requestJson(
+    (s) => deps.fetch(`${ORIGIN}/graphql/query`, { method: 'POST', credentials: 'include', headers, body: form.toString(), signal: s }),
+    deps.policy,
+    deps.hooks,
+    signal,
+  );
 }
 
 // ---- listings ---------------------------------------------------------------

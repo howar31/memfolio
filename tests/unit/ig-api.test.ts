@@ -12,6 +12,7 @@ import {
 } from '../../src/platforms/instagram/api';
 import { RequestGate } from '../../src/core/request';
 import { StopError } from '../../src/core/types';
+import type { PageQueryResult } from '../../src/platforms/instagram/bridge-protocol';
 
 const signal = new AbortController().signal;
 
@@ -379,11 +380,18 @@ describe('fetchReelMedia', () => {
 describe('createGraphql', () => {
   const session: SessionInfo = { appId: '936619743392459', dtsg: 'DTSG', lsd: 'LSD', wwwClaim: 'hmac.x' };
 
-  function transport(body: unknown, docIds: Record<string, string | null> = {}, provided: Record<string, Record<string, unknown>> = {}) {
+  function transport(
+    body: unknown,
+    docIds: Record<string, string | null> = {},
+    provided: Record<string, Record<string, unknown>> = {},
+    page: PageQueryResult = { status: 'unavailable' },
+  ) {
     const sent: Array<{ url: string; init: RequestInit }> = [];
+    const viaPage: Array<{ name: string; docId: string; variables: Record<string, unknown> }> = [];
+    let passes = 0;
     const gate = new RequestGate(
       { minGapMs: [0, 0], hourlyBudget: 100 },
-      { load: async () => [], save: async () => {} },
+      { load: async () => [], save: async () => void passes++ },
       { sleep: async () => {}, rng: () => 0, now: () => Date.now() },
     );
     const gql = createGraphql({
@@ -392,6 +400,10 @@ describe('createGraphql', () => {
       csrf: () => 'CSRF',
       docId: async (name) => docIds[name] ?? null,
       providedVariables: async (name) => provided[name] ?? null,
+      pageQuery: async (name, docId, variables) => {
+        viaPage.push({ name, docId, variables });
+        return page;
+      },
       fetch: async (url, init) => {
         sent.push({ url: String(url), init: init ?? {} });
         return new Response(JSON.stringify(body), { status: 200 });
@@ -399,11 +411,45 @@ describe('createGraphql', () => {
       policy: { maxRetries: 0, backoff: { baseMs: 1, capMs: 1, jitterRatio: 0 }, retryAfterCapMs: 1 },
       hooks: { sleep: async () => {}, rng: () => 0 },
     });
-    return { gql, sent };
+    return { gql, sent, viaPage, passes: () => passes };
   }
 
   const params = (init: RequestInit) => new URLSearchParams(String(init.body));
   const headers = (init: RequestInit) => new Headers(init.headers);
+
+  it("sends a query through the page's network layer when it has one", async () => {
+    const t = transport({}, { PolarisProfilePostsTabContentQuery_connection: '111' }, {
+      PolarisProfilePostsTabContentQuery_connection: { __relay_internal__pv__NewFlagrelayprovider: false },
+    }, { status: 'ok', body: { data: { ok: 1 } } });
+    const data = await t.gql('PolarisProfilePostsTabContentQuery_connection', { username: 'acct' }, signal);
+    expect(data).toEqual({ ok: 1 });
+    expect(t.viaPage).toEqual([
+      { name: 'PolarisProfilePostsTabContentQuery_connection', docId: '111', variables: { username: 'acct', __relay_internal__pv__NewFlagrelayprovider: false } },
+    ]);
+    expect(t.sent).toHaveLength(0);
+    expect(t.passes()).toBe(1);
+  });
+
+  it('reports a GraphQL error from the page without sending the query again', async () => {
+    const t = transport({}, {}, {}, { status: 'graphql', message: 'execution error' });
+    await expect(t.gql('PolarisPostRootQuery', { shortcode: 'C5' }, signal)).rejects.toMatchObject({ reason: 'graphql', message: 'execution error' });
+    expect(t.sent).toHaveLength(0);
+  });
+
+  it('sends the query directly when the page could not, counting both requests', async () => {
+    const t = transport({ data: { ok: 1 } }, {}, {}, { status: 'failed', message: 'Failed to fetch' });
+    expect(await t.gql('PolarisPostRootQuery', { shortcode: 'C5' }, signal)).toEqual({ ok: 1 });
+    expect(t.viaPage).toHaveLength(1);
+    expect(t.sent).toHaveLength(1);
+    expect(t.passes()).toBe(2);
+  });
+
+  it('sends the query directly, once, when the page has no network layer', async () => {
+    const t = transport({ data: { ok: 1 } });
+    expect(await t.gql('PolarisPostRootQuery', { shortcode: 'C5' }, signal)).toEqual({ ok: 1 });
+    expect(t.sent).toHaveLength(1);
+    expect(t.passes()).toBe(1);
+  });
 
   it('sends a query with the session parameters of the web client', async () => {
     const t = transport({ data: { ok: 1 } }, { PolarisProfilePostsTabContentQuery_connection: '111' });

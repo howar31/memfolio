@@ -1,12 +1,13 @@
 import { HandleStore } from '../../core/handles';
 import { t } from '../../core/i18n';
-import { jitter, sleep } from '../../core/pacing';
+import { abortError, jitter, sleep } from '../../core/pacing';
 import { budgetStore } from '../../core/records';
 import { RequestGate, requestJson, type RetryPolicy } from '../../core/request';
 import { StopError, type MediaKind, type StopReason } from '../../core/types';
 import { surface } from '../../ui/host';
 import { ORIGIN, createGraphql, type SessionInfo } from './api';
 import { bridge } from './bridge-client';
+import type { PageQueryResult } from './bridge-protocol';
 import { pageFetch } from './net';
 
 export const PLATFORM = 'instagram';
@@ -111,12 +112,29 @@ async function providedVariables(name: string): Promise<Record<string, unknown> 
   return flags;
 }
 
+/** The bridge call, given up on (not cancelled in the page) when the run is stopped. */
+function pageQuery(name: string, docId: string, variables: Record<string, unknown>, signal: AbortSignal): Promise<PageQueryResult> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(abortError());
+      return;
+    }
+    const onAbort = (): void => reject(abortError());
+    signal.addEventListener('abort', onAbort, { once: true });
+    bridge
+      .pageQuery(name, docId, variables)
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener('abort', onAbort));
+  });
+}
+
 export const gql = createGraphql({
   gate,
   session,
   csrf,
   docId,
   providedVariables,
+  pageQuery,
   fetch: pageFetch,
   policy: CONFIG.retry,
   hooks: requestHooks,

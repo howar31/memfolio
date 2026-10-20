@@ -290,9 +290,8 @@ scenario('first run downloads every file, then runs are incremental', async (ctx
   assertEqual(callsNamed(state, POSTS).length, 3, 'listing requests for 30 posts');
   assertEqual(callsNamed(state, 'PolarisSearchBoxRefetchableQuery').length, 0, 'no search when the page knows the account id');
   const first = callsNamed(state, POSTS)[0];
-  assertEqual([first.params.fb_dtsg, first.params.lsd, first.params.fb_api_req_friendly_name], ['DTSGTOKEN', 'LSDTOKEN', POSTS], 'posts query carries the session parameters');
+  assertEqual(callsNamed(state, POSTS).map((c) => c.via), ['page', 'page', 'page'], "queries go through the page's network layer");
   assertEqual(first.params.doc_id, DOC_IDS[POSTS], 'query id comes from the page');
-  assertEqual(first.headers['x-csrftoken'], 'CSRFTOKEN', 'csrf header');
   assertEqual(first.vars.username, 'acct', 'listing by username');
 
   let record = await ctx.account('42');
@@ -571,7 +570,7 @@ scenario('rate limiting is retried, a login redirect stops the run', async (ctx)
   await click(page, await ctx.msg('downloadAll'));
   await waitText(page, await ctx.msg('slowdownNotice'));
   await runFinished(ctx, page);
-  assertEqual(callsNamed(state, POSTS).length, 1, 'no retry after a login redirect');
+  assertEqual(callsNamed(state, POSTS).map((c) => c.via), ['page', 'direct'], 'no retry after a login redirect, once the direct request names it');
   assert((await surfaceText(page)).includes((await ctx.msg('stopLogin', '')).split('(')[0].trim()), 'login stop is explained');
   const record = await ctx.account('42');
   assertEqual([record.lastStatus, record.needsFullScan.posts], ['stopped', true], 'summary after the stop');
@@ -584,6 +583,18 @@ scenario('rate limiting is retried, a login redirect stops the run', async (ctx)
   await runFinished(ctx, page);
   assertEqual(callsNamed(state, POSTS).length, 2, 'forced full scan lists both pages');
   assertEqual((await ctx.account('42')).needsFullScan.posts, false, 'flag cleared after a complete run');
+});
+
+scenario('without the page network layer, queries are sent directly with the session parameters', async (ctx) => {
+  const state = newState({ posts: makeTimeline(14), pageNetwork: false });
+  const page = await ctx.openProfile('/acct/', state);
+  await firstRun(ctx, page);
+  await runFinished(ctx, page);
+  assertEqual(await opfs.names(page, 'root/acct'), expectedFiles(state.posts), 'files written');
+  const calls = callsNamed(state, POSTS);
+  assertEqual(calls.map((c) => c.via), ['direct', 'direct'], 'both pages sent directly');
+  assertEqual([calls[0].params.fb_dtsg, calls[0].params.lsd, calls[0].params.fb_api_req_friendly_name], ['DTSGTOKEN', 'LSDTOKEN', POSTS], 'session parameters');
+  assertEqual(calls[0].headers['x-csrftoken'], 'CSRFTOKEN', 'csrf header');
 });
 
 scenario('cancelling leaves no partial file and the next run completes', async (ctx) => {

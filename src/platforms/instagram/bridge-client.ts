@@ -1,4 +1,4 @@
-import { RPC_TAG, type BridgeMethod, type BridgeMethods, type BridgeSession, type RpcRequest, type RpcResponse } from './bridge-protocol';
+import { RPC_TAG, type BridgeMethod, type BridgeMethods, type BridgeSession, type PageQueryResult, type RpcRequest, type RpcResponse } from './bridge-protocol';
 
 const DEFAULT_TIMEOUT_MS = 3000;
 
@@ -37,6 +37,12 @@ export const bridge = {
   async providedVariables(names: string[]): Promise<Record<string, Record<string, unknown> | null>> {
     return rpc('providedVariables', [names]).catch(() => ({}));
   },
+
+  pageQuery: (name: string, docId: string, variables: Record<string, unknown>): Promise<PageQueryResult> =>
+    rpc('pageQuery', [name, docId, variables], 30_000).catch((e: unknown) => ({
+      status: 'failed' as const,
+      message: e instanceof Error ? e.message : String(e),
+    })),
 
   findUserId: (username: string): Promise<string | null> => rpc('findUserId', [username]).catch(() => null),
 

@@ -2,7 +2,7 @@
 // that only that world can answer (the site's module registry and the data
 // attached to DOM nodes) and changes nothing on the page.
 
-import { RPC_TAG, type BridgeMethods, type BridgeSession, type RpcRequest, type RpcResponse } from './bridge-protocol';
+import { RPC_TAG, type BridgeMethods, type BridgeSession, type PageQueryResult, type RpcRequest, type RpcResponse } from './bridge-protocol';
 
 type AnyRecord = Record<string, unknown>;
 type RequireLazyFn = (names: string[], onReady: (...modules: unknown[]) => void) => void;
@@ -89,6 +89,43 @@ async function relayEnvironment(): Promise<AnyRecord | null> {
   return typeof d === 'object' && d !== null && typeof (d as AnyRecord).getStore === 'function' ? (d as AnyRecord) : null;
 }
 
+interface Observable {
+  subscribe(sink: { next(v: unknown): void; error(e: unknown): void; complete(): void }): unknown;
+}
+
+/**
+ * Sends a persisted query through the page's network layer and returns its
+ * first payload. Without the page's definition of the query, the request is
+ * named by its id alone, which the layer accepts the same way.
+ */
+async function executeOnPage(name: string, docId: string, variables: AnyRecord): Promise<PageQueryResult> {
+  const network = call(await relayEnvironment(), 'getNetwork') as AnyRecord | null;
+  if (!network || typeof network.execute !== 'function') return { status: 'unavailable' };
+  const def = await objMod(`${name}.graphql`);
+  const loaded = ((def?.default ?? def) as AnyRecord | null | undefined)?.params as AnyRecord | undefined;
+  const params = loaded?.id === docId ? loaded : { id: docId, name, operationKind: 'query', text: null, metadata: {}, cacheID: docId };
+  return new Promise((resolve) => {
+    const payloads: unknown[] = [];
+    const settle = (r: PageQueryResult): void => resolve(r);
+    try {
+      const obs = (network.execute as (...a: unknown[]) => Observable).call(network, params, variables, { force: true });
+      obs.subscribe({
+        next: (v) => payloads.push(v),
+        complete: () =>
+          settle(payloads.length ? { status: 'ok', body: JSON.parse(JSON.stringify(payloads[0])) } : { status: 'failed', message: 'no response' }),
+        error: (e) => {
+          const err = (typeof e === 'object' && e !== null ? e : {}) as AnyRecord;
+          const source = err.source as AnyRecord | undefined;
+          if (err.name === 'GraphQLError') settle({ status: 'graphql', message: text(source?.message) ?? String(err.message) });
+          else settle({ status: 'failed', message: text(err.message) ?? String(e) });
+        },
+      });
+    } catch (e) {
+      settle({ status: 'failed', message: e instanceof Error ? e.message : String(e) });
+    }
+  });
+}
+
 function fiberOf(el: Element): AnyRecord | null {
   for (const key of Object.keys(el)) {
     if (key.startsWith('__reactFiber$')) return (el as unknown as AnyRecord)[key] as AnyRecord;
@@ -138,6 +175,8 @@ const methods: BridgeMethods = {
     const defs = await Promise.all(names.map((name) => objMod(`${name}.graphql`)));
     return Object.fromEntries(names.map((name, i) => [name, flagsOf(defs[i] ?? null)]));
   },
+
+  pageQuery: executeOnPage,
 
   async findUserId(username) {
     const wanted = username.toLowerCase();
