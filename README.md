@@ -25,7 +25,7 @@ A browser extension that saves photos and videos from social platforms into fold
   - The panel of a new account also has **Download to another folder…**, which saves that account to a folder you pick instead.
 - **Import existing folders** rebuilds the account list from files that are already on disk.
 - The toolbar popup lists the managed accounts; a row opens the profile.
-  - Accounts can be put into groups of your own, which fold away, and pinned to a block at the top. A group name is used once.
+  - Accounts can be put into groups of your own, which fold away, and pinned to a block at the top. A group name is used once. **Open all** in a group's actions opens the profiles of its accounts, in background tabs or in a new window (a setting); above 10 accounts it asks first.
   - The list sorts by name, last run, file count or date added, inside each group; or you set the order by hand, with buttons or by dragging. Dragging also moves an account to another group and a group to another place.
   - The button with the tray and two arrows opens a view with two tabs. **Add** takes pasted profile addresses, one per line, and adds those accounts to the list without contacting the site. The folder of each is set up at its first download.
   - **Export** gives the list back as addresses, in the manual order and with a `# name` line before each group, to copy or save as a text file. Pasting that text adds the accounts to the same groups and keeps their order as the manual order.

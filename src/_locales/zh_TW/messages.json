@@ -668,6 +668,15 @@
   "popupGroupDelete": {
     "message": "刪除群組"
   },
+  "popupGroupOpenAll": {
+    "message": "全部開啟"
+  },
+  "popupGroupOpenConfirm": {
+    "message": "開啟 $1 個帳號頁面？"
+  },
+  "popupGroupOpenYes": {
+    "message": "開啟"
+  },
   "popupGroupDeleteConfirm": {
     "message": "刪除群組？其中的帳號會移到未分組。"
   },
@@ -739,6 +748,15 @@
   },
   "optMessageDot": {
     "message": "收合時以圓點提示有訊息"
+  },
+  "optOpenAll": {
+    "message": "群組全部開啟時開在"
+  },
+  "optOpenAllTabs": {
+    "message": "此視窗的背景分頁"
+  },
+  "optOpenAllWindow": {
+    "message": "新視窗"
   },
   "pathDownloads": {
     "message": "這個資料夾位於瀏覽器的下載資料夾內。"

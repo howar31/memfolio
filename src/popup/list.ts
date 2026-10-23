@@ -21,7 +21,7 @@ import {
   type Layout,
   type SortBy,
 } from '../core/layout';
-import { getAccount, getPending, putAccount, putPending, removeAccount, removePending, setLayout, type AccountStatus } from '../core/records';
+import { getAccount, getPending, getSettings, putAccount, putPending, removeAccount, removePending, setLayout, type AccountStatus } from '../core/records';
 import { PATH_HINT } from '../core/target';
 import { ICONS, folderLine, h, icon } from '../ui/dom';
 import { PROFILE_URL, loadList, type Entry } from './shared';
@@ -35,6 +35,8 @@ const STATUS_TEXT: Partial<Record<AccountStatus, MessageKey>> = {
   'needs-relink': 'statusNeedsRelink',
 };
 const ERROR_STATUS = new Set<AccountStatus>(['folder-missing', 'needs-relink']);
+/** "Open all" of a group asks first above this many profiles. */
+const OPEN_ALL_ASK = 10;
 
 const list = document.getElementById('list')!;
 const filter = document.getElementById('filter') as HTMLInputElement;
@@ -225,7 +227,9 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
   const draft = drafting?.id === block.id ? drafting : null;
   const rename = h('button', { class: 'btn grename', text: t('popupGroupRename') });
   const del = h('button', { class: 'btn gdelete', text: t('popupGroupDelete') });
-  const acts = h('div', { class: 'acts' }, rename, del);
+  const openAll = h('button', { class: 'btn gopen', text: t('popupGroupOpenAll') });
+  openAll.disabled = block.items.length === 0;
+  const acts = h('div', { class: 'acts' }, openAll, rename, del);
 
   const input = h('input', { class: 'gname', attrs: { type: 'text', maxlength: '60', 'aria-label': t('popupGroupName') } });
   // A drawing in the middle of typing keeps what was typed.
@@ -282,8 +286,17 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
     h('button', { class: 'btn danger', text: t('popupGroupDeleteYes'), on: { click: () => void change((layout) => removeGroup(layout, block.id)) } }),
   );
 
+  const keep = h('button', { class: 'btn', text: t('cancel') });
+  const asking = h(
+    'div',
+    { class: 'confirm', attrs: { role: 'alert' } },
+    h('span', { text: t('popupGroupOpenConfirm', n(block.items.length)) }),
+    keep,
+    h('button', { class: 'btn gopenyes', text: t('popupGroupOpenYes'), on: { click: () => void openProfiles(block.items).then(() => showOnly(acts)) } }),
+  );
+
   const showOnly = (part: HTMLElement): void => {
-    for (const el of [acts, form, confirm]) el.hidden = el !== part;
+    for (const el of [acts, form, confirm, asking]) el.hidden = el !== part;
   };
   const startNaming = (): void => {
     showOnly(form);
@@ -300,12 +313,27 @@ function groupExtra(block: Block<Entry>): { more: HTMLButtonElement; extra: HTML
     cancel.focus();
   });
   cancel.addEventListener('click', () => showOnly(acts));
+  openAll.addEventListener('click', () => {
+    if (block.items.length <= OPEN_ALL_ASK) return void openProfiles(block.items);
+    showOnly(asking);
+    keep.focus();
+  });
+  keep.addEventListener('click', () => showOnly(acts));
 
-  const extra = h('div', { class: 'extra gextra' }, acts, form, confirm);
+  const extra = h('div', { class: 'extra gextra' }, acts, form, confirm, asking);
   showOnly(acts);
   const more = foldOut(() => extra.parentElement!, extra, () => showOnly(acts));
   more.classList.add('gmore');
   return { more, extra, startNaming };
+}
+
+/** Opens the profiles in the order of the list, where the settings say. */
+async function openProfiles(entries: Entry[]): Promise<void> {
+  const urls = entries.flatMap((entry) => PROFILE_URL[entry.platform]?.(entry.name) ?? []);
+  if (urls.length === 0) return;
+  if ((await getSettings()).openAll === 'window') return void (await chrome.windows.create({ url: urls }));
+  // One after the other, so that the tabs keep the order of the list.
+  for (const url of urls) await chrome.tabs.create({ url, active: false });
 }
 
 function blockName(block: Block<Entry>): string {

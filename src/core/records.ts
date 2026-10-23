@@ -45,6 +45,8 @@ export interface Settings {
   timeFormat: TimeFormat;
   /** Whether the closed button on profile pages marks that messages are waiting. */
   messageDot: boolean;
+  /** Where "Open all" of a group opens the profiles: background tabs of the popup's window, or a new window. */
+  openAll: OpenAll;
   /**
    * Where a browser that saves through its download handling puts new accounts:
    * a path inside its download folder. Empty: the download folder itself.
@@ -56,7 +58,9 @@ export type SingleSave = 'browser' | 'folder';
 
 export type TimeFormat = '24' | '12';
 
-export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24', messageDot: true, subfolder: 'Memfolio' };
+export type OpenAll = 'tabs' | 'window';
+
+export const DEFAULT_SETTINGS: Settings = { developerMode: false, language: 'auto', singleSave: 'browser', timeFormat: '24', messageDot: true, openAll: 'tabs', subfolder: 'Memfolio' };
 
 const ACCOUNT_PREFIX = 'account:';
 const SETTINGS_KEY = 'settings';

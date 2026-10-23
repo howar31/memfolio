@@ -4,7 +4,7 @@
 
 import { initI18n, setLanguage, setTimeFormat, t, uiLanguage, type MessageKey } from '../core/i18n';
 import { DEFAULT_MESSAGE, IMPORT_MESSAGE, PAGE_MESSAGE, PENDING_TOOL_KEY, type PendingTool } from '../core/messages';
-import { getSettings, onStorageChange, setSettings, type Language, type SingleSave, type TimeFormat } from '../core/records';
+import { getSettings, onStorageChange, setSettings, type Language, type OpenAll, type SingleSave, type TimeFormat } from '../core/records';
 import { ICONS, icon } from '../ui/dom';
 import { initFolders, renderFolders } from './folders';
 import { initList, render } from './list';
@@ -80,6 +80,9 @@ function renderText(): void {
   text('single-save-browser', t('optSingleSaveBrowser'));
   text('single-save-folder', t('optSingleSaveFolder'));
   text('message-dot-name', t('optMessageDot'));
+  text('open-all-name', t('optOpenAll'));
+  text('open-all-tabs', t('optOpenAllTabs'));
+  text('open-all-window', t('optOpenAllWindow'));
 }
 
 /** Name and version come from the manifest, so the popup always names the build that is loaded. */
@@ -144,6 +147,13 @@ async function initSettings(): Promise<void> {
   messageDot.checked = settings.messageDot;
   messageDot.addEventListener('change', async () => {
     await setSettings({ messageDot: messageDot.checked });
+    showSaved();
+  });
+
+  const openAll = document.getElementById('open-all') as HTMLSelectElement;
+  openAll.value = settings.openAll;
+  openAll.addEventListener('change', async () => {
+    await setSettings({ openAll: openAll.value as OpenAll });
     showSaved();
   });
 

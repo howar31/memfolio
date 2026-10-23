@@ -1375,8 +1375,15 @@ async function openPopup(ctx) {
   await waitFor(() => popup.$('#list > *'), 'the popup list');
   await popup.evaluate(() => {
     window.__opened = [];
+    window.__inFront = [];
+    window.__windows = [];
     chrome.tabs.create = async (options) => {
       window.__opened.push(options.url);
+      window.__inFront.push(options.active !== false);
+      return {};
+    };
+    chrome.windows.create = async (options) => {
+      window.__windows.push(options.url);
       return {};
     };
   });
@@ -1512,6 +1519,68 @@ scenario('groups split the list and sorting stays inside them', async (ctx) => {
   await again.keyboard.press('Enter');
   await waitBlocks(again, [[await ctx.msg('popupGroupDefault'), ['delta']], [rest, ['alpha', 'bravo', 'charlie']]], 'the entry in its new group');
   assertEqual((await layoutOf(ctx)).groupOf['instagram:@delta'], (await layoutOf(ctx)).groups[0].id, 'an address-only entry is keyed by its name');
+});
+
+scenario('a group opens all its profiles', async (ctx) => {
+  const many = Array.from({ length: 11 }, (_, i) => `m${String(i).padStart(2, '0')}`);
+  const pending = (name, extra = {}) => [`pending:instagram:${name}`, { platform: 'instagram', username: name, addedAt: 1, ...extra }];
+  await ctx.ext.evaluate((entries) => chrome.storage.local.set(entries), {
+    ...Object.fromEntries([pending('alpha'), pending('bravo'), pending('charlie', { pinned: true }), pending('delta'), ...many.map((name) => pending(name))]),
+    layout: {
+      groups: [
+        { id: 'g1', name: 'Few', collapsed: false },
+        { id: 'g2', name: 'Many', collapsed: false },
+        { id: 'g3', name: 'Empty', collapsed: false },
+      ],
+      groupOf: {
+        'instagram:@alpha': 'g1',
+        'instagram:@bravo': 'g1',
+        'instagram:@charlie': 'g1',
+        ...Object.fromEntries(many.map((name) => [`instagram:@${name}`, 'g2'])),
+      },
+    },
+  });
+  const popup = await openPopup(ctx);
+  const few = '.block[data-block="g1"]';
+  const manyBlock = '.block[data-block="g2"]';
+  const opened = () => popup.evaluate(() => window.__opened);
+  const url = (name) => `${ORIGIN}/${name}/`;
+
+  assertEqual(await popup.$$eval('.block', (els) => els.filter((e) => e.querySelector('.gopen')).map((e) => e.dataset.block)), ['g1', 'g2', 'g3'], 'only groups have the action');
+  await popup.click('.block[data-block="g3"] .gmore');
+  assertEqual(await popup.$eval('.block[data-block="g3"] .gopen', (e) => e.disabled), true, 'an empty group has nothing to open');
+
+  // A small group opens at once, in the order of the list, without the pinned member.
+  await popup.click(`${few} .gmore`);
+  await popup.click(`${few} .gopen`);
+  await waitFor(async () => (await opened()).length === 2, 'the profiles of the group');
+  assertEqual(await opened(), [url('alpha'), url('bravo')], 'the entries shown in the block, in their order');
+  assertEqual(await popup.evaluate(() => window.__inFront), [false, false], 'in background tabs');
+
+  // A group of more than ten asks first.
+  await popup.evaluate(() => (window.__opened.length = 0));
+  await popup.click(`${manyBlock} .gmore`);
+  await popup.click(`${manyBlock} .gopen`);
+  assertEqual(await popup.$eval(`${manyBlock} .gextra .confirm:not([hidden]) span`, (e) => e.textContent), await ctx.msg('popupGroupOpenConfirm', 11), 'the question names the number');
+  assertEqual(await opened(), [], 'nothing opened before the answer');
+  await popup.click(`${manyBlock} .gextra .confirm:not([hidden]) .btn:not(.gopenyes)`);
+  assertEqual(await popup.$eval(`${manyBlock} .gextra .acts`, (e) => e.hidden), false, 'cancelling brings the actions back');
+  await popup.click(`${manyBlock} .gopen`);
+  await popup.click(`${manyBlock} .gopenyes`);
+  await waitFor(async () => (await opened()).length === 11, 'the profiles of the large group');
+  assertEqual(await opened(), many.map(url), 'all of them, in order');
+
+  // The setting opens them in a new window instead.
+  await popup.click('#options');
+  await popup.select('#open-all', 'window');
+  await waitFor(async () => (await ctx.storage()).settings?.openAll === 'window', 'the setting to be stored');
+  await popup.click('#back');
+  await popup.evaluate(() => (window.__opened.length = 0));
+  await popup.click(`${few} .gmore`);
+  await popup.click(`${few} .gopen`);
+  await waitFor(async () => (await popup.evaluate(() => window.__windows.length)) === 1, 'a new window');
+  assertEqual(await popup.evaluate(() => window.__windows), [[url('alpha'), url('bravo')]], 'with the profiles of the group');
+  assertEqual(await opened(), [], 'and no tabs in this window');
 });
 
 scenario('a group name is used once', async (ctx) => {

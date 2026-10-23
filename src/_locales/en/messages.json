@@ -668,6 +668,15 @@
   "popupGroupDelete": {
     "message": "Delete group"
   },
+  "popupGroupOpenAll": {
+    "message": "Open all"
+  },
+  "popupGroupOpenConfirm": {
+    "message": "Open $1 profiles?"
+  },
+  "popupGroupOpenYes": {
+    "message": "Open"
+  },
   "popupGroupDeleteConfirm": {
     "message": "Delete the group? Its accounts move to Ungrouped."
   },
@@ -739,6 +748,15 @@
   },
   "optMessageDot": {
     "message": "Dot on the closed button when messages wait"
+  },
+  "optOpenAll": {
+    "message": "Open all in a group opens"
+  },
+  "optOpenAllTabs": {
+    "message": "Background tabs in this window"
+  },
+  "optOpenAllWindow": {
+    "message": "A new window"
   },
   "pathDownloads": {
     "message": "This folder is inside the browser's download folder."
